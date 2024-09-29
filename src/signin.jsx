@@ -25,7 +25,7 @@ function SignIn() {
               <input className="form-control" type="password" id="password" placeholder="Mot de passe" />
             </div>
             <button type="submit" className="btn btn-primary py-3 w-100 mb-4">Se connecter</button>
-            <p >Vous n'avez pas de compte ? <a>S'inscrire</a></p>
+            <p className="text-center mb-0">Vous n'avez pas de compte ? <a href="/signup">S'inscrire</a></p>
             </div>
           <div ><a className="d-flex justify-content-center" style={{ fontSize: '16px', cursor: 'pointer' }}>العربية</a></div>
         </div>

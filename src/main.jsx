@@ -4,9 +4,10 @@ import { createRoot } from 'react-dom/client'
 //import SignUp from './signup';  // The sign-up page
 import SignIn from './signin'
 import './index.css'
+import SignUp from './signup'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-  <SignIn />
+  <SignUp/>
   </StrictMode>,
 )
