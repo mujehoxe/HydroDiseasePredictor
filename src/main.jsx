@@ -6,9 +6,10 @@ import SignIn from './signin'
 import './index.css'
 import SignUp from './signup'
 import Ajoutferme from './Ajouter-une-ferme'
+import Dashboard from './Tableau de Bord'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-  <Ajoutferme/>
+  <Dashboard/>
   </StrictMode>,
 )
