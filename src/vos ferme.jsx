@@ -1,5 +1,7 @@
 import React from 'react';
 import plusicon from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png';
+import './css/bootstrap.min.css';
+import './css/style.css';
 
 function VosFermes() {
   return (

@@ -7,11 +7,12 @@ import './index.css'
 import SignUp from './signup'
 import Ajoutferme from './Ajouter-une-ferme'
 import VosFermes from './vos ferme'
+import Tableaudebord from './Tableau de Bord Boumerdas'
 
 
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-  <VosFermes/>
+  <Tableaudebord/>
   </StrictMode>,
 )
