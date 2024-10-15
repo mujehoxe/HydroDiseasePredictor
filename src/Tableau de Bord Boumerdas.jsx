@@ -1,55 +1,47 @@
-import React from "react";
-import './css/bootstrap.min.css';
-import './css/style.css';
-import logo from './imgtest/logo-tc-advisor.png'
+import '@fortawesome/fontawesome-free/css/all.min.css'; 
+import logo from './imgtest/logo-tc-advisor 2.png';
 import plusicone from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png'
 import infoicone from './imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg'
 import Recommendationsicone from './imgtest/group-2572.png'
-import '@fortawesome/fontawesome-free/css/all.min.css'; 
 
+import { useState } from 'react';
+import Dropdown from 'react-bootstrap/Dropdown';
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import Sidebar from './components/SidebarOffcanvas';
+import Offcanvas from 'react-bootstrap/Offcanvas';
 
 function Tableaudebord() {
+ // State to manage the modal visibility
+ const [showInfo, setShowInfo] = useState(false);
+ const handleCloseInfo = () => setShowInfo(false);
+ const handleShowInfo = () => setShowInfo(true);
+
+ // State to manage the recommendations modal visibility
+ const [showRecommendations, setShowRecommendations] = useState(false);
+ const handleCloseRecommendations = () => setShowRecommendations(false);
+ const handleShowRecommendations = () => setShowRecommendations(true);
+
+  // State to manage the Offcanvas visibility
+  const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const handleCloseOffcanvas = () => setShowOffcanvas(false);
+  const handleShowOffcanvas = () => setShowOffcanvas(true);
+
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
       {/* Sidebar Start */}
-      <div className="sidebar pe-4 pb-3">
-        <div className="d-flex justify-content-center align-items-center" style={{ marginTop: '10px' }}>
-          <h3>
-            <img src={logo} alt="Logo" style={{ height: '55px' }} />
-          </h3>
-        </div>
-        <nav className="navbar bg-light navbar-light">
-          <div className="navbar-nav w-100">
-          <div className="nav-item dropdown">
-              <a href="#" className="nav-link dropdown-toggle active" data-bs-toggle="dropdown">
-                Vos fermes
-              </a>
-              <div className="dropdown-menu bg-transparent border-0">
-                <a href="#" className="dropdown-item">Boumerdes 1</a>
-                <a href="#" className="dropdown-item">Boumerdes 2</a>
-                <a href="Ajouter-une-ferme.html" className="dropdown-item">
-                  <img
-                    src={plusicone}
-                    alt="Plus icon"
-                    className="me-2"
-                    style={{ width: '16px', height: '16px' }}
-                  />
-                  Ajouter une ferme
-                </a>
-              </div>
-            </div>
-
-
-          </div>
-        </nav>
-      </div>
+      <Sidebar/>
       {/* Sidebar End */}
 
       {/* Content Start */}
       <div className="content">
         {/* Navbar Start */}
-        <nav className="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
-          <a href="#" className="sidebar-toggler flex-shrink-0">
+        <nav className="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0 ">
+          <a 
+          href="#" 
+          className="sidebar-toggler flex-shrink-0 d-lg-none" 
+          onClick={handleShowOffcanvas}
+          >
             <i className="fa fa-bars"></i>
           </a>
           <div
@@ -82,8 +74,7 @@ function Tableaudebord() {
                         src={infoicone}
                         className="ms-2"
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#infoModal"
+                        onClick={handleShowInfo}
                         alt="Info"
                       />
                     </div>
@@ -93,8 +84,7 @@ function Tableaudebord() {
                         src={Recommendationsicone}
                         className="ms-2"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#recommendModal"
+                        onClick={handleShowRecommendations}
                         alt="Recommendations"
                       />
                     </div>
@@ -107,8 +97,7 @@ function Tableaudebord() {
                         src={infoicone}
                         className="ms-2"
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#infoModal"
+                        onClick={handleShowInfo}
                         alt="Info"
                       />
                     </div>
@@ -118,8 +107,7 @@ function Tableaudebord() {
                         src={Recommendationsicone}
                         className="ms-2"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#recommendModal"
+                        onClick={handleShowRecommendations}
                         alt="Recommendations"
                       />
                     </div>
@@ -132,8 +120,7 @@ function Tableaudebord() {
                         src={infoicone}
                         className="ms-2"
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#infoModal"
+                        onClick={handleShowInfo}
                         alt="Info"
                       />
                     </div>
@@ -143,8 +130,7 @@ function Tableaudebord() {
                         src={Recommendationsicone}
                         className="ms-2"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#recommendModal"
+                        onClick={handleShowRecommendations}
                         alt="Recommendations"
                       />
                     </div>
@@ -157,8 +143,7 @@ function Tableaudebord() {
                         src={infoicone}
                         className="ms-2"
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#infoModal"
+                        onClick={handleShowInfo}
                         alt="Info"
                       />
                     </div>
@@ -168,8 +153,7 @@ function Tableaudebord() {
                         src={Recommendationsicone}
                         className="ms-2"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#recommendModal"
+                        onClick={handleShowRecommendations}
                         alt="Recommendations"
                       />
                     </div>
@@ -182,8 +166,7 @@ function Tableaudebord() {
                         src={infoicone}
                         className="ms-2"
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#infoModal"
+                        onClick={handleShowInfo}
                         alt="Info"
                       />
                     </div>
@@ -193,8 +176,7 @@ function Tableaudebord() {
                         src={Recommendationsicone}
                         className="ms-2"
                         style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        data-bs-toggle="modal"
-                        data-bs-target="#recommendModal"
+                        onClick={handleShowRecommendations}
                         alt="Recommendations"
                       />
                     </div>
@@ -237,64 +219,46 @@ function Tableaudebord() {
               </div>
             </div>
           </div>
+          
         </div>
         {/* Button End */}
+        {/* Offcanvas Start */}
+        <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} >
+          <Offcanvas.Header closeButton>
+          </Offcanvas.Header>
+          <Offcanvas.Body>
+          <Sidebar/>
+          </Offcanvas.Body>
+        </Offcanvas>
+        {/* Offcanvas End */}
       </div>
       {/* Content End */}
+      
+      {/* Info Modal */}
+      <Modal show={showInfo} onHide={handleCloseInfo}>
+        <Modal.Header closeButton>
+          <Modal.Title>Information sur la maladie</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Détails sur la maladie ici.</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseInfo}>
+            Fermer
+          </Button>
+        </Modal.Footer>
+      </Modal>  
 
-      {/* Modal Info Start */}
-      <div
-        className="modal fade"
-        id="infoModal"
-        tabIndex="-1"
-        aria-labelledby="infoModalLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="infoModalLabel">
-                Information sur la maladie
-              </h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">Détails sur la maladie ici.</div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Modal Info End */}
-
-      {/* Modal Recommendations Start */}
-      <div
-        className="modal fade"
-        id="recommendModal"
-        tabIndex="-1"
-        aria-labelledby="recommendModalLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="recommendModalLabel">
-                Recommandations
-              </h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">Recommandations pour cette maladie ici.</div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Modal Recommendations End */}
+      {/* Info Modal */}
+      <Modal show={showRecommendations} onHide={handleCloseRecommendations}>
+        <Modal.Header closeButton>
+          <Modal.Title>Recommandations</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Recommandations pour cette maladie ici.</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseRecommendations}>
+            Fermer
+          </Button>
+        </Modal.Footer>
+      </Modal> 
     </div>
   );
 };

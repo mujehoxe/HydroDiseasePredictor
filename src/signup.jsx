@@ -1,7 +1,7 @@
 import React from 'react';
 import './css/bootstrap.min.css';
 import './css/style.css';
-import logo from './imgtest/logo-tc-advisor - Copie.png';
+import logo from './imgtest/logo-tc-advisor 1.png';
 
 function SignUp() {
   return (
@@ -14,22 +14,27 @@ function SignUp() {
                 <img src={logo} alt="Logo" style={{ height: '60px' }} />
                 <h3>Sign Up</h3>
               </div>
+
               <div className="form-floating mb-3">
+                <input type="text" className="form-control" id="name" placeholder="Nom & Prénom" />
                 <label htmlFor="name">Nom & Prénom</label>
-                <input className="form-control" type="text" id="name" placeholder="jhondoe" />
               </div>
+              
               <div className="form-floating mb-3">
+                <input type="text" className="form-control" id="email" placeholder="Adresse mail" />
                 <label htmlFor="email">Adresse mail</label>
-                <input className="form-control" type="email" id="email" placeholder="name@example.com" />
               </div>
+              
               <div className="form-floating mb-3">
+                <input type="text" className="form-control" id="phone" placeholder="Numéro de téléphone" />
                 <label htmlFor="phone">Numéro de téléphone</label>
-                <input className="form-control" type="text" id="phone" placeholder="Phone number" />
               </div>
+              
               <div className="form-floating mb-4">
+                <input type="password" className="form-control" id="password" placeholder="Mot de passe" />
                 <label htmlFor="password">Mot de passe</label>
-                <input className="form-control" type="password" id="password" placeholder="Password" />
               </div>
+              
               <button type="submit" className="btn btn-primary py-3 w-100 mb-4">Créer un compte</button>
               <p className="text-center mb-0">Vous avez déjà un compte ? <a href="/signin">Se connecter</a></p>
             </div>

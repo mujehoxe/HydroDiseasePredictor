@@ -275,13 +275,3 @@
     background: var(--dark);
     border-color: var(--primary);
 }
-
-.sidebar {
-    transition: margin-left 0.3s ease;
-    width: 250px; /* adjust as necessary */
-  }
-  
-  .sidebar.collapsed {
-    margin-left: -250px;
-  }
-  

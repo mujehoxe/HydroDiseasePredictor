@@ -1,9 +1,8 @@
 import React from 'react';
 import './css/bootstrap.min.css';
 import './css/style.css';
-import logo from './imgtest/logo-tc-advisor - Copie.png';
-//import { Link } from 'react-router-dom';  // Link for navigation
-//import './App.css';
+import logo from './imgtest/logo-tc-advisor 1.png';
+
 
 function SignIn() {
   return (
@@ -16,14 +15,17 @@ function SignIn() {
               <img src={logo} alt="Logo" style={{ height: '60px' }} /> 
               <h3>Connexion</h3>
             </div>
+
             <div className="form-floating mb-3" >
+              <input type="text" className="form-control"  id="email" placeholder="Adress mail" />
               <label htmlFor="email">Adresse mail</label>
-              <input className="form-control" type="email" id="email" placeholder="name@example.com" />
             </div>
+
             <div className="form-floating mb-4">
+              <input type="text" className="form-control" id="password" placeholder="Mot de passe" />
               <label htmlFor="password">Mot de passe</label>
-              <input className="form-control" type="password" id="password" placeholder="Mot de passe" />
             </div>
+
             <button type="submit" className="btn btn-primary py-3 w-100 mb-4">Se connecter</button>
             <p className="text-center mb-0">Vous n'avez pas de compte ? <a href="/signup">S'inscrire</a></p>
             </div>
