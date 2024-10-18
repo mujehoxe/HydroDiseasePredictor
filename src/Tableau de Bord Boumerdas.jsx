@@ -3,8 +3,9 @@ import logo from './imgtest/logo-tc-advisor 2.png';
 import plusicone from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png'
 import infoicone from './imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg'
 import Recommendationsicone from './imgtest/group-2572.png'
+import { getWeather } from './js/weatherAPI'; // Import the weather service
 
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -26,6 +27,12 @@ function Tableaudebord() {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const handleCloseOffcanvas = () => setShowOffcanvas(false);
   const handleShowOffcanvas = () => setShowOffcanvas(true);
+
+  const [temperature, setTemperature] = useState(null); // State for temperature
+  // Fetch the temperature when the component mounts
+  useEffect(() => {
+    getWeather('Boumerdes').then(temp => setTemperature(temp));
+  }, []);
 
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
@@ -196,7 +203,7 @@ function Tableaudebord() {
                   </div>
                   <div className="d-flex flex-column text-center mt-5 mb-4">
                     <h6 className="display-4 mb-0 font-weight-bold" style={{ color: '#1C2331' }}>
-                      13°C
+                    {temperature !== null ? `${temperature}°C` : 'Loading...'}
                     </h6>
                   </div>
                   <div className="d-flex align-items-center">
