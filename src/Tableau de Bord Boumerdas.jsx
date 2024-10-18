@@ -214,7 +214,7 @@ function Tableaudebord() {
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> 84% </span>
+                        <span className="ms-1">    Humidity: {weatherData.humidity !== null ? `${weatherData.humidity}%` : 'Loading...'} </span>
                       </div>
                       <div>
                         <i className="fas fa-sun fa-fw" style={{ color: '#868B94' }}></i>
