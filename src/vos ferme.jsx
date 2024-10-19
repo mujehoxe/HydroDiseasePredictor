@@ -2,8 +2,20 @@ import React from 'react';
 import plusicon from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png';
 import './css/bootstrap.min.css';
 import './css/style.css';
+import { useNavigate } from 'react-router-dom';
 
 function VosFermes() {
+  const navigate = useNavigate();
+
+  const handleferme1 = () => {
+    // Add your authentication logic here
+    navigate('/Tableaudebord'); // Redirect to the VosFermes page
+  };
+  const handleAjout = () => {
+    // Add your authentication logic here
+    navigate('/Ajoutferme'); // Redirect to the VosFermes page
+  };
+
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
       {/* "Vos Fermes" and "Recommendations" Start */}
@@ -20,7 +32,7 @@ function VosFermes() {
               </div>
               <div className="text-center">
                 <div className="mb-3">
-                  <a href="Tableau de Bord Boumerdas.html" className="btn btn-primary">
+                  <a onClick={handleferme1} className="btn btn-primary">
                     Boumerdes 1
                   </a>
                 </div>
@@ -30,7 +42,7 @@ function VosFermes() {
                   </button>
                 </div>
               </div>
-              <div className="text-center mt-4">
+              <div onClick={handleAjout} className="text-center mt-4" style={{ cursor: 'pointer' }}>
                 Ajouter une ferme
                 <img
                   id="plusIcon"
@@ -38,7 +50,7 @@ function VosFermes() {
                   alt="Plus icon"
                   className="ms-2"
                   style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  onClick={() => (window.location.href = 'Ajouter-une-ferme.html')}
+                  
                 />
               </div>
             </div>
