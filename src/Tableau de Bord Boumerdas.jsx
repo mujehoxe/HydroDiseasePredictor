@@ -3,7 +3,7 @@ import logo from './imgtest/logo-tc-advisor 2.png';
 import plusicone from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png'
 import infoicone from './imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg'
 import Recommendationsicone from './imgtest/group-2572.png'
-
+import { useLanguage } from './LanguageContext';
 import { useState } from 'react';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
@@ -12,6 +12,8 @@ import Sidebar from './components/SidebarOffcanvas';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
 function Tableaudebord() {
+  const { language } = useLanguage();
+
  // State to manage the modal visibility
  const [showInfo, setShowInfo] = useState(false);
  const handleCloseInfo = () => setShowInfo(false);
@@ -54,7 +56,7 @@ function Tableaudebord() {
               paddingLeft: '20px',
             }}
           >
-            Tableau de Bord Boumerdes 1
+            {language === 'fr' ? 'Tableau de Bord' : 'لوحة مراقبة'} Boumerdes 1
           </div>
         </nav>
         {/* Navbar End */}
@@ -65,7 +67,7 @@ function Tableaudebord() {
             {/* Maladies */}
             <div className="col-sm-12 col-xl-6">
               <div className="bg-light rounded h-100 p-4">
-                <h6 className="mb-4">Maladies :</h6>
+                <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
                   <div className="d-flex justify-content-between align-items-center ">
                     <div>
@@ -78,8 +80,10 @@ function Tableaudebord() {
                         alt="Info"
                       />
                     </div>
-                    <div>
-                      Risques : 50%
+                    <div className="d-flex align-items-center">
+                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
+                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 50%</span>
+                      </div>
                       <img
                         src={Recommendationsicone}
                         className="ms-2"
@@ -88,6 +92,7 @@ function Tableaudebord() {
                         alt="Recommendations"
                       />
                     </div>
+
                   </div>
                   <hr />
                   <div className="d-flex justify-content-between align-items-center ">
@@ -101,8 +106,10 @@ function Tableaudebord() {
                         alt="Info"
                       />
                     </div>
-                    <div>
-                      Risques : 80%
+                    <div className="d-flex align-items-center">
+                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
+                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 80%</span>
+                      </div>
                       <img
                         src={Recommendationsicone}
                         className="ms-2"
@@ -124,8 +131,10 @@ function Tableaudebord() {
                         alt="Info"
                       />
                     </div>
-                    <div>
-                      Risques : 60%
+                    <div className="d-flex align-items-center">
+                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
+                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 60%</span>
+                      </div>
                       <img
                         src={Recommendationsicone}
                         className="ms-2"
@@ -147,8 +156,10 @@ function Tableaudebord() {
                         alt="Info"
                       />
                     </div>
-                    <div>
-                      Risques : 20%
+                    <div className="d-flex align-items-center">
+                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
+                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 20%</span>
+                      </div>
                       <img
                         src={Recommendationsicone}
                         className="ms-2"
@@ -170,8 +181,10 @@ function Tableaudebord() {
                         alt="Info"
                       />
                     </div>
-                    <div>
-                      Risques : 10%
+                    <div className="d-flex align-items-center">
+                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
+                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 10%</span>
+                      </div>
                       <img
                         src={Recommendationsicone}
                         className="ms-2"
@@ -188,7 +201,7 @@ function Tableaudebord() {
             {/* Meteo */}
             <div className="col-sm-12 col-xl-6">
               <div className="bg-light rounded h-100 p-4">
-                <h6 className="mb-4">Meteo :</h6>
+                <h6 className="mb-4">{language === 'fr' ? 'Meteo :' : 'تقرير الطقس :'}</h6>
                 <div>
                   <div className="d-flex">
                     <div className="flex-grow-1">Boumerdes</div>
@@ -223,15 +236,15 @@ function Tableaudebord() {
         </div>
         {/* Button End */}
         {/* Offcanvas Start */}
-        <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} >
-          <Offcanvas.Header closeButton>
-          </Offcanvas.Header>
-          <Offcanvas.Body>
-          <Sidebar/>
-          </Offcanvas.Body>
-        </Offcanvas>
+          <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} >
+            <Offcanvas.Header closeButton>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+            <Sidebar/>
+            </Offcanvas.Body>
+          </Offcanvas>
         {/* Offcanvas End */}
-      </div>
+      </div>  
       {/* Content End */}
       
       {/* Info Modal */}
