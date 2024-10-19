@@ -10,6 +10,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Sidebar from './components/SidebarOffcanvas';
+import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
 function Tableaudebord() {
@@ -29,9 +30,14 @@ function Tableaudebord() {
   const handleShowOffcanvas = () => setShowOffcanvas(true);
 
   const [temperature, setTemperature] = useState(null); // State for temperature
+  const [humidity, setHumidity] = useState(null); // State for humidity
   // Fetch the temperature when the component mounts
   useEffect(() => {
-    getWeather('Boumerdes').then(temp => setTemperature(temp));
+    getWeather('Boumerdes').then(data => {
+      console.log(data); // Check the returned object structure in the console
+      setTemperature(data.temperature); // Extract the temperature field
+      setHumidity(data.humidity);
+    });
   }, []);
 
   return (
@@ -74,120 +80,16 @@ function Tableaudebord() {
               <div className="bg-light rounded h-100 p-4">
                 <h6 className="mb-4">Maladies :</h6>
                 <div>
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Pythium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div>
-                      Risques : 50%
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Pythium" risk={50} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Botrytis
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div>
-                      Risques : 80%
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Botrytis" risk={80} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Fusarium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div>
-                      Risques : 60%
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Fusarium" risk={60} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Mildiou
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div>
-                      Risques : 20%
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Mildiou" risk={20} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      Oïdium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div>
-                      Risques : 10%
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Oïdium" risk={10} />
+                  <hr />
                 </div>
               </div>
             </div>
@@ -214,11 +116,11 @@ function Tableaudebord() {
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1">    Humidity: {weatherData.humidity !== null ? `${weatherData.humidity}%` : 'Loading...'} </span>
+                        <span className="ms-1">    Humidity: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
                       </div>
                       <div>
                         <i className="fas fa-sun fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> 0.2h </span>
+                        <span className="ms-1"> UV index: </span>
                       </div>
                     </div>
                   </div>
@@ -240,32 +142,6 @@ function Tableaudebord() {
         {/* Offcanvas End */}
       </div>
       {/* Content End */}
-      
-      {/* Info Modal */}
-      <Modal show={showInfo} onHide={handleCloseInfo}>
-        <Modal.Header closeButton>
-          <Modal.Title>Information sur la maladie</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Détails sur la maladie ici.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseInfo}>
-            Fermer
-          </Button>
-        </Modal.Footer>
-      </Modal>  
-
-      {/* Info Modal */}
-      <Modal show={showRecommendations} onHide={handleCloseRecommendations}>
-        <Modal.Header closeButton>
-          <Modal.Title>Recommandations</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Recommandations pour cette maladie ici.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseRecommendations}>
-            Fermer
-          </Button>
-        </Modal.Footer>
-      </Modal> 
     </div>
   );
 };
