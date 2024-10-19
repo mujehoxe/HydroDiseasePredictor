@@ -3,12 +3,16 @@ import logo from './imgtest/logo-tc-advisor 2.png';
 import plusicone from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png'
 import infoicone from './imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg'
 import Recommendationsicone from './imgtest/group-2572.png'
+
+import { getWeather } from './js/weatherAPI'; // Import the weather service
 import { useLanguage } from './LanguageContext';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Sidebar from './components/SidebarOffcanvas';
+import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
 function Tableaudebord() {
@@ -28,6 +32,17 @@ function Tableaudebord() {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const handleCloseOffcanvas = () => setShowOffcanvas(false);
   const handleShowOffcanvas = () => setShowOffcanvas(true);
+
+  const [temperature, setTemperature] = useState(null); // State for temperature
+  const [humidity, setHumidity] = useState(null); // State for humidity
+  // Fetch the temperature when the component mounts
+  useEffect(() => {
+    getWeather('Boumerdes').then(data => {
+      console.log(data); // Check the returned object structure in the console
+      setTemperature(data.temperature); // Extract the temperature field
+      setHumidity(data.humidity);
+    });
+  }, []);
 
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
@@ -69,131 +84,18 @@ function Tableaudebord() {
               <div className="bg-light rounded h-100 p-4">
                 <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Pythium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
-                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 50%</span>
-                      </div>
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
 
-                  </div>
+                  <Maladie name="Pythium" risk={50} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Botrytis
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
-                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 80%</span>
-                      </div>
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Botrytis" risk={80} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Fusarium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
-                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 60%</span>
-                      </div>
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Fusarium" risk={60} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center ">
-                    <div>
-                      Mildiou
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
-                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 20%</span>
-                      </div>
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Mildiou" risk={20} />
                   <hr />
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      Oïdium
-                      <img
-                        src={infoicone}
-                        className="ms-2"
-                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        onClick={handleShowInfo}
-                        alt="Info"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center">
-                      <div style={{ direction: language === 'fr' ? 'ltr' : 'rtl' }}>
-                        {language === 'fr' ? 'Risques' : 'المخاطر'} <span>: 10%</span>
-                      </div>
-                      <img
-                        src={Recommendationsicone}
-                        className="ms-2"
-                        style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        onClick={handleShowRecommendations}
-                        alt="Recommendations"
-                      />
-                    </div>
-                  </div>
+                  <Maladie name="Oïdium" risk={10} />
+                  <hr />
+
                 </div>
               </div>
             </div>
@@ -209,7 +111,7 @@ function Tableaudebord() {
                   </div>
                   <div className="d-flex flex-column text-center mt-5 mb-4">
                     <h6 className="display-4 mb-0 font-weight-bold" style={{ color: '#1C2331' }}>
-                      13°C
+                    {temperature !== null ? `${temperature}°C` : 'Loading...'}
                     </h6>
                   </div>
                   <div className="d-flex align-items-center">
@@ -220,11 +122,11 @@ function Tableaudebord() {
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> 84% </span>
+                        <span className="ms-1">    Humidity: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
                       </div>
                       <div>
                         <i className="fas fa-sun fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> 0.2h </span>
+                        <span className="ms-1"> UV index: </span>
                       </div>
                     </div>
                   </div>
@@ -246,32 +148,6 @@ function Tableaudebord() {
         {/* Offcanvas End */}
       </div>  
       {/* Content End */}
-      
-      {/* Info Modal */}
-      <Modal show={showInfo} onHide={handleCloseInfo}>
-        <Modal.Header closeButton>
-          <Modal.Title>Information sur la maladie</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Détails sur la maladie ici.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseInfo}>
-            Fermer
-          </Button>
-        </Modal.Footer>
-      </Modal>  
-
-      {/* Info Modal */}
-      <Modal show={showRecommendations} onHide={handleCloseRecommendations}>
-        <Modal.Header closeButton>
-          <Modal.Title>Recommandations</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Recommandations pour cette maladie ici.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseRecommendations}>
-            Fermer
-          </Button>
-        </Modal.Footer>
-      </Modal> 
     </div>
   );
 };
