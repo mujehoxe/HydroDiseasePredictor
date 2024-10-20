@@ -85,15 +85,15 @@ function Tableaudebord() {
                 <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
 
-                  <Maladie name="Pythium" risk={50} />
+                  <Maladie name="Pythium" risk={50} info="" />
                   <hr />
-                  <Maladie name="Botrytis" risk={80} />
+                  <Maladie name="Botrytis" risk={80} info="" />
                   <hr />
-                  <Maladie name="Fusarium" risk={60} />
+                  <Maladie name="Fusarium" risk={60} info="" />
                   <hr />
-                  <Maladie name="Mildiou" risk={20} />
+                  <Maladie name="Mildiou" risk={20} info="" />
                   <hr />
-                  <Maladie name="Oïdium" risk={10} />
+                  <Maladie name="Oïdium" risk={10} info="" />
                   <hr />
 
                 </div>

@@ -8,7 +8,7 @@ import Button from 'react-bootstrap/Button';
 
 
 
-function Maladie({ name, risk }) {
+function Maladie({ name, risk, info }) {
   // State to manage the info modal visibility
   const [showInfo, setShowInfo] = useState(false);
   const handleCloseInfo = () => setShowInfo(false);
@@ -46,9 +46,9 @@ function Maladie({ name, risk }) {
 
       <Modal show={showInfo} onHide={handleCloseInfo}>
         <Modal.Header closeButton>
-          <Modal.Title>Information sur la maladie</Modal.Title>
+          <Modal.Title>{name}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Détails sur la maladie ici.</Modal.Body>
+        <Modal.Body>{info}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseInfo}>
             Fermer
