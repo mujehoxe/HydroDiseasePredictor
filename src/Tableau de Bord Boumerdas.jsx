@@ -94,7 +94,6 @@ function Tableaudebord() {
                   <Maladie name="Mildiou" risk={20} info="" />
                   <hr />
                   <Maladie name="Oïdium" risk={10} info="" />
-                  <hr />
 
                 </div>
               </div>
