@@ -3,8 +3,10 @@ import plusicon from './icone/add-1--expand-cross-buttons-button-more-remove-plu
 import './css/bootstrap.min.css';
 import './css/style.css';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from './LanguageContext';
 
 function VosFermes() {
+  const { language } = useLanguage();
   const navigate = useNavigate();
 
   const handleferme1 = () => {
@@ -28,7 +30,7 @@ function VosFermes() {
           <div className="col-12 col-md-6 d-flex">
             <div className="bg-light rounded p-4 my-4 mx-3 w-100">
               <div className="d-flex align-items-center justify-content-between mb-3">
-                <h3>Vos Fermes</h3>
+                <h3>{language === 'fr' ? 'Vos Fermes' : 'مزارعك'}</h3>
               </div>
               <div className="text-center">
                 <div className="mb-3">
@@ -43,7 +45,7 @@ function VosFermes() {
                 </div>
               </div>
               <div onClick={handleAjout} className="text-center mt-4" style={{ cursor: 'pointer' }}>
-                Ajouter une ferme
+                 {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'} 
                 <img
                   id="plusIcon"
                   src={plusicon}
@@ -59,7 +61,7 @@ function VosFermes() {
           {/* Recommendations Box */}
           <div className="col-12 col-md-6 d-flex">
             <div className="bg-light rounded p-4 my-4 mx-3 w-100">
-              <h3>Résumé des recommendations</h3>
+              <h3>{language === 'fr' ? 'Résumé des recommendations' : 'ملخص التوصيات'}</h3>
               <div className="recommendations-content">
                 <h6>Boumerdes 1 :</h6>
                 <p>Contenu des recommendations ici.</p>
