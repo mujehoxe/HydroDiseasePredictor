@@ -5,10 +5,12 @@ import Recommendationsicone from '../imgtest/group-2572.png';
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
+import { useLanguage } from '../LanguageContext';
 
 
 
-function Maladie({ name, risk, info }) {
+function Maladie({ name, risk, info, recommendation }) {
+  const { language } = useLanguage();
   // State to manage the info modal visibility
   const [showInfo, setShowInfo] = useState(false);
   const handleCloseInfo = () => setShowInfo(false);
@@ -51,7 +53,7 @@ function Maladie({ name, risk, info }) {
         <Modal.Body>{info}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseInfo}>
-            Fermer
+            {language === 'fr' ? 'Fermer' : 'غلق'}
           </Button>
         </Modal.Footer>
       </Modal>  
@@ -59,12 +61,12 @@ function Maladie({ name, risk, info }) {
       {/* Info Modal */}
       <Modal show={showRecommendations} onHide={handleCloseRecommendations}>
         <Modal.Header closeButton>
-          <Modal.Title>Recommandations</Modal.Title>
+          <Modal.Title>{language === 'fr' ? 'Recommandations' : 'توصيات'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Recommandations pour cette maladie ici.</Modal.Body>
+        <Modal.Body>{recommendation}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseRecommendations}>
-            Fermer
+            {language === 'fr' ? 'Fermer' : 'غلق'}
           </Button>
         </Modal.Footer>
       </Modal> 

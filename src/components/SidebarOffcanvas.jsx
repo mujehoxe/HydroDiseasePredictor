@@ -16,12 +16,6 @@ function Sidebar() {
 
   return (
     <>
-      {/* Button for small screens to toggle sidebar */}
-
-
-      {/* Offcanvas for small screens */}
-      
-
       {/* Sidebar for large screens */}
       <div className="sidebar d-none d-lg-block">
       <div className="sidebar pe-4 pb-3 d-flex flex-column">
@@ -37,7 +31,7 @@ function Sidebar() {
                 variant="link"
                 id="dropdown-basic"
                 className="w-100 d-flex justify-content-between align-items-center"
-                style={{ textDecoration: 'none', outline: 'none', boxShadow: 'none', border: 'none', padding: '0.5rem' }} // Ensure padding for clickable area
+                style={{ textDecoration: 'none', outline: 'none', boxShadow: 'none', border: 'none', padding: '0.5rem' }} 
               >
                 {language === 'fr' ? 'Vos fermes' : 'مزارعكم'}
               </Dropdown.Toggle>
