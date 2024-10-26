@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './css/bootstrap.min.css';
 import './css/style.css';
 import { useNavigate } from 'react-router-dom';
@@ -56,31 +56,36 @@ try {
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmName" placeholder={language === 'fr' ? 'Nom de la ferme' : 'اسم المزرعة'} 
-              value={farmName} onChange={(e) => setFarmName(e.target.value)}  />
+              value={farmName} onChange={(e) => setFarmName(e.target.value)} 
+              />
               <label htmlFor="farmName">{language === 'fr' ? 'Nom de la ferme' : 'اسم المزرعة'}</label>
             </div>
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmAddress" placeholder={language === 'fr' ? 'Adresse de la ferme' : 'عنوان المزرعة'} 
-              value={farmAddress} onChange={(e) => setFarmAddress(e.target.value)} />
+              value={farmAddress} onChange={(e) => setFarmAddress(e.target.value)} 
+              />
               <label htmlFor="farmAddress">{language === 'fr' ? 'Adresse de la ferme' : 'عنوان المزرعة'}</label>
             </div>
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmInfo1" placeholder={language === 'fr' ? 'Informations sur la ferme' : 'معلومات المزرعة'}
-              value={farmInfo1} onChange={(e) => setFarmInfo1(e.target.value)} />
+              value={farmInfo1} onChange={(e) => setFarmInfo1(e.target.value)} 
+              />
               <label htmlFor="farmInfo1">{language === 'fr' ? 'Informations sur la ferme' : 'معلومات المزرعة'}</label>
             </div>
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmInfo2" placeholder={language === 'fr' ? 'Informations supplémentaires sur la ferme' : 'معلومات المزرعة الإضافية'}
-              value={farmInfo2} onChange={(e) => setFarmInfo2(e.target.value)} />
+              value={farmInfo2} onChange={(e) => setFarmInfo2(e.target.value)} 
+              />
               <label htmlFor="farmInfo2">{language === 'fr' ? 'Informations supplémentaires sur la ferme' : 'معلومات إضافية عن المزرعة'}</label>
             </div>
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmInfo3" placeholder={language === 'fr' ? 'Autres informations sur la ferme' : 'معلومات اخرى عن المزرعة'}
-              value={farmInfo3} onChange={(e) => setFarmInfo3(e.target.value)} />
+              value={farmInfo3} onChange={(e) => setFarmInfo3(e.target.value)}
+               />
               <label htmlFor="farmInfo3">{language === 'fr' ? 'Autres informations sur la ferme' : 'معلومات اخرى عن المزرعة'}</label>
             </div>
 
