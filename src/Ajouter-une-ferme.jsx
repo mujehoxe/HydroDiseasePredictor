@@ -30,7 +30,7 @@ function Ajoutferme() {
 
 // Send the data to the backend
 try {
-  const response = await fetch('/api/farms', {
+  const response = await fetch('http://localhost:5000/api/farms', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
