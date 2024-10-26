@@ -1,32 +1,17 @@
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
-import logo from './imgtest/logo-tc-advisor 2.png';
-import plusicone from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png'
-import infoicone from './imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg'
-import Recommendationsicone from './imgtest/group-2572.png'
+
 
 import { getWeather } from './js/weatherAPI'; // Import the weather service
 import { useLanguage } from './LanguageContext';
 import React, { useEffect, useState } from 'react';
 
-import Dropdown from 'react-bootstrap/Dropdown';
-import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
+
 import Sidebar from './components/SidebarOffcanvas';
 import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
 function Tableaudebord() {
   const { language } = useLanguage();
-
- // State to manage the modal visibility
- const [showInfo, setShowInfo] = useState(false);
- const handleCloseInfo = () => setShowInfo(false);
- const handleShowInfo = () => setShowInfo(true);
-
- // State to manage the recommendations modal visibility
- const [showRecommendations, setShowRecommendations] = useState(false);
- const handleCloseRecommendations = () => setShowRecommendations(false);
- const handleShowRecommendations = () => setShowRecommendations(true);
 
   // State to manage the Offcanvas visibility
   const [showOffcanvas, setShowOffcanvas] = useState(false);
@@ -85,15 +70,15 @@ function Tableaudebord() {
                 <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
 
-                  <Maladie name="Pythium" risk={50} info="" />
-                  <hr />
-                  <Maladie name="Botrytis" risk={80} info="" />
-                  <hr />
-                  <Maladie name="Fusarium" risk={60} info="" />
-                  <hr />
-                  <Maladie name="Mildiou" risk={20} info="" />
-                  <hr />
-                  <Maladie name="Oïdium" risk={10} info="" />
+                <Maladie name={language === 'fr' ? 'Pythium' : 'بيثيوم'} risk={50} info="" />
+                <hr />
+                <Maladie name={language === 'fr' ? 'Botrytis' : 'بوتريتيس'} risk={80} info="" />
+                <hr />
+                <Maladie name={language === 'fr' ? 'Fusarium' : 'فيوزاريوم'} risk={60} info="" />
+                <hr />
+                <Maladie name={language === 'fr' ? 'Mildiou' : 'عفن فطرية'} risk={20} info="" />
+                <hr />
+                <Maladie name={language === 'fr' ? 'Oïdium' : 'بياض الدقيقي'} risk={10} info="" />
 
                 </div>
               </div>
