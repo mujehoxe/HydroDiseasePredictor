@@ -9,7 +9,7 @@ import { useLanguage } from '../LanguageContext';
 
 
 
-function Maladie({ name, risk, info }) {
+function Maladie({ name, risk, info, recommendation }) {
   const { language } = useLanguage();
   // State to manage the info modal visibility
   const [showInfo, setShowInfo] = useState(false);
@@ -63,7 +63,7 @@ function Maladie({ name, risk, info }) {
         <Modal.Header closeButton>
           <Modal.Title>{language === 'fr' ? 'Recommandations' : 'توصيات'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Recommandations pour cette maladie ici.</Modal.Body>
+        <Modal.Body>{recommendation}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseRecommendations}>
             {language === 'fr' ? 'Fermer' : 'غلق'}

@@ -1,11 +1,7 @@
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
-
-
 import { getWeather } from './js/weatherAPI'; // Import the weather service
 import { useLanguage } from './LanguageContext';
 import React, { useEffect, useState } from 'react';
-
-
 import Sidebar from './components/SidebarOffcanvas';
 import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
@@ -70,15 +66,40 @@ function Tableaudebord() {
                 <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
 
-                <Maladie name={language === 'fr' ? 'Pythium' : 'بيثيوم'} risk={50} info="" />
+                <Maladie 
+                  name={language === 'fr' ? 'Pythium' : 'بيثيوم'} 
+                  risk={50} 
+                  info={language === 'fr' ? 'Information sur la maladie' : 'Information sur la maladie'} 
+                  recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'Recommandations pour cette maladie ici.'} 
+                />
                 <hr />
-                <Maladie name={language === 'fr' ? 'Botrytis' : 'بوتريتيس'} risk={80} info="" />
+                <Maladie 
+                  name={language === 'fr' ? 'Botrytis' : 'بوتريتيس'} 
+                  risk={80} 
+                  info={language === 'fr' ? 'Information sur la maladie' : 'Information sur la maladie'} 
+                  recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'Recommandations pour cette maladie ici.'}
+                />
                 <hr />
-                <Maladie name={language === 'fr' ? 'Fusarium' : 'فيوزاريوم'} risk={60} info="" />
+                <Maladie 
+                  name={language === 'fr' ? 'Fusarium' : 'فيوزاريوم'} 
+                  risk={60} 
+                  info={language === 'fr' ? 'Information sur la maladie' : 'Information sur la maladie'} 
+                  recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'Recommandations pour cette maladie ici.'}
+                />
                 <hr />
-                <Maladie name={language === 'fr' ? 'Mildiou' : 'عفن فطرية'} risk={20} info="" />
+                <Maladie 
+                  name={language === 'fr' ? 'Mildiou' : 'عفن فطرية'} 
+                  risk={20} 
+                  info={language === 'fr' ? 'Information sur la maladie' : 'Information sur la maladie'} 
+                  recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'Recommandations pour cette maladie ici.'}
+                />
                 <hr />
-                <Maladie name={language === 'fr' ? 'Oïdium' : 'بياض الدقيقي'} risk={10} info="" />
+                <Maladie 
+                name={language === 'fr' ? 'Oïdium' : 'بياض الدقيقي'} 
+                risk={10} 
+                info={language === 'fr' ? 'Information sur la maladie' : 'Information sur la maladie'} 
+                recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'Recommandations pour cette maladie ici.'}
+              />
 
                 </div>
               </div>
