@@ -10,6 +10,11 @@ const farmSchema = new mongoose.Schema({
     type: { type: String, default: 'Point' },  // GeoJSON format
     coordinates: { type: [Number], required: true },  // [longitude, latitude]
   },
+  additionalInfo: {
+    info1: String,
+    info2: String,
+    info3: String
+  }
 }, { timestamps: true });
 
 export default mongoose.model('Farm', farmSchema);
