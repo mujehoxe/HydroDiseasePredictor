@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Farm from "./src/models/Farm";
+import Farm from "./src/models/Farms";
 
 dotenv.config();  // Load environment variables
 
