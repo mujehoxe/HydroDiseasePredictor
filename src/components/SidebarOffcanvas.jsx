@@ -17,7 +17,6 @@ function Sidebar() {
   return (
     <>
       {/* Sidebar for large screens */}
-      <div className="sidebar d-none d-lg-block">
       <div className="sidebar pe-4 pb-3 d-flex flex-column">
         <div className="d-flex justify-content-center align-items-center" style={{ marginTop: '10px' }}>
           <h3>
@@ -57,7 +56,6 @@ function Sidebar() {
         <div className="d-flex justify-content-center mt-auto mb-3">
       <a onClick={toggleLanguage} className="text-black fw-bold text-decoration-underline" style={{ fontSize: '16px', cursor: 'pointer' }}>{language === 'fr' ? 'العربية' : 'Français'}</a>
     </div>
-      </div>
       </div>
     </>
   );
