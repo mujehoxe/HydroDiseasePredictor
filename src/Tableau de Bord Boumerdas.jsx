@@ -28,7 +28,10 @@ function Tableaudebord() {
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
       {/* Sidebar Start */}
-      <Sidebar/>
+      <div className="desktop-sidebar">
+        <Sidebar/>
+      </div>
+      
       {/* Sidebar End */}
 
       {/* Content Start */}
@@ -143,13 +146,17 @@ function Tableaudebord() {
         </div>
         {/* Button End */}
         {/* Offcanvas Start */}
-          <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} >
-            <Offcanvas.Header closeButton>
-            </Offcanvas.Header>
-            <Offcanvas.Body>
-            <Sidebar/>
-            </Offcanvas.Body>
-          </Offcanvas>
+        <Offcanvas
+          show={showOffcanvas}
+          onHide={handleCloseOffcanvas}
+          className="custom-offcanvas"
+          
+        >
+          <Offcanvas.Header closeButton className="d-flex justify-content-end"/>
+          <Offcanvas.Body>
+            <Sidebar />
+          </Offcanvas.Body>
+        </Offcanvas>
         {/* Offcanvas End */}
       </div>  
       {/* Content End */}
