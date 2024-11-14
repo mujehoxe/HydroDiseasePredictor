@@ -56,32 +56,6 @@ type Server struct {
 	router *mux.Router
 }
 
-// @Summary Create a new user
-// @Description Create a new user in the system
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body User true "User object"
-// @Success 201 {object} User
-// @Failure 400 {string} string "Bad request"
-// @Failure 500 {string} string "Internal server error"
-// @Router /users [post]
-func (s *Server) createUser(w http.ResponseWriter, r *http.Request) {
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if result := s.db.Create(&user); result.Error != nil {
-		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
-}
-
 // @Summary Get a user by ID
 // @Description Get user details including their farms
 // @Tags users
