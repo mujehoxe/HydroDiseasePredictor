@@ -49,21 +49,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Login successful",
                         "schema": {
                             "$ref": "#/definitions/main.LoginResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request payload",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Invalid credentials",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -95,21 +95,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "User created successfully",
                         "schema": {
                             "$ref": "#/definitions/main.User"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request payload",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -117,6 +117,11 @@ const docTemplate = `{
         },
         "/farms": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Create a new farm for a user",
                 "consumes": [
                     "application/json"
@@ -141,21 +146,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Farm created successfully",
                         "schema": {
                             "$ref": "#/definitions/main.Farm"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request payload",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -163,6 +168,11 @@ const docTemplate = `{
         },
         "/farms/{farm_id}/crops": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Get all crops for a specific farm",
                 "consumes": [
                     "application/json"
@@ -185,7 +195,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of crops retrieved successfully",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -194,26 +204,31 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid farm ID",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Farm not found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Add a new crop to a specific farm",
                 "consumes": [
                     "application/json"
@@ -245,21 +260,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Crop added successfully",
                         "schema": {
                             "$ref": "#/definitions/main.Crop"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request payload",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Farm not found",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -267,6 +288,11 @@ const docTemplate = `{
         },
         "/farms/{id}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Get detailed information about a specific farm",
                 "consumes": [
                     "application/json"
@@ -289,7 +315,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Farm details retrieved successfully",
                         "schema": {
                             "$ref": "#/definitions/main.Farm"
                         }
@@ -297,12 +323,17 @@ const docTemplate = `{
                     "404": {
                         "description": "Farm not found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Update information about a specific farm",
                 "consumes": [
                     "application/json"
@@ -334,26 +365,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Farm updated successfully",
                         "schema": {
                             "$ref": "#/definitions/main.Farm"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request payload",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Farm not found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Delete a specific farm",
                 "consumes": [
                     "application/json"
@@ -376,12 +412,12 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "No Content"
+                        "description": "Farm deleted successfully"
                     },
                     "404": {
                         "description": "Farm not found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -389,6 +425,11 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "description": "Get user details including their farms",
                 "consumes": [
                     "application/json"
@@ -411,7 +452,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "User details retrieved successfully",
                         "schema": {
                             "$ref": "#/definitions/main.User"
                         }
@@ -419,7 +460,7 @@ const docTemplate = `{
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     }
                 }
@@ -469,11 +510,9 @@ const docTemplate = `{
     },
     "definitions": {
         "main.Crop": {
-            "description": "Crop information",
             "type": "object",
             "properties": {
                 "area": {
-                    "description": "in hectares",
                     "type": "number",
                     "example": 50.5
                 },
@@ -490,12 +529,10 @@ const docTemplate = `{
                     "example": 1
                 },
                 "id": {
-                    "description": "Standard fields from gorm.Model",
                     "type": "integer",
                     "example": 1
                 },
                 "name": {
-                    "description": "Crop-specific fields",
                     "type": "string",
                     "example": "Corn"
                 },
@@ -508,9 +545,18 @@ const docTemplate = `{
                     "example": "2024-01-01T00:00:00Z"
                 },
                 "yield_rate": {
-                    "description": "expected yield per hectare",
                     "type": "number",
                     "example": 8.5
+                }
+            }
+        },
+        "main.ErrorResponse": {
+            "description": "Generic error response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Error message details"
                 }
             }
         },
@@ -522,12 +568,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
+                "crops": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.Crop"
+                    }
+                },
                 "deleted_at": {
                     "type": "string",
                     "format": "date-time"
                 },
                 "id": {
-                    "description": "Standard fields from gorm.Model",
                     "type": "integer",
                     "example": 1
                 },
@@ -540,17 +591,19 @@ const docTemplate = `{
                     "example": "Kansas"
                 },
                 "name": {
-                    "description": "Farm-specific fields",
                     "type": "string",
                     "example": "Green Acres"
                 },
                 "size": {
-                    "description": "in hectares",
                     "type": "number",
                     "example": 100.5
                 },
                 "status": {
                     "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ],
                     "example": "active"
                 },
                 "updated_at": {
@@ -603,12 +656,10 @@ const docTemplate = `{
                     "format": "date-time"
                 },
                 "email": {
-                    "description": "User-specific fields",
                     "type": "string",
                     "example": "user@example.com"
                 },
                 "id": {
-                    "description": "Standard fields from gorm.Model",
                     "type": "integer",
                     "example": 1
                 },
@@ -636,7 +687,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Farm Management API",
-	Description:      "Crop information",
+	Description:      "Farm information",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

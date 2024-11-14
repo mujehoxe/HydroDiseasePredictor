@@ -11,6 +11,8 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	_ "github.com/Amir-Bitam/vite-project/backend/docs"
 )
 
 // @title Farm Management API
@@ -27,66 +29,51 @@ import (
 // @host localhost:8080
 // @BasePath /api/v1
 
+// Response models
+// @Description Generic error response
+type ErrorResponse struct {
+	Message string `json:"message" example:"Error message details"`
+}
+
+// @Description Success response with data
+type SuccessResponse struct {
+	Message string      `json:"message" example:"Operation successful"`
+	Data    interface{} `json:"data"`
+}
+
 // Farm represents a farm owned by a user
 // @Description Farm information
+// Farm represents a farm owned by a user
 type Farm struct {
-	// Standard fields from gorm.Model
-	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
-
-	// Farm-specific fields
-	Name        string    `json:"name" example:"Green Acres"`
-	Location    string    `json:"location" example:"Kansas"`
-	Size        float64   `json:"size" example:"100.5"` // in hectares
-	UserID      uint      `json:"user_id" example:"1"`
-	CropTypes   []Crop    `json:"crops" swaggerignore:"true"`
-	LastHarvest time.Time `json:"last_harvest" example:"2024-01-01T00:00:00Z"`
-	Status      string    `json:"status" example:"active"`
+	ID          uint       `json:"id" example:"1"`
+	CreatedAt   time.Time  `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt   time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	DeletedAt   *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
+	Name        string     `json:"name" example:"Green Acres"`
+	Location    string     `json:"location" example:"Kansas"`
+	Size        float64    `json:"size" example:"100.5"`
+	UserID      uint       `json:"user_id" example:"1"`
+	CropTypes   []Crop     `json:"crops,omitempty"`
+	LastHarvest time.Time  `json:"last_harvest" example:"2024-01-01T00:00:00Z"`
+	Status      string     `json:"status" example:"active" enums:"active,inactive"`
 }
 
 // Crop represents a type of crop grown in a farm
-// @Description Crop information
 type Crop struct {
-	// Standard fields from gorm.Model
-	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
-
-	// Crop-specific fields
-	Name      string    `json:"name" example:"Corn"`
-	Area      float64   `json:"area" example:"50.5"` // in hectares
-	FarmID    uint      `json:"farm_id" example:"1"`
-	PlantDate time.Time `json:"plant_date" example:"2024-01-01T00:00:00Z"`
-	YieldRate float64   `json:"yield_rate" example:"8.5"` // expected yield per hectare
+	ID        uint       `json:"id" example:"1"`
+	CreatedAt time.Time  `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
+	Name      string     `json:"name" example:"Corn"`
+	Area      float64    `json:"area" example:"50.5"`
+	FarmID    uint       `json:"farm_id" example:"1"`
+	PlantDate time.Time  `json:"plant_date" example:"2024-01-01T00:00:00Z"`
+	YieldRate float64    `json:"yield_rate" example:"8.5"`
 }
 
 type Server struct {
 	db     *gorm.DB
 	router *mux.Router
-}
-
-// @Summary Get a user by ID
-// @Description Get user details including their farms
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path int true "User ID"
-// @Success 200 {object} User
-// @Failure 404 {string} string "User not found"
-// @Router /users/{id} [get]
-func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var user User
-
-	if result := s.db.Preload("Farms").First(&user, vars["id"]); result.Error != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	json.NewEncoder(w).Encode(user)
 }
 
 // @Summary Get user's farms
@@ -116,9 +103,10 @@ func (s *Server) getUserFarms(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param farm body Farm true "Farm object"
-// @Success 201 {object} Farm
-// @Failure 400 {string} string "Bad request"
-// @Failure 500 {string} string "Internal server error"
+// @Success 201 {object} Farm "Farm created successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Security Bearer
 // @Router /farms [post]
 func (s *Server) createFarm(w http.ResponseWriter, r *http.Request) {
 	var farm Farm
@@ -142,8 +130,9 @@ func (s *Server) createFarm(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Farm ID"
-// @Success 200 {object} Farm
-// @Failure 404 {string} string "Farm not found"
+// @Success 200 {object} Farm "Farm details retrieved successfully"
+// @Failure 404 {object} ErrorResponse "Farm not found"
+// @Security Bearer
 // @Router /farms/{id} [get]
 func (s *Server) getFarm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -164,9 +153,10 @@ func (s *Server) getFarm(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path int true "Farm ID"
 // @Param farm body Farm true "Farm object"
-// @Success 200 {object} Farm
-// @Failure 404 {string} string "Farm not found"
-// @Failure 400 {string} string "Bad request"
+// @Success 200 {object} Farm "Farm updated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 404 {object} ErrorResponse "Farm not found"
+// @Security Bearer
 // @Router /farms/{id} [put]
 func (s *Server) updateFarm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -192,8 +182,9 @@ func (s *Server) updateFarm(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Farm ID"
-// @Success 204 "No Content"
-// @Failure 404 {string} string "Farm not found"
+// @Success 204 "Farm deleted successfully"
+// @Failure 404 {object} ErrorResponse "Farm not found"
+// @Security Bearer
 // @Router /farms/{id} [delete]
 func (s *Server) deleteFarm(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -215,9 +206,11 @@ func (s *Server) deleteFarm(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param farm_id path int true "Farm ID"
 // @Param crop body Crop true "Crop object"
-// @Success 201 {object} Crop
-// @Failure 400 {string} string "Bad request"
-// @Failure 500 {string} string "Internal server error"
+// @Success 201 {object} Crop "Crop added successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 404 {object} ErrorResponse "Farm not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Security Bearer
 // @Router /farms/{farm_id}/crops [post]
 func (s *Server) addCrop(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -292,10 +285,11 @@ func (s *Server) setupRoutes() {
 // @Accept json
 // @Produce json
 // @Param farm_id path int true "Farm ID"
-// @Success 200 {array} Crop
-// @Failure 400 {string} string "Bad request"
-// @Failure 404 {string} string "Farm not found"
-// @Failure 500 {string} string "Internal server error"
+// @Success 200 {array} Crop "List of crops retrieved successfully"
+// @Failure 400 {object} ErrorResponse "Invalid farm ID"
+// @Failure 404 {object} ErrorResponse "Farm not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Security Bearer
 // @Router /farms/{farm_id}/crops [get]
 func (s *Server) getFarmCrops(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

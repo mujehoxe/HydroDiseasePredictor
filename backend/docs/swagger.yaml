@@ -1,10 +1,8 @@
 basePath: /api/v1
 definitions:
   main.Crop:
-    description: Crop information
     properties:
       area:
-        description: in hectares
         example: 50.5
         type: number
       created_at:
@@ -17,11 +15,9 @@ definitions:
         example: 1
         type: integer
       id:
-        description: Standard fields from gorm.Model
         example: 1
         type: integer
       name:
-        description: Crop-specific fields
         example: Corn
         type: string
       plant_date:
@@ -31,9 +27,15 @@ definitions:
         example: "2024-01-01T00:00:00Z"
         type: string
       yield_rate:
-        description: expected yield per hectare
         example: 8.5
         type: number
+    type: object
+  main.ErrorResponse:
+    description: Generic error response
+    properties:
+      message:
+        example: Error message details
+        type: string
     type: object
   main.Farm:
     description: Farm information
@@ -41,11 +43,14 @@ definitions:
       created_at:
         example: "2024-01-01T00:00:00Z"
         type: string
+      crops:
+        items:
+          $ref: '#/definitions/main.Crop'
+        type: array
       deleted_at:
         format: date-time
         type: string
       id:
-        description: Standard fields from gorm.Model
         example: 1
         type: integer
       last_harvest:
@@ -55,14 +60,15 @@ definitions:
         example: Kansas
         type: string
       name:
-        description: Farm-specific fields
         example: Green Acres
         type: string
       size:
-        description: in hectares
         example: 100.5
         type: number
       status:
+        enum:
+        - active
+        - inactive
         example: active
         type: string
       updated_at:
@@ -101,11 +107,9 @@ definitions:
         format: date-time
         type: string
       email:
-        description: User-specific fields
         example: user@example.com
         type: string
       id:
-        description: Standard fields from gorm.Model
         example: 1
         type: integer
       name:
@@ -123,7 +127,7 @@ info:
   contact:
     email: support@farmmanagement.io
     name: API Support
-  description: Crop information
+  description: Farm information
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -147,17 +151,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Login successful
           schema:
             $ref: '#/definitions/main.LoginResponse'
         "400":
-          description: Bad request
+          description: Invalid request payload
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Invalid credentials
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
       summary: Login user
       tags:
       - auth
@@ -177,17 +181,17 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: User created successfully
           schema:
             $ref: '#/definitions/main.User'
         "400":
-          description: Bad request
+          description: Invalid request payload
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
       summary: Register a new user
       tags:
       - auth
@@ -207,17 +211,19 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Farm created successfully
           schema:
             $ref: '#/definitions/main.Farm'
         "400":
-          description: Bad request
+          description: Invalid request payload
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Create a new farm
       tags:
       - farms
@@ -236,23 +242,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of crops retrieved successfully
           schema:
             items:
               $ref: '#/definitions/main.Crop'
             type: array
         "400":
-          description: Bad request
+          description: Invalid farm ID
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Farm not found
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Get farm crops
       tags:
       - crops
@@ -276,17 +284,23 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Crop added successfully
           schema:
             $ref: '#/definitions/main.Crop'
         "400":
-          description: Bad request
+          description: Invalid request payload
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Farm not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Add a crop to a farm
       tags:
       - crops
@@ -305,11 +319,13 @@ paths:
       - application/json
       responses:
         "204":
-          description: No Content
+          description: Farm deleted successfully
         "404":
           description: Farm not found
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Delete a farm
       tags:
       - farms
@@ -327,13 +343,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Farm details retrieved successfully
           schema:
             $ref: '#/definitions/main.Farm'
         "404":
           description: Farm not found
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Get farm details
       tags:
       - farms
@@ -357,17 +375,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Farm updated successfully
           schema:
             $ref: '#/definitions/main.Farm'
         "400":
-          description: Bad request
+          description: Invalid request payload
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Farm not found
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Update farm details
       tags:
       - farms
@@ -386,13 +406,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: User details retrieved successfully
           schema:
             $ref: '#/definitions/main.User'
         "404":
           description: User not found
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
       summary: Get a user by ID
       tags:
       - users

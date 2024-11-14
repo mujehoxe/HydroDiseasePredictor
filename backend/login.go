@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/gorilla/mux"
 )
 
 // JWT secret key - in production, use environment variable
@@ -27,18 +28,14 @@ func getEnvOrDefault(key, defaultValue string) string {
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	// Standard fields from gorm.Model
-	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
-
-	// User-specific fields
-	Email    string `json:"email" example:"user@example.com" gorm:"unique"`
-	Name     string `json:"name" example:"John Doe"`
-	Password string `json:"password,omitempty" example:"secretpassword" gorm:"not null"`
-	HashPass string `json:"-" gorm:"not null"`
-	Farms    []Farm `json:"farms,omitempty" swaggerignore:"true"`
+	ID        uint       `json:"id" example:"1"`
+	CreatedAt time.Time  `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
+	Email     string     `json:"email" example:"user@example.com"`
+	Name      string     `json:"name" example:"John Doe"`
+	Password  string     `json:"password,omitempty" example:"secretpassword"`
+	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
 }
 
 // LoginRequest represents login credentials
@@ -113,9 +110,9 @@ func hashPassword(password string) string {
 // @Accept json
 // @Produce json
 // @Param user body User true "User registration details"
-// @Success 201 {object} User
-// @Failure 400 {string} string "Bad request"
-// @Failure 500 {string} string "Internal server error"
+// @Success 201 {object} User "User created successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /auth/register [post]
 func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	var user User
@@ -125,8 +122,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the password before saving
-	user.HashPass = hashPassword(user.Password)
-	user.Password = "" // Clear plain text password
+	user.Password = hashPassword(user.Password)
 
 	if result := s.db.Create(&user); result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
@@ -143,9 +139,9 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param credentials body LoginRequest true "Login credentials"
-// @Success 200 {object} LoginResponse
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
+// @Success 200 {object} LoginResponse "Login successful"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 401 {object} ErrorResponse "Invalid credentials"
 // @Router /auth/login [post]
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	var loginReq LoginRequest
@@ -162,7 +158,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify password
-	if hashPassword(loginReq.Password) != user.HashPass {
+	if hashPassword(loginReq.Password) != user.Password {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -185,7 +181,6 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clear sensitive data
-	user.HashPass = ""
 	user.Password = ""
 
 	response := LoginResponse{
@@ -195,4 +190,26 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// @Summary Get a user by ID
+// @Description Get user details including their farms
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} User "User details retrieved successfully"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Security Bearer
+// @Router /users/{id} [get]
+func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var user User
+
+	if result := s.db.Preload("Farms").First(&user, vars["id"]); result.Error != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
 }
