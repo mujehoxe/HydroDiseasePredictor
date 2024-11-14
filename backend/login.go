@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"gorm.io/gorm"
 )
 
 // JWT secret key - in production, use environment variable
@@ -28,23 +27,31 @@ func getEnvOrDefault(key, defaultValue string) string {
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	gorm.Model
-	Email    string `json:"email" gorm:"unique"`
-	Name     string `json:"name"`
-	Password string `json:"password,omitempty" gorm:"not null"`
+	// Standard fields from gorm.Model
+	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
+	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
+
+	// User-specific fields
+	Email    string `json:"email" example:"user@example.com" gorm:"unique"`
+	Name     string `json:"name" example:"John Doe"`
+	Password string `json:"password,omitempty" example:"secretpassword" gorm:"not null"`
 	HashPass string `json:"-" gorm:"not null"`
-	Farms    []Farm `json:"farms,omitempty"`
+	Farms    []Farm `json:"farms,omitempty" swaggerignore:"true"`
 }
 
 // LoginRequest represents login credentials
+// @Description Login request payload
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"secretpassword"`
 }
 
 // LoginResponse contains the JWT token
+// @Description Login response with JWT token
 type LoginResponse struct {
-	Token string `json:"token"`
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	User  User   `json:"user"`
 }
 
