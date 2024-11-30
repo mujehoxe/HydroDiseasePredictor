@@ -1,0 +1,426 @@
+basePath: /api/v1
+definitions:
+  main.Crop:
+    description: Crop information
+    properties:
+      area:
+        description: in hectares
+        example: 50.5
+        type: number
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      deleted_at:
+        format: date-time
+        type: string
+      farm_id:
+        example: 1
+        type: integer
+      id:
+        description: Standard fields from gorm.Model
+        example: 1
+        type: integer
+      name:
+        description: Crop-specific fields
+        example: Corn
+        type: string
+      plant_date:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      yield_rate:
+        description: expected yield per hectare
+        example: 8.5
+        type: number
+    type: object
+  main.Farm:
+    description: Farm information
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      deleted_at:
+        format: date-time
+        type: string
+      id:
+        description: Standard fields from gorm.Model
+        example: 1
+        type: integer
+      last_harvest:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      location:
+        example: Kansas
+        type: string
+      name:
+        description: Farm-specific fields
+        example: Green Acres
+        type: string
+      size:
+        description: in hectares
+        example: 100.5
+        type: number
+      status:
+        example: active
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  main.LoginRequest:
+    description: Login request payload
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: secretpassword
+        type: string
+    type: object
+  main.LoginResponse:
+    description: Login response with JWT token
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/main.User'
+    type: object
+  main.User:
+    description: User account information
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      deleted_at:
+        format: date-time
+        type: string
+      email:
+        description: User-specific fields
+        example: user@example.com
+        type: string
+      id:
+        description: Standard fields from gorm.Model
+        example: 1
+        type: integer
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: secretpassword
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@farmmanagement.io
+    name: API Support
+  description: Crop information
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Farm Management API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password to get JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/main.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.LoginResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Login user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.User'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - auth
+  /farms:
+    post:
+      consumes:
+      - application/json
+      description: Create a new farm for a user
+      parameters:
+      - description: Farm object
+        in: body
+        name: farm
+        required: true
+        schema:
+          $ref: '#/definitions/main.Farm'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Farm'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new farm
+      tags:
+      - farms
+  /farms/{farm_id}/crops:
+    get:
+      consumes:
+      - application/json
+      description: Get all crops for a specific farm
+      parameters:
+      - description: Farm ID
+        in: path
+        name: farm_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Crop'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Farm not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get farm crops
+      tags:
+      - crops
+    post:
+      consumes:
+      - application/json
+      description: Add a new crop to a specific farm
+      parameters:
+      - description: Farm ID
+        in: path
+        name: farm_id
+        required: true
+        type: integer
+      - description: Crop object
+        in: body
+        name: crop
+        required: true
+        schema:
+          $ref: '#/definitions/main.Crop'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Crop'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Add a crop to a farm
+      tags:
+      - crops
+  /farms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific farm
+      parameters:
+      - description: Farm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Farm not found
+          schema:
+            type: string
+      summary: Delete a farm
+      tags:
+      - farms
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific farm
+      parameters:
+      - description: Farm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Farm'
+        "404":
+          description: Farm not found
+          schema:
+            type: string
+      summary: Get farm details
+      tags:
+      - farms
+    put:
+      consumes:
+      - application/json
+      description: Update information about a specific farm
+      parameters:
+      - description: Farm ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Farm object
+        in: body
+        name: farm
+        required: true
+        schema:
+          $ref: '#/definitions/main.Farm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Farm'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Farm not found
+          schema:
+            type: string
+      summary: Update farm details
+      tags:
+      - farms
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get user details including their farms
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Get a user by ID
+      tags:
+      - users
+  /users/{id}/farms:
+    get:
+      consumes:
+      - application/json
+      description: Get all farms belonging to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Farm'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user's farms
+      tags:
+      - farms
+swagger: "2.0"
