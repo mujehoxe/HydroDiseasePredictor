@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -261,6 +263,12 @@ func NewServer() (*Server, error) {
 
 // Update setupRoutes to include authentication routes and middleware
 func (s *Server) setupRoutes() {
+	s.router = handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Origin", "Content-Type", "Authorization"}),
+	)(s.router)
+
 	// Auth routes (no authentication required)
 	s.router.HandleFunc("/auth/register", s.register).Methods("POST")
 	s.router.HandleFunc("/auth/login", s.login).Methods("POST")
