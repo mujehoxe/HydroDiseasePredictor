@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -340,9 +341,17 @@ func main() {
 		log.Fatalf("Failed to initialize server: %v", err)
 	}
 
+	// CORS middleware configuration
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:5173", "http://localhost:3000", "*"}), // Add your frontend URLs here
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+		handlers.AllowCredentials(),
+	)
+
 	log.Println("Server starting on :8080")
 	log.Println("API documentation available at http://localhost:8080/api/v1/swagger/index.html")
-	if err := http.ListenAndServe(":8080", server.router); err != nil {
+	if err := http.ListenAndServe(":8080", corsHandler(server.router)); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
