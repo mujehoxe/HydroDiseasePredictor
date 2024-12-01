@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -261,27 +260,36 @@ func NewServer() (*Server, error) {
 	return server, nil
 }
 
-// Update setupRoutes to include authentication routes and middleware
 func (s *Server) setupRoutes() {
-	s.router = handlers.CORS(
-		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"Origin", "Content-Type", "Authorization"}),
-	)(s.router)
+	// Create a cors handler
+	s.router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// Auth routes (no authentication required)
-	s.router.HandleFunc("/auth/register", s.register).Methods("POST")
-	s.router.HandleFunc("/auth/login", s.login).Methods("POST")
+	s.router.HandleFunc("/auth/register", s.register).Methods("POST", "OPTIONS")
+	s.router.HandleFunc("/auth/login", s.login).Methods("POST", "OPTIONS")
 
 	// Protected routes (require authentication)
-	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.getUser)).Methods("GET")
-	s.router.HandleFunc("/users/{id}/farms", s.authMiddleware(s.getUserFarms)).Methods("GET")
-	s.router.HandleFunc("/farms", s.authMiddleware(s.createFarm)).Methods("POST")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.getFarm)).Methods("GET")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.updateFarm)).Methods("PUT")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE")
-	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.addCrop)).Methods("POST")
-	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET")
+	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.getUser)).Methods("GET", "OPTIONS")
+	s.router.HandleFunc("/users/{id}/farms", s.authMiddleware(s.getUserFarms)).Methods("GET", "OPTIONS")
+	s.router.HandleFunc("/farms", s.authMiddleware(s.createFarm)).Methods("POST", "OPTIONS")
+	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.getFarm)).Methods("GET", "OPTIONS")
+	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.updateFarm)).Methods("PUT", "OPTIONS")
+	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE", "OPTIONS")
+	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.addCrop)).Methods("POST", "OPTIONS")
+	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET", "OPTIONS")
 
 	// Swagger documentation
 	s.router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
