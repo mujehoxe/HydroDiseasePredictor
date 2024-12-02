@@ -648,20 +648,17 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 },
                 "deleted_at": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -672,8 +669,7 @@ const docTemplate = `{
                     "example": "secretpassword"
                 },
                 "updated_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 }
             }
         }
@@ -683,6 +679,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
+	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Farm Management API",

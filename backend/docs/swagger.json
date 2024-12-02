@@ -642,20 +642,17 @@
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 },
                 "deleted_at": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -666,8 +663,7 @@
                     "example": "secretpassword"
                 },
                 "updated_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 }
             }
         }

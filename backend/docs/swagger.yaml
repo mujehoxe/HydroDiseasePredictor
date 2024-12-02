@@ -101,16 +101,13 @@ definitions:
     description: User account information
     properties:
       created_at:
-        example: "2024-01-01T00:00:00Z"
         type: string
       deleted_at:
-        format: date-time
         type: string
       email:
         example: user@example.com
         type: string
       id:
-        example: 1
         type: integer
       name:
         example: John Doe
@@ -119,7 +116,6 @@ definitions:
         example: secretpassword
         type: string
       updated_at:
-        example: "2024-01-01T00:00:00Z"
         type: string
     type: object
 host: localhost:8080
