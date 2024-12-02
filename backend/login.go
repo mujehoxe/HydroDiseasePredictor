@@ -28,7 +28,7 @@ func getEnvOrDefault(key, defaultValue string) string {
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	ID        uint       `json:"-" swaggerignore:"true"`
+	ID        uint       `json:"id,omitempty" swaggerignore:"true"`
 	CreatedAt time.Time  `json:"-" swaggerignore:"true"`
 	UpdatedAt time.Time  `json:"-" swaggerignore:"true"`
 	DeletedAt *time.Time `json:"-" swaggerignore:"true"`
