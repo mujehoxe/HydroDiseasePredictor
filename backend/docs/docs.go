@@ -20,6 +20,7 @@ const docTemplate = `{
         },
         "version": "{{.Version}}"
     },
+    "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
         "/auth/login": {
@@ -646,24 +647,9 @@ const docTemplate = `{
             "description": "User account information",
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
-                },
-                "farms": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/main.Farm"
-                    }
-                },
-                "id": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -672,9 +658,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "secretpassword"
-                },
-                "updatedAt": {
-                    "type": "string"
                 }
             }
         }
@@ -684,6 +667,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
+	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Farm Management API",
