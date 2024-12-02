@@ -647,9 +647,24 @@ const docTemplate = `{
             "description": "User account information",
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
+                },
+                "farms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.Farm"
+                    }
+                },
+                "id": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -658,6 +673,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "secretpassword"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         }

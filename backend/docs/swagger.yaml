@@ -45,7 +45,7 @@ definitions:
         type: string
       crops:
         items:
-          $ref: '#/definitions/main.Crop'
+          $ref: "#/definitions/main.Crop"
         type: array
       deleted_at:
         format: date-time
@@ -67,8 +67,8 @@ definitions:
         type: number
       status:
         enum:
-        - active
-        - inactive
+          - active
+          - inactive
         example: active
         type: string
       updated_at:
@@ -95,22 +95,33 @@ definitions:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
       user:
-        $ref: '#/definitions/main.User'
+        $ref: "#/definitions/main.User"
     type: object
   main.User:
     description: User account information
     properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
       email:
         example: user@example.com
         type: string
+      farms:
+        items:
+          $ref: "#/definitions/main.Farm"
+        type: array
+      id:
+        type: integer
       name:
         example: John Doe
         type: string
       password:
         example: secretpassword
         type: string
+      updatedAt:
+        type: string
     type: object
-host: localhost:8080
 info:
   contact:
     email: support@farmmanagement.io
@@ -126,305 +137,305 @@ paths:
   /auth/login:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Login with email and password to get JWT token
       parameters:
-      - description: Login credentials
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/main.LoginRequest'
+        - description: Login credentials
+          in: body
+          name: credentials
+          required: true
+          schema:
+            $ref: "#/definitions/main.LoginRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Login successful
           schema:
-            $ref: '#/definitions/main.LoginResponse'
+            $ref: "#/definitions/main.LoginResponse"
         "400":
           description: Invalid request payload
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Login user
       tags:
-      - auth
+        - auth
   /auth/register:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Register a new user account
       parameters:
-      - description: User registration details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/main.User'
+        - description: User registration details
+          in: body
+          name: user
+          required: true
+          schema:
+            $ref: "#/definitions/main.User"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: User created successfully
           schema:
-            $ref: '#/definitions/main.User'
+            $ref: "#/definitions/main.User"
         "400":
           description: Invalid request payload
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       summary: Register a new user
       tags:
-      - auth
+        - auth
   /farms:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new farm for a user
       parameters:
-      - description: Farm object
-        in: body
-        name: farm
-        required: true
-        schema:
-          $ref: '#/definitions/main.Farm'
+        - description: Farm object
+          in: body
+          name: farm
+          required: true
+          schema:
+            $ref: "#/definitions/main.Farm"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Farm created successfully
           schema:
-            $ref: '#/definitions/main.Farm'
+            $ref: "#/definitions/main.Farm"
         "400":
           description: Invalid request payload
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Create a new farm
       tags:
-      - farms
+        - farms
   /farms/{farm_id}/crops:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all crops for a specific farm
       parameters:
-      - description: Farm ID
-        in: path
-        name: farm_id
-        required: true
-        type: integer
+        - description: Farm ID
+          in: path
+          name: farm_id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of crops retrieved successfully
           schema:
             items:
-              $ref: '#/definitions/main.Crop'
+              $ref: "#/definitions/main.Crop"
             type: array
         "400":
           description: Invalid farm ID
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Farm not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Get farm crops
       tags:
-      - crops
+        - crops
     post:
       consumes:
-      - application/json
+        - application/json
       description: Add a new crop to a specific farm
       parameters:
-      - description: Farm ID
-        in: path
-        name: farm_id
-        required: true
-        type: integer
-      - description: Crop object
-        in: body
-        name: crop
-        required: true
-        schema:
-          $ref: '#/definitions/main.Crop'
+        - description: Farm ID
+          in: path
+          name: farm_id
+          required: true
+          type: integer
+        - description: Crop object
+          in: body
+          name: crop
+          required: true
+          schema:
+            $ref: "#/definitions/main.Crop"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Crop added successfully
           schema:
-            $ref: '#/definitions/main.Crop'
+            $ref: "#/definitions/main.Crop"
         "400":
           description: Invalid request payload
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Farm not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Add a crop to a farm
       tags:
-      - crops
+        - crops
   /farms/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete a specific farm
       parameters:
-      - description: Farm ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: Farm ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: Farm deleted successfully
         "404":
           description: Farm not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Delete a farm
       tags:
-      - farms
+        - farms
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get detailed information about a specific farm
       parameters:
-      - description: Farm ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: Farm ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Farm details retrieved successfully
           schema:
-            $ref: '#/definitions/main.Farm'
+            $ref: "#/definitions/main.Farm"
         "404":
           description: Farm not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Get farm details
       tags:
-      - farms
+        - farms
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update information about a specific farm
       parameters:
-      - description: Farm ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Farm object
-        in: body
-        name: farm
-        required: true
-        schema:
-          $ref: '#/definitions/main.Farm'
+        - description: Farm ID
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: Farm object
+          in: body
+          name: farm
+          required: true
+          schema:
+            $ref: "#/definitions/main.Farm"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Farm updated successfully
           schema:
-            $ref: '#/definitions/main.Farm'
+            $ref: "#/definitions/main.Farm"
         "400":
           description: Invalid request payload
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
         "404":
           description: Farm not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Update farm details
       tags:
-      - farms
+        - farms
   /users/{id}:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get user details including their farms
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: User ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: User details retrieved successfully
           schema:
-            $ref: '#/definitions/main.User'
+            $ref: "#/definitions/main.User"
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: "#/definitions/main.ErrorResponse"
       security:
-      - Bearer: []
+        - Bearer: []
       summary: Get a user by ID
       tags:
-      - users
+        - users
   /users/{id}/farms:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all farms belonging to a specific user
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
+        - description: User ID
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/main.Farm'
+              $ref: "#/definitions/main.Farm"
             type: array
         "500":
           description: Internal server error
@@ -432,5 +443,5 @@ paths:
             type: string
       summary: Get user's farms
       tags:
-      - farms
+        - farms
 swagger: "2.0"
