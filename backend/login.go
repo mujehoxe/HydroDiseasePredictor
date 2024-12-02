@@ -28,14 +28,14 @@ func getEnvOrDefault(key, defaultValue string) string {
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	ID        uint       `swaggerignore:"true"`
-	CreatedAt time.Time  `swaggerignore:"true"`
-	UpdatedAt time.Time  `swaggerignore:"true"`
-	DeletedAt *time.Time `swaggerignore:"true"`
+	ID        uint       `json:"-" swaggerignore:"true"`
+	CreatedAt time.Time  `json:"-" swaggerignore:"true"`
+	UpdatedAt time.Time  `json:"-" swaggerignore:"true"`
+	DeletedAt *time.Time `json:"-" swaggerignore:"true"`
 	Email     string     `json:"email" example:"user@example.com"`
 	Name      string     `json:"name" example:"John Doe"`
 	Password  string     `json:"password,omitempty" example:"secretpassword"`
-	Farms     []Farm     `swaggerignore:"true"`
+	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
 }
 
 // LoginRequest represents login credentials
