@@ -100,22 +100,14 @@ definitions:
   main.User:
     description: User account information
     properties:
-      created_at:
-        type: string
-      deleted_at:
-        type: string
       email:
         example: user@example.com
         type: string
-      id:
-        type: integer
       name:
         example: John Doe
         type: string
       password:
         example: secretpassword
-        type: string
-      updated_at:
         type: string
     type: object
 host: localhost:8080

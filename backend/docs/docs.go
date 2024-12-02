@@ -647,18 +647,9 @@ const docTemplate = `{
             "description": "User account information",
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
-                },
-                "id": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string",
@@ -667,9 +658,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "secretpassword"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         }
