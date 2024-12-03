@@ -564,6 +564,10 @@ const docTemplate = `{
             "description": "Farm information",
             "type": "object",
             "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "123 Farm Lane, Kansas City, KS 66101"
+                },
                 "created_at": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
@@ -587,8 +591,7 @@ const docTemplate = `{
                     "example": "2024-01-01T00:00:00Z"
                 },
                 "location": {
-                    "type": "string",
-                    "example": "Kansas"
+                    "$ref": "#/definitions/main.Location"
                 },
                 "name": {
                     "type": "string",
@@ -613,6 +616,19 @@ const docTemplate = `{
                 "user_id": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "main.Location": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "number",
+                    "example": 39.0997
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": -94.5783
                 }
             }
         },

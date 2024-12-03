@@ -51,12 +51,18 @@ type Farm struct {
 	UpdatedAt   time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
 	DeletedAt   *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
 	Name        string     `json:"name" example:"Green Acres"`
-	Location    string     `json:"location" example:"Kansas"`
+	Address     string     `json:"address" example:"123 Farm Lane, Kansas City, KS 66101"`
+	Location    Location   `json:"location"`
 	Size        float64    `json:"size" example:"100.5"`
 	UserID      uint       `json:"user_id" example:"1"`
 	CropTypes   []Crop     `json:"crops,omitempty"`
 	LastHarvest time.Time  `json:"last_harvest" example:"2024-01-01T00:00:00Z"`
 	Status      string     `json:"status" example:"active" enums:"active,inactive"`
+}
+
+type Location struct {
+	Latitude  float64 `json:"latitude" example:"39.0997"`
+	Longitude float64 `json:"longitude" example:"-94.5783"`
 }
 
 // Crop represents a type of crop grown in a farm
