@@ -27,3 +27,4 @@ dist-ssr
 /backend/build
 /backend/*.db
 backend/farm.db
+farm.db
