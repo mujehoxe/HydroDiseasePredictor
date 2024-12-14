@@ -8,15 +8,16 @@ calculer la probabilité de développement de maladies grâce à des formules st
 présentes dans les travaux de recherche scientifique. Enfin, des recommandations pour
 prévenir la maladie seront faites selon les chances calculées.
 
+
+
+
+Le présent outil n’est qu’un modèle théorique simplifié. Après la collecte de données, nous procéderons à l'entraînement d’un modèle pour prédire l’arrivée des maladies grâce à l’intelligence artificielle.
 ## Fonctionnalités :
 - Une interface graphique.
 - Connexion à une API pour prélever les données météorologiques en temps réel.
 - La possibilité d’introduire des valeurs customisées.
 - 5 maladies qui touchent la laitue sont prises en considération.
 - Des fiches informatives succinctes sont fournies pour chaque maladie.
-
-
-Le présent outil n’est qu’un modèle théorique simplifié. Après la collecte de données, nous procéderons à l'entraînement d’un modèle pour prédire l’arrivée des maladies grâce à l’intelligence artificielle.
 
 
 ### Colaborateurs:
