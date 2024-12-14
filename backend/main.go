@@ -57,10 +57,9 @@ type Crop struct {
 
 	// Crop-specific fields
 	Name      string    `json:"name" example:"Corn"`
-	Area      float64   `json:"area" example:"50.5"` // in hectares
 	FarmID    uint      `json:"farm_id" example:"1"`
 	PlantDate time.Time `json:"plant_date" example:"2024-01-01T00:00:00Z"`
-	YieldRate float64   `json:"yield_rate" example:"8.5"` // expected yield per hectare
+	CycleDuration float64   `json:"cycle_duration" example:"45"` // expected cycle lenght in days
 }
 
 type Server struct {

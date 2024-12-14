@@ -3,10 +3,6 @@ definitions:
   main.Crop:
     description: Crop information
     properties:
-      area:
-        description: in hectares
-        example: 50.5
-        type: number
       created_at:
         example: "2024-01-01T00:00:00Z"
         type: string
@@ -30,9 +26,9 @@ definitions:
       updated_at:
         example: "2024-01-01T00:00:00Z"
         type: string
-      yield_rate:
-        description: expected yield per hectare
-        example: 8.5
+      cycle_duration:
+        description: expected cycle duration in days
+        example: 45
         type: number
     type: object
   main.Farm:

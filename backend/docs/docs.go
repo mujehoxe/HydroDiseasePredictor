@@ -472,11 +472,6 @@ const docTemplate = `{
             "description": "Crop information",
             "type": "object",
             "properties": {
-                "area": {
-                    "description": "in hectares",
-                    "type": "number",
-                    "example": 50.5
-                },
                 "created_at": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
@@ -507,10 +502,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
-                "yield_rate": {
-                    "description": "expected yield per hectare",
+                "cycle_duration": {
+                    "description": "expected cycle duration in days",
                     "type": "number",
-                    "example": 8.5
+                    "example": 45
                 }
             }
         },
