@@ -22,3 +22,5 @@ Le présent outil n’est qu’un modèle théorique simplifié. Après la colle
 
 ### Colaborateurs:
 - SarahRayaneRoufiaBenzai
+- Amir-Bitam
+- mujehoxe Mujehoxe
