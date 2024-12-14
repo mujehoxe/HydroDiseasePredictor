@@ -42,7 +42,7 @@ function SignUp() {
       }
 
       // If successful, navigate to the desired page
-      navigate('/Ajoutferme');
+      navigate('/vosfermes');
     } catch (err) {
       setError('An error occurred. Please try again later.');
     }
