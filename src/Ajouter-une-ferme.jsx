@@ -11,9 +11,7 @@ function Ajoutferme() {
   // Define state variables for form fields
   const [farmName, setFarmName] = useState('');
   const [farmAddress, setFarmAddress] = useState('');
-  const [farmInfo1, setFarmInfo1] = useState('');
-  const [farmInfo2, setFarmInfo2] = useState('');
-  const [farmInfo3, setFarmInfo3] = useState('');
+  const [farmCity, setFarmCity] = useState('');
   
   const handleAjout = async () => {
  // Construct the farm data object
@@ -22,15 +20,13 @@ function Ajoutferme() {
   name: farmName,
   location: farmAddress,  // Assuming this is address/GPS
   additionalInfo: {
-    info1: farmInfo1,
-    info2: farmInfo2,
-    info3: farmInfo3
+    City: farmCity
   }
 };
 
 // Send the data to the backend
 try {
-  const response = await fetch('http://localhost:5000/api/farms', {
+  const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/farms', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -52,7 +48,7 @@ try {
       <div className="row h-100 align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
         <div className="col-sm-12 col-xl-6">
           <div className="bg-light rounded h-100 p-4">
-            <h6 className="mb-4">{language === 'fr' ? 'Ajouter Une ferme' : 'أضف مزرعة'}</h6>
+            <h6 className="mb-4">{language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}</h6>
 
             <div className="form-floating mb-3">
               <input type="text" className="form-control" id="farmName" placeholder={language === 'fr' ? 'Nom de la ferme' : 'اسم المزرعة'} 
@@ -69,24 +65,10 @@ try {
             </div>
 
             <div className="form-floating mb-3">
-              <input type="text" className="form-control" id="farmInfo1" placeholder={language === 'fr' ? 'Informations sur la ferme' : 'معلومات المزرعة'}
-              value={farmInfo1} onChange={(e) => setFarmInfo1(e.target.value)} 
+              <input type="text" className="form-control" id="farmCity" placeholder={language === 'fr' ? 'Wilaya' : 'معلومات المزرعة'}
+              value={farmCity} onChange={(e) => setFarmCity(e.target.value)} 
               />
-              <label htmlFor="farmInfo1">{language === 'fr' ? 'Informations sur la ferme' : 'معلومات المزرعة'}</label>
-            </div>
-
-            <div className="form-floating mb-3">
-              <input type="text" className="form-control" id="farmInfo2" placeholder={language === 'fr' ? 'Informations supplémentaires sur la ferme' : 'معلومات المزرعة الإضافية'}
-              value={farmInfo2} onChange={(e) => setFarmInfo2(e.target.value)} 
-              />
-              <label htmlFor="farmInfo2">{language === 'fr' ? 'Informations supplémentaires sur la ferme' : 'معلومات إضافية عن المزرعة'}</label>
-            </div>
-
-            <div className="form-floating mb-3">
-              <input type="text" className="form-control" id="farmInfo3" placeholder={language === 'fr' ? 'Autres informations sur la ferme' : 'معلومات اخرى عن المزرعة'}
-              value={farmInfo3} onChange={(e) => setFarmInfo3(e.target.value)}
-               />
-              <label htmlFor="farmInfo3">{language === 'fr' ? 'Autres informations sur la ferme' : 'معلومات اخرى عن المزرعة'}</label>
+              <label htmlFor="farmCity">{language === 'fr' ? 'Wilaya' : 'معلومات المزرعة'}</label>
             </div>
 
             <div className="text-end">
