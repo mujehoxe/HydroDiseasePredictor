@@ -52,7 +52,6 @@ type Farm struct {
 	DeletedAt   *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
 	Name        string     `json:"name" example:"Green Acres"`
 	Address     string     `json:"address" example:"123 Farm Lane, Kansas City, KS 66101"`
-	Location    Location   `json:"location" gorm:"embedded;embeddedPrefix:location_"`
 	Size        float64    `json:"size" example:"100.5"`
 	UserID      uint       `json:"user_id" example:"1"`
 	CropTypes   []Crop     `json:"crops,omitempty"`

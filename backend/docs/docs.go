@@ -586,9 +586,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
-                "location": {
-                    "$ref": "#/definitions/main.Location"
-                },
                 "name": {
                     "type": "string",
                     "example": "Green Acres"
@@ -614,10 +611,6 @@ const docTemplate = `{
                     "example": 1
                 }
             }
-        },
-        "main.Location": {
-            "type": "string",
-            "example": "Bouira"
         },
         "main.LoginRequest": {
             "description": "Login request payload",

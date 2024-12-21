@@ -26,11 +26,11 @@ app.get('/', (req, res) => {
 // POST route to add a new farm
 app.post('/api/farms', async (req, res) => {
     try {
-        const { user, name, location, additionalInfo } = req.body;
+        const { user, name, address, additionalInfo } = req.body;
         const newFarm = new Farm({
             user,
             name,
-            location,
+            address,
             additionalInfo
         });
         await newFarm.save();

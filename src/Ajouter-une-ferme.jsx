@@ -20,7 +20,7 @@ function Ajoutferme() {
  const farmData = {
   user: 'farmer1',  // Temporary user ID/name
   name: farmName,
-  location: farmAddress,  // Assuming this is address/GPS
+  address: farmAddress,  // Assuming this is address/GPS
   additionalInfo: {
     info1: farmInfo1,
     info2: farmInfo2,
