@@ -72,7 +72,6 @@ type Crop struct {
 	UpdatedAt time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
 	Name      string     `json:"name" example:"Corn"`
-	Area      float64    `json:"area" example:"50.5"`
 	FarmID    uint       `json:"farm_id" example:"1"`
 	PlantDate time.Time  `json:"plant_date" example:"2024-01-01T00:00:00Z"`
 	YieldRate float64    `json:"yield_rate" example:"8.5"`

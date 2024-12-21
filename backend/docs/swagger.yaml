@@ -2,9 +2,6 @@ basePath: /api/v1
 definitions:
   main.Crop:
     properties:
-      area:
-        example: 50.5
-        type: number
       created_at:
         example: "2024-01-01T00:00:00Z"
         type: string

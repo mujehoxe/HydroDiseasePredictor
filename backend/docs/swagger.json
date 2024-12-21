@@ -505,10 +505,6 @@
         "main.Crop": {
             "type": "object",
             "properties": {
-                "area": {
-                    "type": "number",
-                    "example": 50.5
-                },
                 "created_at": {
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
