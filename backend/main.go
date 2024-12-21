@@ -60,11 +60,6 @@ type Farm struct {
 	Status      string     `json:"status" example:"active" enums:"active,inactive"`
 }
 
-type Location struct {
-	Latitude  float64 `json:"latitude" example:"39.0997"`
-	Longitude float64 `json:"longitude" example:"-94.5783"`
-}
-
 // Crop represents a type of crop grown in a farm
 type Crop struct {
 	ID        uint       `json:"id" example:"1"`

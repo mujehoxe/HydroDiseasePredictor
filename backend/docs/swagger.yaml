@@ -78,14 +78,8 @@ definitions:
         type: integer
     type: object
   main.Location:
-    properties:
-      latitude:
-        example: 39.0997
-        type: number
-      longitude:
-        example: -94.5783
-        type: number
-    type: object
+    example: "Bouira"
+    string
   main.LoginRequest:
     description: Login request payload
     properties:

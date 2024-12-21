@@ -609,17 +609,8 @@
             }
         },
         "main.Location": {
-            "type": "object",
-            "properties": {
-                "latitude": {
-                    "type": "number",
-                    "example": 39.0997
-                },
-                "longitude": {
-                    "type": "number",
-                    "example": -94.5783
-                }
-            }
+            "type": "string",
+            "example": "Bouira"
         },
         "main.LoginRequest": {
             "description": "Login request payload",
