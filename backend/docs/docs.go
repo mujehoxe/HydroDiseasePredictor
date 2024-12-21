@@ -526,10 +526,6 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "last_harvest": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
-                },
                 "location": {
                     "type": "string",
                     "example": "Kansas"
@@ -538,15 +534,6 @@ const docTemplate = `{
                     "description": "Farm-specific fields",
                     "type": "string",
                     "example": "Green Acres"
-                },
-                "size": {
-                    "description": "in hectares",
-                    "type": "number",
-                    "example": 100.5
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
                 },
                 "updated_at": {
                     "type": "string",

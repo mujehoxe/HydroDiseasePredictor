@@ -32,13 +32,11 @@ type User struct {
 	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
 	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
-
-	// User-specific fields
-	Email    string `json:"email" example:"user@example.com" gorm:"unique"`
-	Name     string `json:"name" example:"John Doe"`
-	Password string `json:"password,omitempty" example:"secretpassword" gorm:"not null"`
-	HashPass string `json:"-" gorm:"not null"`
-	Farms    []Farm `json:"farms,omitempty" swaggerignore:"true"`
+	Email     string    `json:"email" example:"user@example.com" gorm:"unique"`
+	Name      string    `json:"name" example:"John Doe"`
+	Password  string    `json:"password,omitempty" example:"secretpassword" gorm:"not null"`
+	HashPass  string    `json:"-" gorm:"not null"`
+	Farms     []Farm    `json:"farms,omitempty" swaggerignore:"true"`
 }
 
 // LoginRequest represents login credentials
@@ -126,7 +124,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 
 	// Hash the password before saving
 	user.HashPass = hashPassword(user.Password)
-	user.Password = "" // Clear plain text password
+	user.Password = ""
 
 	if result := s.db.Create(&user); result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
@@ -194,5 +192,6 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+tokenString) // Send token in response header
 	json.NewEncoder(w).Encode(response)
 }

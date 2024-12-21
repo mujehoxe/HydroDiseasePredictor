@@ -44,22 +44,12 @@ definitions:
         description: Standard fields from gorm.Model
         example: 1
         type: integer
-      last_harvest:
-        example: "2024-01-01T00:00:00Z"
-        type: string
       location:
         example: Kansas
         type: string
       name:
         description: Farm-specific fields
         example: Green Acres
-        type: string
-      size:
-        description: in hectares
-        example: 100.5
-        type: number
-      status:
-        example: active
         type: string
       updated_at:
         example: "2024-01-01T00:00:00Z"

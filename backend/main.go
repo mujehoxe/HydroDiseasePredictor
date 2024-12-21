@@ -32,34 +32,27 @@ import (
 type Farm struct {
 	// Standard fields from gorm.Model
 	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
 
 	// Farm-specific fields
-	Name        string    `json:"name" example:"Green Acres"`
-	Location    string    `json:"location" example:"Kansas"`
-	Size        float64   `json:"size" example:"100.5"` // in hectares
-	UserID      uint      `json:"user_id" example:"1"`
-	CropTypes   []Crop    `json:"crops" swaggerignore:"true"`
-	LastHarvest time.Time `json:"last_harvest" example:"2024-01-01T00:00:00Z"`
-	Status      string    `json:"status" example:"active"`
+	Name      string    `json:"name" example:"Green Acres"`
+	Location  string    `json:"location" example:"Kansas"`
+	UserID    uint      `json:"user_id" example:"1"`
 }
 
 // Crop represents a type of crop grown in a farm
 // @Description Crop information
 type Crop struct {
 	// Standard fields from gorm.Model
-	ID        uint      `json:"id" example:"1" gorm:"primarykey"`
-	CreatedAt time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
+	ID           uint      `json:"id" example:"1" gorm:"primarykey"`
+	CreatedAt    time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt    time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	DeletedAt    time.Time `json:"deleted_at,omitempty" swaggertype:"string" format:"date-time"`
 
 	// Crop-specific fields
-	Name      string    `json:"name" example:"Corn"`
-	FarmID    uint      `json:"farm_id" example:"1"`
-	PlantDate time.Time `json:"plant_date" example:"2024-01-01T00:00:00Z"`
-	CycleDuration float64   `json:"cycle_duration" example:"45"` // expected cycle lenght in days
+	Name         string    `json:"name" example:"Corn"`
+	FarmID       uint      `json:"farm_id" example:"1"`
+	PlantDate    time.Time `json:"plant_date" example:"2024-01-01T00:00:00Z"`
+	CycleDuration float64  `json:"cycle_duration" example:"45"`
 }
 
 type Server struct {
