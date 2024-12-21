@@ -14,8 +14,19 @@ function VosFermes() {
   useEffect(() => {
     // Fetch the user's farms from the API
     const fetchFarms = async () => {
+      const token = localStorage.getItem('authToken'); // Retrieve the auth token
+      setLoading(true);
+      setError('');
+
       try {
-        const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/1/farms`);
+        const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`, // Add the auth token here
+            'Content-Type': 'application/json',
+          },
+        });
+
         if (response.ok) {
           const data = await response.json();
           setFarms(data);
