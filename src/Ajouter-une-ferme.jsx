@@ -22,7 +22,7 @@ function Ajoutferme() {
 
   const handleAjout = async () => {
     const testFarmData = {
-      "id": 7,
+      "id": 11,
       "address": "Algiers",
       "name": "Green Acres",
       "user_id": 1
