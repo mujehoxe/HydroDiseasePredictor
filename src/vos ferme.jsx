@@ -10,6 +10,8 @@ function VosFermes() {
   const navigate = useNavigate();
   const [farms, setFarms] = useState([]);
   const userId = 1; // Replace with dynamic user ID after login
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     // Fetch the user's farms from the API
@@ -35,6 +37,8 @@ function VosFermes() {
         }
       } catch (error) {
         console.error('Error fetching farms:', error);
+      }finally{
+        setLoading(false);
       }
     };
 
