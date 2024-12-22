@@ -21,11 +21,11 @@ function Ajoutferme() {
   ];
 
   const handleAjout = async () => {
-    const testFarmData = {
-      "id": 11,
-      "address": "Algiers",
-      "name": "Green Acres",
-      "user_id": 1
+    const farmData = {
+      id: 12, // Static ID for now
+      address: farmCity, // Dynamically collected from the form
+      name: farmName, // Dynamically collected from the form
+      user_id: 1, // Static user ID for now
     };
   
     const token = localStorage.getItem('authToken');
@@ -33,7 +33,7 @@ function Ajoutferme() {
     setError('');
   
     try {
-      console.log('Sending test farm data:', testFarmData);
+      console.log('Sending farm data:', farmData);
   
       const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/farms', {
         method: 'POST',
@@ -41,7 +41,7 @@ function Ajoutferme() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(testFarmData),
+        body: JSON.stringify(farmData), // Use the dynamically collected farm data
       });
   
       if (response.ok) {
@@ -58,6 +58,7 @@ function Ajoutferme() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="container-fluid">
