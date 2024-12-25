@@ -46,6 +46,11 @@ function Sidebar() {
     fetchFarms();
   }, [1]);
 
+  const handleFarmClick = (farm) => {
+    // Pass the farm's name and address as props to the dashboard
+    navigate('/Tableaudebord', { state: { name: farm.name, address: farm.address } });
+  };
+  
   const handleAjout = () => {
     // Add your authentication logic here
     navigate('/Ajoutferme'); // Redirect to the VosFermes page
@@ -75,7 +80,10 @@ function Sidebar() {
                 <Dropdown.Menu className="bg-transparent border-0">
                 {farms.length > 0 ? (
                   farms.map((farm) => (
-                  <Dropdown.Item key={farm.id} href="#action1" className="dropdown-item">{farm.name}</Dropdown.Item>
+                  <Dropdown.Item 
+                  key={farm.id} 
+                  onClick={() => handleFarmClick(farm)} 
+                  className="dropdown-item">{farm.name}</Dropdown.Item>
                 ))
               ) : (
                 <p>{language === 'fr' ? 'Aucune ferme trouvée.' : 'لم يتم العثور على أي مزرعة.'}</p>
