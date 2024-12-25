@@ -114,14 +114,14 @@ function VosFermes() {
                         src={editIcon}
                         alt="Edit"
                         className="ms-2"
-                        style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer' }}
                         onClick={() => handleDelete(farm.id)}
                       />
                       <img
                         src={deleteIcon}
                         alt="Delete"
                         className="ms-2"
-                        style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer' }}
                         onClick={() => handleDelete(farm.id)}
                       />
                     </div>
