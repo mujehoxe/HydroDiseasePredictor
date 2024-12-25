@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import plusicon from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png';
+import deleteIcon from './icone/icons8-delete-24.png'; // <a target="_blank" href="https://icons8.com/icon/99933/delete">Delete</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+import editIcon from './icone/icons8-edit-50.png'; // <a target="_blank" href="https://icons8.com/icon/49/edit">Edit</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 import './css/bootstrap.min.css';
 import './css/style.css';
 import { useNavigate } from 'react-router-dom';
@@ -50,6 +52,36 @@ function VosFermes() {
     navigate('/Tableaudebord', { state: { name: farm.name, address: farm.address } });
   };
 
+  const handleDelete = async (farmId) => {
+    const confirmDelete = window.confirm(
+      language === 'fr'
+        ? 'Êtes-vous sûr de vouloir supprimer cette ferme ?\nCette action est irréversible.'
+        : 'هل أنت متأكد أنك تريد حذف هذه المزرعة؟\nهذا الإجراء لا رجوع فيه.'
+    );
+
+    if (!confirmDelete) return;
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+
+    try {
+      const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/farms/${farmId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Remove the deleted farm from the state
+        setFarms((prevFarms) => prevFarms.filter((farm) => farm.id !== farmId));
+      } else {
+        console.error('Failed to delete farm:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting farm:', error);
+    }
+  };
+
   const handleAjout = () => {
     navigate('/Ajoutferme');
   };
@@ -76,8 +108,22 @@ function VosFermes() {
                         className="btn btn-primary"
                         onClick={() => handleFarmClick(farm)}
                       >
-                        {farm.name}
+                        {farm.name} {/* add the delete and edit buttons here*/}
                       </button>
+                      <img
+                        src={editIcon}
+                        alt="Edit"
+                        className="ms-2"
+                        style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                        onClick={() => handleDelete(farm.id)}
+                      />
+                      <img
+                        src={deleteIcon}
+                        alt="Delete"
+                        className="ms-2"
+                        style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                        onClick={() => handleDelete(farm.id)}
+                      />
                     </div>
                   ))
                 ) : (
