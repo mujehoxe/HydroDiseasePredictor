@@ -21,27 +21,51 @@ function Ajoutferme() {
   ];
 
   const handleAjout = async () => {
-    const farmData = {
-      id: 12, // Static ID for now
-      address: farmCity, // Dynamically collected from the form
-      name: farmName, // Dynamically collected from the form
-      user_id: 1, // Static user ID for now
-    };
-  
     const token = localStorage.getItem('authToken');
+    if (!token) {
+      setError(language === 'fr' ? 'Utilisateur non authentifié.' : 'المستخدم غير مصدق عليه.');
+      return;
+    }
+  
     setLoading(true);
     setError('');
   
     try {
-      console.log('Sending farm data:', farmData);
+      // Decode the token to get the user ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.user_id; // Extract user ID from token payload
   
+      // Fetch the user's existing farms to determine the next unique ID
+      const farmsResponse = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!farmsResponse.ok) {
+        throw new Error(language === 'fr' ? 'Impossible de récupérer les fermes.' : 'تعذر استرداد المزارع.');
+      }
+  
+      const farms = await farmsResponse.json();
+      const nextFarmId = farms.length > 0 ? Math.max(...farms.map((farm) => farm.id)) + 1 : 1;
+  
+      // Construct the new farm data
+      const farmData = {
+        id: nextFarmId, // Incremental unique ID
+        address: farmCity, // From form input
+        name: farmName, // From form input
+        user_id: userId, // From token payload
+      };
+  
+      // Send the POST request to create the new farm
       const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/farms', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(farmData), // Use the dynamically collected farm data
+        body: JSON.stringify(farmData),
       });
   
       if (response.ok) {
@@ -57,7 +81,7 @@ function Ajoutferme() {
     } finally {
       setLoading(false);
     }
-  };
+  };  
   
 
   return (
