@@ -48,6 +48,11 @@ function Sidebar() {
     fetchFarms();
   }, [1]);
 
+  const handleEdit = (farm) => {
+    // Navigate to the edit farm page with pre-filled data
+    navigate('/Ajoutferme', { state: { farm, isEdit: true } });
+  };
+  
   const handleDelete = async (farmId) => {
     const confirmDelete = window.confirm(
       language === 'fr'
@@ -121,7 +126,7 @@ function Sidebar() {
                       alt="Edit"
                       className="ms-2"
                       style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                      onClick={() => handleDelete(farm.id)}
+                      onClick={() => handleEdit(farm.id)}
                     />
                     <img
                       src={deleteIcon}

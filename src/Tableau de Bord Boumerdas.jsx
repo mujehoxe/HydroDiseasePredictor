@@ -119,7 +119,6 @@ function Tableaudebord() {
                 <div>
                   <div className="d-flex">
                     <div className="flex-grow-1">{address || 'Location not provided'}</div>
-                    <div>15:07</div>
                   </div>
                   <div className="d-flex flex-column text-center mt-5 mb-4">
                     <h6 className="display-4 mb-0 font-weight-bold" style={{ color: '#1C2331' }}>
