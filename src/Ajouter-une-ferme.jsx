@@ -36,9 +36,31 @@ function Ajoutferme() {
     setError('');
 
     try {
+      // Decode the token to get the user ID
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const userId = payload.user_id; // Extract user ID from token payload
+
+      // Fetch the user's existing farms to determine the next unique ID
+      const farmsResponse = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!farmsResponse.ok) {
+        throw new Error(language === 'fr' ? 'Impossible de récupérer les fermes.' : 'تعذر استرداد المزارع.');
+      }
+
+      const farms = await farmsResponse.json();
+      const nextFarmId = farms.length > 0 ? Math.max(...farms.map((farm) => farm.id)) + 1 : 1;
+
+      // Construct the new farm data
       const farmData = {
-        name: farmName,
-        address: farmCity,
+        id: nextFarmId, // Incremental unique ID
+        address: farmCity, // From form input
+        name: farmName, // From form input
+        user_id: userId, // From token payload
       };
 
       const url = isEdit
