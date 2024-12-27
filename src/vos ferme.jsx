@@ -21,7 +21,7 @@ function VosFermes() {
 
     if (!user || !user.id || !token) {
       // Redirect to login if userId or token is missing
-      navigate('/login');
+      navigate('/');
       return;
     }
 

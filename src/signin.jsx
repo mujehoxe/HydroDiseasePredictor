@@ -28,7 +28,8 @@ function SignIn() {
         console.log('Login successful:', data);
 
         // Save the token in localStorage
-        localStorage.setItem('authToken', data.token);
+        sessionStorage.setItem('authToken', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data.user)); // Save user details
 
         // Redirect to the VosFermes page
         navigate('/vosfermes');
