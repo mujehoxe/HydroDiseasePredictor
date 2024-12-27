@@ -126,7 +126,10 @@ function Sidebar() {
                       alt="Edit"
                       className="ms-2"
                       style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                      onClick={() => handleEdit(farm.id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the event from bubbling up
+                        handleEdit(farm);
+                      }}
                     />
                     <img
                       src={deleteIcon}
