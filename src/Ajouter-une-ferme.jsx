@@ -52,15 +52,11 @@ function Ajoutferme() {
         throw new Error(language === 'fr' ? 'Impossible de récupérer les fermes.' : 'تعذر استرداد المزارع.');
       }
 
-      const farms = await farmsResponse.json();
-      const nextFarmId = farms.length > 0 ? Math.max(...farms.map((farm) => farm.id)) + 1 : 1;
-
       // Construct the new farm data
-      const farmData = {
-        id: nextFarmId, // Incremental unique ID
-        address: farmCity, // From form input
-        name: farmName, // From form input
-        user_id: userId, // From token payload
+      const farm = {
+        address: farmCity,
+        name: farmName,
+        user_id: userId,
       };
 
       const url = isEdit
@@ -75,7 +71,7 @@ function Ajoutferme() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(farmData),
+        body: JSON.stringify(farm),
       });
 
       if (response.ok) {
