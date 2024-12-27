@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import plusicon from './icone/add-1--expand-cross-buttons-button-more-remove-plus-add-+-mathematics-math.png';
-import deleteIcon from './icone/icons8-delete-24.png'; // <a target="_blank" href="https://icons8.com/icon/99933/delete">Delete</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
-import editIcon from './icone/icons8-edit-50.png'; // <a target="_blank" href="https://icons8.com/icon/49/edit">Edit</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+import deleteIcon from './icone/icons8-delete-24.png';
+import editIcon from './icone/icons8-edit-50.png';
 import './css/bootstrap.min.css';
 import './css/style.css';
 import { useNavigate } from 'react-router-dom';
@@ -11,14 +11,24 @@ function VosFermes() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [farms, setFarms] = useState([]);
-  const userId = 1; // Replace with dynamic user ID after login
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Retrieve userId and authToken from sessionStorage
+    const user = JSON.parse(sessionStorage.getItem('user'));
+    const token = sessionStorage.getItem('authToken');
+
+    if (!user || !user.id || !token) {
+      // Redirect to login if userId or token is missing
+      navigate('/login');
+      return;
+    }
+
+    const userId = user.id;
+
     // Fetch the user's farms from the API
     const fetchFarms = async () => {
-      const token = localStorage.getItem('authToken'); // Retrieve the auth token
       setLoading(true);
       setError('');
 
@@ -26,7 +36,7 @@ function VosFermes() {
         const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`, // Add the auth token here
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -35,20 +45,21 @@ function VosFermes() {
           const data = await response.json();
           setFarms(data);
         } else {
-          console.error('Failed to fetch farms:', response.statusText);
+          const errorData = await response.json();
+          setError(errorData.message || (language === 'fr' ? 'Échec de la récupération des fermes.' : 'فشل في استرداد المزارع.'));
         }
       } catch (error) {
         console.error('Error fetching farms:', error);
-      }finally{
+        setError(language === 'fr' ? 'Une erreur s’est produite.' : 'حدث خطأ.');
+      } finally {
         setLoading(false);
       }
     };
 
     fetchFarms();
-  }, [1]);
+  }, [navigate, language]);
 
   const handleFarmClick = (farm) => {
-    // Pass the farm's name and address as props to the dashboard
     navigate('/Tableaudebord', { state: { name: farm.name, address: farm.address } });
   };
 
@@ -60,19 +71,18 @@ function VosFermes() {
     );
 
     if (!confirmDelete) return;
-    const token = localStorage.getItem('authToken'); // Retrieve the auth token
 
+    const token = sessionStorage.getItem('authToken');
     try {
       const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/farms/${farmId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
-        // Remove the deleted farm from the state
         setFarms((prevFarms) => prevFarms.filter((farm) => farm.id !== farmId));
       } else {
         console.error('Failed to delete farm:', response.statusText);
@@ -83,7 +93,6 @@ function VosFermes() {
   };
 
   const handleEdit = (farm) => {
-    // Navigate to the edit farm page with pre-filled data
     navigate('/Ajoutferme', { state: { farm, isEdit: true } });
   };
 
@@ -98,14 +107,17 @@ function VosFermes() {
         style={{ minHeight: '100vh' }}
       >
         <div className="row g-4 w-100 justify-content-center align-items-stretch" style={{ maxWidth: '1200px' }}>
-          {/* Vos Fermes Box */}
           <div className="col-12 col-md-6 d-flex">
             <div className="bg-light rounded p-4 my-4 mx-3 w-100">
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <h3>{language === 'fr' ? 'Vos Fermes' : 'مزارعك'}</h3>
               </div>
               <div className="text-center">
-                {farms.length > 0 ? (
+                {loading ? (
+                  <p>{language === 'fr' ? 'Chargement...' : 'جار التحميل...'}</p>
+                ) : error ? (
+                  <p className="text-danger">{error}</p>
+                ) : farms.length > 0 ? (
                   farms.map((farm) => (
                     <div key={farm.id} className="mb-3">
                       <button
@@ -113,7 +125,7 @@ function VosFermes() {
                         className="btn btn-primary"
                         onClick={() => handleFarmClick(farm)}
                       >
-                        {farm.name} {/* add the delete and edit buttons here*/}
+                        {farm.name}
                       </button>
                       <img
                         src={editIcon}
@@ -147,8 +159,6 @@ function VosFermes() {
               </div>
             </div>
           </div>
-
-          {/* Recommendations Box */}
           <div className="col-12 col-md-6 d-flex">
             <div className="bg-light rounded p-4 my-4 mx-3 w-100">
               <h3>{language === 'fr' ? 'Résumé des recommendations' : 'ملخص التوصيات'}</h3>
