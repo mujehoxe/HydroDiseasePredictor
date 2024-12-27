@@ -82,8 +82,13 @@ function VosFermes() {
     }
   };
 
+  const handleEdit = (farm) => {
+    // Navigate to the edit farm page with pre-filled data
+    navigate('/Ajoutferme', { state: { farm, isEdit: true } });
+  };
+
   const handleAjout = () => {
-    navigate('/Ajoutferme');
+    navigate('/Ajoutferme', { state: { isEdit: false } });
   };
 
   return (
@@ -115,7 +120,7 @@ function VosFermes() {
                         alt="Edit"
                         className="ms-2"
                         style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                        onClick={() => handleDelete(farm.id)}
+                        onClick={() => handleEdit(farm)}
                       />
                       <img
                         src={deleteIcon}
