@@ -7,7 +7,7 @@ import Sidebar from './components/SidebarOffcanvas';
 import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
-function Tableaudebord() {
+function tableaudebord() {
   const { language } = useLanguage();
   const location = useLocation();
   const { name, address } = location.state || {}; // Get farm name and address from props
@@ -154,11 +154,17 @@ function Tableaudebord() {
           onHide={handleCloseOffcanvas}
           className="custom-offcanvas"
         >
-          <Offcanvas.Header closeButton className="d-flex justify-content-end" />
+          <Offcanvas.Header className="d-flex justify-content-end">
+            <button 
+              className="btn-close d-lg-none" 
+              aria-label="Close" 
+              onClick={handleShowOffcanvas}
+            ></button>
+          </Offcanvas.Header>
           <Offcanvas.Body>
             <Sidebar />
           </Offcanvas.Body>
-        </Offcanvas>
+          </Offcanvas>
         {/* Offcanvas End */}
       </div>  
       {/* Content End */}
@@ -166,4 +172,4 @@ function Tableaudebord() {
   );
 }
 
-export default Tableaudebord;
+export default tableaudebord;
