@@ -6,14 +6,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './components/SidebarOffcanvas';
 import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
-import diseaseDescriptions from './assets/diseaseDescriptions';
-import {
-  calculatePythiumRisk,
-  calculateBotrytisRisk,
-  calculateFusariumRisk,
-  calculateMildiouRisk,
-  calculateOidiumRisk,
-} from './js/diseaseRiskCalculator';
+import MaladiesList from './components/MaladiesList';
 
 function Tableaudebord() {
   const { language } = useLanguage();
@@ -82,43 +75,20 @@ function Tableaudebord() {
               <div className="bg-light rounded h-100 p-4">
                 <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
                 <div>
-                  <Maladie 
-                    name={language === 'fr' ? 'Pythium' : 'بيثيوم'} 
-                    risk={calculatePythiumRisk(temperature, humidity)}
-                    info={language === 'fr' ? diseaseDescriptions.fr.pythium : diseaseDescriptions.ar.pythium} 
-                    recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'} 
-                  />
-                  <hr />
-                  <Maladie 
-                    name={language === 'fr' ? 'Botrytis' : 'بوتريتيس'} 
-                    risk={calculateBotrytisRisk(temperature, humidity)}
-                    info={language === 'fr' ? diseaseDescriptions.fr.botrytis : diseaseDescriptions.ar.botrytis}
-                    recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
-                  />
-                  <hr />
-                  <Maladie 
-                    name={language === 'fr' ? 'Fusarium' : 'فيوزاريوم'} 
-                    risk={calculateFusariumRisk(temperature, humidity)}
-                    info={language === 'fr' ? diseaseDescriptions.fr.fusarium : diseaseDescriptions.ar.fusarium}
-                    recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
-                  />
-                  <hr />
-                  <Maladie 
-                    name={language === 'fr' ? 'Mildiou' : 'عفن فطرية'} 
-                    risk={calculateMildiouRisk(temperature, humidity)}
-                    info={language === 'fr' ? diseaseDescriptions.fr.mildiou : diseaseDescriptions.ar.mildiou}  
-                    recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
-                  />
-                  <hr />
-                  <Maladie 
-                    name={language === 'fr' ? 'Oïdium' : 'بياض الدقيقي'} 
-                    risk={calculateOidiumRisk(temperature, humidity)}
-                    info={language === 'fr' ? diseaseDescriptions.fr.oidium : diseaseDescriptions.ar.oidium} 
-                    recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
-                  />
+                  {(() => {
+                    try {
+                      return <MaladiesList 
+                      language={language} 
+                      />;
+                    } catch (error) {
+                      console.error('Error rendering MaladiesList:', error);
+                      return <p>{language === 'fr' ? 'Erreur lors du chargement des maladies.' : 'خطأ أثناء تحميل الأمراض.'}</p>;
+                    }
+                  })()}
                 </div>
               </div>
             </div>
+
 
             {/* Meteo */}
             <div className="col-sm-12 col-xl-6">
