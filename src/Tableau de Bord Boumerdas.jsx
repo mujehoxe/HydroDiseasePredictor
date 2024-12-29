@@ -7,6 +7,13 @@ import Sidebar from './components/SidebarOffcanvas';
 import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import diseaseDescriptions from './assets/diseaseDescriptions';
+import {
+  calculatePythiumRisk,
+  calculateBotrytisRisk,
+  calculateFusariumRisk,
+  calculateMildiouRisk,
+  calculateOidiumRisk,
+} from './js/diseaseRiskCalculator';
 
 function Tableaudebord() {
   const { language } = useLanguage();
@@ -77,35 +84,35 @@ function Tableaudebord() {
                 <div>
                   <Maladie 
                     name={language === 'fr' ? 'Pythium' : 'بيثيوم'} 
-                    risk={50} 
+                    risk={calculatePythiumRisk(temperature, humidity)}
                     info={language === 'fr' ? diseaseDescriptions.fr.pythium : diseaseDescriptions.ar.pythium} 
                     recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'} 
                   />
                   <hr />
                   <Maladie 
                     name={language === 'fr' ? 'Botrytis' : 'بوتريتيس'} 
-                    risk={80} 
+                    risk={calculateBotrytisRisk(temperature, humidity)}
                     info={language === 'fr' ? diseaseDescriptions.fr.botrytis : diseaseDescriptions.ar.botrytis}
                     recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
                   />
                   <hr />
                   <Maladie 
                     name={language === 'fr' ? 'Fusarium' : 'فيوزاريوم'} 
-                    risk={60} 
+                    risk={calculateFusariumRisk(temperature, humidity)}
                     info={language === 'fr' ? diseaseDescriptions.fr.fusarium : diseaseDescriptions.ar.fusarium}
                     recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
                   />
                   <hr />
                   <Maladie 
                     name={language === 'fr' ? 'Mildiou' : 'عفن فطرية'} 
-                    risk={20} 
+                    risk={calculateMildiouRisk(temperature, humidity)}
                     info={language === 'fr' ? diseaseDescriptions.fr.mildiou : diseaseDescriptions.ar.mildiou}  
                     recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
                   />
                   <hr />
                   <Maladie 
                     name={language === 'fr' ? 'Oïdium' : 'بياض الدقيقي'} 
-                    risk={10} 
+                    risk={calculateOidiumRisk(temperature, humidity)}
                     info={language === 'fr' ? diseaseDescriptions.fr.oidium : diseaseDescriptions.ar.oidium} 
                     recommendation={language === 'fr' ? 'Recommandations pour cette maladie ici.' : 'توصيات لهذا المرض هنا.'}
                   />
