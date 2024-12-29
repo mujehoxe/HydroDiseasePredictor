@@ -31,7 +31,7 @@ function Sidebar() {
     
     // Fetch the user's farms from the API
     const fetchFarms = async () => {
-      const token = localStorage.getItem('authToken'); // Retrieve the auth token
+      const token = sessionStorage.getItem('authToken'); // Retrieve the auth token
       setLoading(true);
       setError('');
 
