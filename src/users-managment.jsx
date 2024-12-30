@@ -34,7 +34,6 @@ function UsersManagement() {
   const [newUser, setNewUser] = useState({
     fullName: '',
     email: '',
-    password: '',
     farms: '',
   });
 
@@ -125,7 +124,7 @@ function UsersManagement() {
                     <Tr>
                       <Th>#</Th>
                       <Th>
-                        {language === 'fr' ? 'utilisateur depuis' : 'المستخدم منذ'}
+                        {language === 'fr' ? 'Utilisateur depuis' : 'المستخدم منذ'}
                       </Th>
                       <Th>
                         {language === 'fr' ? 'Nom complet' : 'الاسم الكامل'}
@@ -133,9 +132,7 @@ function UsersManagement() {
                       <Th>
                         {language === 'fr' ? 'Adresse email' : 'البريد الإلكتروني'}
                       </Th>
-                      <Th>
-                        {language === 'fr' ? 'Mot de passe' : 'كلمة المرور'}
-                      </Th>
+                      
                       <Th>
                         {language === 'fr' ? 'Liste des fermes' : 'قائمة المزارع'}
                       </Th>
@@ -149,18 +146,9 @@ function UsersManagement() {
                   </Thead>
                   <Tbody>
                     {[
-                      { id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', password: 'pass123', farms: 'Farm 1', role: 'admin' },
-                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', password: 'pass123', farms: 'Farm 2', role: 'utilisateur' },
-                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', password: 'pass123', farms: 'Farm 3', role: 'admin' },
-                      { id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', password: 'pass123', farms: 'Farm 1', role: 'admin' },
-                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', password: 'pass123', farms: 'Farm 2', role: 'utilisateur' },
-                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', password: 'pass123', farms: 'Farm 3', role: 'admin' },{ id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', password: 'pass123', farms: 'Farm 1', role: 'admin' },
-                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', password: 'pass123', farms: 'Farm 2', role: 'utilisateur' },
-                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', password: 'pass123', farms: 'Farm 3', role: 'admin' },
-                      { id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', password: 'pass123', farms: 'Farm 1', role: 'admin' },
-                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', password: 'pass123', farms: 'Farm 2', role: 'utilisateur' },
-                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', password: 'pass123', farms: 'Farm 3', role: 'admin' },{ id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', password: 'pass123', farms: 'Farm 1', role: 'admin' },
-                      
+                      { id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger),ouled hedaj(oran),jsp wch nsemi hadi(alger)', role: 'admin' },
+                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger)', role: 'utilisateur' },
+                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger),ouled hedaj(oran),jsp wch nsemi hadi(alger),jsp wch nsemi hadi(alger)', role: 'admin' }
                     ].map((user) => (
                       <UserRow
                         key={user.id}
@@ -168,7 +156,6 @@ function UsersManagement() {
                         usersince={user.usersince}
                         fullName={user.fullName}
                         email={user.email}
-                        password={user.password}
                         farms={user.farms}
                         role={user.role}
                         onEdit={() => console.log(`Edit ${user.fullName}`)}
@@ -208,6 +195,7 @@ function UsersManagement() {
         </Modal.Header>
         <Modal.Body>
           <Form>
+            {/* Name Section */}
             <Form.Group className="mb-3" controlId="fullName">
               <Form.Label>{language === 'fr' ? 'Nom complet' : 'الاسم الكامل'}</Form.Label>
               <Form.Control
@@ -218,6 +206,8 @@ function UsersManagement() {
                 onChange={handleInputChange}
               />
             </Form.Group>
+
+            {/* Email Section */}
             <Form.Group className="mb-3" controlId="email">
               <Form.Label>{language === 'fr' ? 'Adresse email' : 'البريد الإلكتروني'}</Form.Label>
               <Form.Control
@@ -228,6 +218,8 @@ function UsersManagement() {
                 onChange={handleInputChange}
               />
             </Form.Group>
+
+            {/* Password Section */}
             <Form.Group className="mb-3" controlId="password">
               <Form.Label>{language === 'fr' ? 'Mot de passe' : 'كلمة المرور'}</Form.Label>
               <Form.Control
@@ -238,6 +230,8 @@ function UsersManagement() {
                 onChange={handleInputChange}
               />
             </Form.Group>
+
+            {/* role Section */}
             <Form.Group className="mb-3" controlId="role">
               <Form.Label>{language === 'fr' ? 'Selectioner le role' : 'حدد الدور'}</Form.Label>
               <Form.Select  aria-label="select role">

@@ -7,11 +7,15 @@ import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import { useLanguage } from '../LanguageContext';
 
-function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit, onDelete }) {
+function UserRow({ id, usersince, fullName, email, farms, role, onEdit, onDelete }) {
   const { language } = useLanguage();
   const [showEdit, setShowEdit] = useState(false);
   const [activeFarmAccordion, setActiveFarmAccordion] = useState(null);
-  const [showAddFarm, setShowAddFarm] = useState(false); 
+  const [showAddFarm, setShowAddFarm] = useState(false);
+
+  const [showFarmsModal, setShowFarmsModal] = useState(false);
+  const [selectedFarms, setSelectedFarms] = useState([]);
+  
   const toggleFarmAccordion = (farmIndex) => {
     setActiveFarmAccordion((prevIndex) => (prevIndex === farmIndex ? null : farmIndex));
   };
@@ -22,14 +26,24 @@ function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit
     setShowAddFarm(false);
   };
 
+  const handleShowFarms = (farms) => {
+    setSelectedFarms(farms);
+    setShowFarmsModal(true);
+  };
+
   return (
     <Tr>
       <Td>{id}</Td>
       <Td>{usersince}</Td>
       <Td>{fullName}</Td>
       <Td>{email}</Td>
-      <Td>{password}</Td>
-      <Td>{farms}</Td>
+      
+      <Td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+
+        <Button variant="secondary" size="sm" onClick={() => handleShowFarms(farms)}>
+          {language === 'fr' ? 'Voir' : 'عرض'}
+        </Button>
+      </Td>
       <Td>{role}</Td>
       <Td>
         <Button
@@ -53,71 +67,60 @@ function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Accordion defaultActiveKey={['0']} alwaysOpen>
+            <Form>
               {/* Change Name Section */}
-              <Accordion.Item eventKey="0">
-                <Accordion.Header>
-                  {language === 'fr' ? 'Changer le Nom' : 'تغيير الاسم'}
-                </Accordion.Header>
-                <Accordion.Body>
-                  <Form.Control
-                    type="text"
-                    placeholder={language === 'fr' ? 'Nouveau Nom' : 'الاسم الجديد'}
-                  />
-                  <div className="d-flex justify-content-end mt-3">
-                    <Button variant="success">
-                      {language === 'fr' ? 'Sauvegarder' : 'حفظ'}
-                    </Button>
-                  </div>
-                </Accordion.Body>
-              </Accordion.Item>
+              <Form.Group className="mb-3" controlId="changeName">
+              <Form.Label>{language === 'fr' ? 'Changer le Nom' : 'تغيير الاسم'}</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="changeName"
+                  placeholder={language === 'fr' ? 'Nouveau Nom' : 'الاسم الجديد'}
+                />
+              </Form.Group>
 
               {/* Change Email Section */}
-              <Accordion.Item eventKey="1">
-                <Accordion.Header>
-                  {language === 'fr' ? "Changer l'adresse mail" : 'تغيير عنوان البريد الإلكتروني'}
-                </Accordion.Header>
-                <Accordion.Body>
-                  <Form.Control
-                    type="text"
-                    placeholder={
-                      language === 'fr' ? 'Nouvelle adresse mail' : 'عنوان البريد الإلكتروني الجديد'
-                    }
-                  />
-                  <div className="d-flex justify-content-end mt-3">
-                    <Button variant="success">
-                      {language === 'fr' ? 'Sauvegarder' : 'حفظ'}
-                    </Button>
-                  </div>
-                </Accordion.Body>
-              </Accordion.Item>
+              <Form.Group className="mb-3" controlId="email">
+                <Form.Label>{language === 'fr' ? "Changer l'adresse mail" : 'تغيير عنوان البريد الإلكتروني'}</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="email"
+                  placeholder={
+                    language === 'fr' ? 'Nouvelle adresse mail' : 'عنوان البريد الإلكتروني الجديد'
+                  }
+                />
+              </Form.Group>
 
               {/* Change Password Section */}
-              <Accordion.Item eventKey="2">
-                <Accordion.Header>
-                  {language === 'fr' ? 'Changer le mot de passe' : 'تغيير كلمة السر'}
-                </Accordion.Header>
-                <Accordion.Body>
+              <Form.Group className="mb-3" controlId="email">
+                <Form.Label>{language === 'fr' ? 'Changer le mot de passe' : 'تغيير كلمة السر'}</Form.Label>
                   <Form.Control
                     type="text"
+                    name="password"
                     placeholder={
                       language === 'fr' ? 'Nouveau mot de passe' : 'كلمة السر الجديدة'
                     }
                   />
-                  <div className="d-flex justify-content-end mt-3">
-                    <Button variant="success">
-                      {language === 'fr' ? 'Sauvegarder' : 'حفظ'}
-                    </Button>
-                  </div>
-                </Accordion.Body>
-              </Accordion.Item>
+              </Form.Group>
+
+              {/* role Section */}
+              <Form.Group className="mb-3" controlId="role">
+                <Form.Label>{language === 'fr' ? 'Changer le role' : 'حدد الدور'}</Form.Label>
+                <Form.Select  aria-label="select role">
+                <option>{language === 'fr' ? 'Admin/Utilisateur' : 'مستخدم/مسؤول'}</option>
+                <option value="1">{language === 'fr' ? 'Utilisateur' : 'مستخدم'}</option>
+                <option value="2">{language === 'fr' ? 'Admin' : 'مسؤول'}</option>
+              </Form.Select>
+              </Form.Group>
 
               {/* Edit Farms Section */}
-              <Accordion.Item eventKey="3">
-                <Accordion.Header>
-                  {language === 'fr' ? 'Editer les fermes' : 'تعديل المزارع'}
-                </Accordion.Header>
-                <Accordion.Body>
+              <Form.Group className="mb-3" controlId="editFarm">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <Form.Label>{language === 'fr' ? 'Editer les fermes' : 'تعديل المزارع'}</Form.Label>
+                  <Button variant="primary" size="sm" onClick={() => setShowAddFarm(true)}>
+                    {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}
+                  </Button>
+                </div>
+                
                   {["Farm 1", "Farm 2", "Farm 3"].map((farmName, index) => (
                     <Card className="mb-3" key={index}>
                       <Card.Header className="d-flex justify-content-between align-items-center">
@@ -136,6 +139,8 @@ function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit
                           >
                             {language === 'fr' ? 'Supprimer' : 'حذف'}
                           </Button>
+                          
+
                         </div>
                       </Card.Header>
                       <Accordion activeKey={activeFarmAccordion === index ? '0' : null}>
@@ -156,26 +161,26 @@ function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit
                                 <option value="2">Oran</option>
                                 <option value="3">Setef</option>
                               </Form.Select>
-                              <div className="d-flex justify-content-end mt-3">
-                                <Button variant="success">
-                                  {language === 'fr' ? 'Sauvegarder' : 'حفظ'}
-                                </Button>
-                              </div>
                             </Card.Body>
                           </Accordion.Collapse>
                         </Card>
                       </Accordion>
                     </Card>
                   ))}
-                  <div className="d-flex justify-content-end mt-3">
-                    <Button variant="primary" onClick={() => setShowAddFarm(true)}>
-                      {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}
-                    </Button>
-                  </div>
-                </Accordion.Body>
-              </Accordion.Item>
-            </Accordion>
+                  
+                
+              </Form.Group>
+            </Form>
           </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEdit(false)}>
+              {language === 'fr' ? 'Annuler' : 'إلغاء'}
+            </Button>
+            <Button variant="success" onClick={() => setShowEdit(false)}>
+              {language === 'fr' ? 'Sauvegarder' : 'حفظ'}
+            </Button>
+          </Modal.Footer>
+
         </Modal>
 
         {/* Add Farm Modal */}
@@ -213,9 +218,34 @@ function UserRow({ id, usersince, fullName, email, password, farms, role, onEdit
         </Modal.Footer>
         </Modal>
 
+        <Modal show={showFarmsModal} onHide={() => setShowFarmsModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>{language === 'fr' ? 'Fermes' : 'المزارع'}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+          <ul>
+            {farms
+              .split(',')
+              .map((farm) => farm.trim())
+              .filter((farm) => farm) // Remove empty entries
+              .map((farm, index) => (
+                <li key={index}>{farm}</li>
+              ))}
+          </ul>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowFarmsModal(false)}>
+              {language === 'fr' ? 'Fermer' : 'إغلاق'}
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-        <Button variant="danger" onClick={() => onDelete(id)}>
+
+        <Button variant="danger" style={{ marginRight: '5px' }} onClick={() => onDelete(id)}>
           {language === 'fr' ? 'Supprimer' : 'حذف'}
+        </Button>
+        <Button variant="primary" >
+          {language === 'fr' ? 'Connecter API' : 'ربط API'}
         </Button>
       </Td>
     </Tr>
