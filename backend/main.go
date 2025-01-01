@@ -281,14 +281,18 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/auth/login", s.login).Methods("POST", "OPTIONS")
 
 	// Protected routes (require authentication)
-	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.getUser)).Methods("GET", "OPTIONS")
 	s.router.HandleFunc("/users/{id}/farms", s.authMiddleware(s.getUserFarms)).Methods("GET", "OPTIONS")
+
 	s.router.HandleFunc("/farms", s.authMiddleware(s.createFarm)).Methods("POST", "OPTIONS")
 	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.getFarm)).Methods("GET", "OPTIONS")
 	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.updateFarm)).Methods("PUT", "OPTIONS")
 	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE", "OPTIONS")
 	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.addCrop)).Methods("POST", "OPTIONS")
 	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET", "OPTIONS")
+
+	// Protected routes (admin only)
+	s.router.HandleFunc("/users", s.authMiddleware(s.adminMiddleware(s.getAllUsers))).Methods("GET", "OPTIONS")
+	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.adminMiddleware(s.getUser))).Methods("GET", "OPTIONS")
 
 	// Swagger documentation
 	s.router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)

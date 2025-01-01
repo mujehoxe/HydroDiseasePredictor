@@ -35,6 +35,7 @@ type User struct {
 	Email     string     `json:"email" example:"user@example.com"`
 	Name      string     `json:"name" example:"John Doe"`
 	Password  string     `json:"password,omitempty" example:"secretpassword"`
+	Role      string     `json:"type" example:"admin"` // New field
 	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
 }
 
@@ -94,6 +95,29 @@ func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "user_id", claims.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+func (s *Server) adminMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("user_id")
+		if userID == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		var user User
+		if err := s.db.First(&user, userID).Error; err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if user.Role != "admin" {
+			http.Error(w, "Forbidden: Admins only", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
 
@@ -212,4 +236,33 @@ func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(user)
+}
+
+// @Summary Get all users
+// @Description Retrieve a list of all users. Only accessible by admin users.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} SuccessResponse "List of users retrieved successfully"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Admin access required"
+// @Failure 403 {object} ErrorResponse "Forbidden - Access denied"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Security Bearer
+// @Router /users [get]
+func (s *Server) getAllUsers(w http.ResponseWriter, r *http.Request) {
+	var users []User
+	result := s.db.Select("id", "email", "name", "type", "created_at").Find(&users) // Exclude sensitive fields
+
+	if result.Error != nil {
+		http.Error(w, "Failed to fetch users: "+result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := SuccessResponse{
+		Message: "Users retrieved successfully",
+		Data:    users,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

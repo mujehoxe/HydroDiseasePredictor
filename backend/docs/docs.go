@@ -423,6 +423,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve a list of all users. Only accessible by admin users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "List of users retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/main.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Admin access required",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Access denied",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -639,6 +685,17 @@ const docTemplate = `{
                 }
             }
         },
+        "main.SuccessResponse": {
+            "description": "Success response with data",
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string",
+                    "example": "Operation successful"
+                }
+            }
+        },
         "main.User": {
             "description": "User account information",
             "type": "object",
@@ -654,6 +711,11 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "secretpassword"
+                },
+                "type": {
+                    "description": "New field",
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         }
