@@ -712,7 +712,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "secretpassword"
                 },
-                "type": {
+                "role": {
                     "description": "New field",
                     "type": "string",
                     "example": "admin"

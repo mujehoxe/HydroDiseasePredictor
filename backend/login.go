@@ -35,7 +35,7 @@ type User struct {
 	Email     string     `json:"email" example:"user@example.com"`
 	Name      string     `json:"name" example:"John Doe"`
 	Password  string     `json:"password,omitempty" example:"secretpassword"`
-	Role      string     `json:"type" example:"admin"` // New field
+	Role      string     `json:"role" example:"admin"` // New field
 	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
 }
 

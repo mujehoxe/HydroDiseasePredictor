@@ -114,7 +114,7 @@ definitions:
       password:
         example: secretpassword
         type: string
-      type:
+      role:
         description: New field
         example: admin
         type: string
