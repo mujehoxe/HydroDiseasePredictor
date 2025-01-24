@@ -78,7 +78,7 @@ function Tableaudebord() {
                   {(() => {
                     try {
                       return <MaladiesList 
-                      language={language} 
+                      language={language} temperature={temperature} humidity={humidity}
                       />;
                     } catch (error) {
                       console.error('Error rendering MaladiesList:', error);
