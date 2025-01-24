@@ -27,7 +27,7 @@ function SignIn() {
         const data = await response.json();
         console.log('Login successful:', data);
 
-        // Save the token in localStorage
+        // Save the token in sessionStorage
         sessionStorage.setItem('authToken', data.token);
         sessionStorage.setItem('user', JSON.stringify(data.user)); // Save user details
 

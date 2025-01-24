@@ -5,18 +5,18 @@ const LanguageContext = createContext();
 
 // Create a Provider Component
 export const LanguageProvider = ({ children }) => {
-  // Check localStorage for saved language or default to French ('fr')
-  const [language, setLanguage] = useState(localStorage.getItem('appLanguage') || 'fr');
+  // Check sessionStorage for saved language or default to French ('fr')
+  const [language, setLanguage] = useState(sessionStorage.getItem('appLanguage') || 'fr');
 
   const toggleLanguage = () => {
     const newLanguage = language === 'fr' ? 'ar' : 'fr';
     setLanguage(newLanguage);
-    localStorage.setItem('appLanguage', newLanguage); // Save the new language to localStorage
+    sessionStorage.setItem('appLanguage', newLanguage); // Save the new language to sessionStorage
   };
 
   useEffect(() => {
-    // Update the language from localStorage when the component mounts
-    const savedLanguage = localStorage.getItem('appLanguage');
+    // Update the language from sessionStorage when the component mounts
+    const savedLanguage = sessionStorage.getItem('appLanguage');
     if (savedLanguage) {
       setLanguage(savedLanguage);
     }

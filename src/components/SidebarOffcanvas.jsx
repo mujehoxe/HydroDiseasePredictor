@@ -73,7 +73,7 @@ function Sidebar() {
     );
 
     if (!confirmDelete) return;
-    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+    const token = sessionStorage.getItem('authToken'); // Retrieve the auth token
 
     try {
       const response = await fetch(`https://vite-project-9cea.onrender.com/api/v1/farms/${farmId}`, {

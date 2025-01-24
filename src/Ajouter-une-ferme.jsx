@@ -26,7 +26,7 @@ function Ajoutferme() {
   ];
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     if (!token) {
       setError(language === 'fr' ? 'Utilisateur non authentifié.' : 'المستخدم غير مصدق عليه.');
       return;
