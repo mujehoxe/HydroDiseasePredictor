@@ -14,7 +14,12 @@ function SignUp() {
     name: '',
     email: '',
     password: '',
+    role: '',
   });
+
+  const roles = [
+    'admin', 'farmer',
+  ];
 
   const [error, setError] = useState(null);
 
@@ -85,7 +90,7 @@ function SignUp() {
                 <label htmlFor="email">{language === 'fr' ? 'Adresse mail' : 'البريد الإلكتروني'}</label>
               </div>
 
-              <div className="form-floating mb-4">
+              <div className="form-floating mb-3">
                 <input
                   type="password"
                   className="form-control"
@@ -95,6 +100,23 @@ function SignUp() {
                   placeholder={language === 'fr' ? 'Mot de passe' : 'كلمة السر'}
                 />
                 <label htmlFor="password">{language === 'fr' ? 'Mot de passe' : 'كلمة السر'}</label>
+              </div>
+
+              <div className="form-floating mb-4">
+                <select
+                className="form-control"
+                id="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                >
+                  <option value="">{language === 'fr' ? 'Role du nouvel utilisateur' : 'دور المستخدم الجديد'}</option>
+                  {roles.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+                </select>
+                <label htmlFor="role">{language === 'fr' ? 'Role' : 'دور'}</label>
               </div>
 
               <button onClick={handleSignUp} className="btn btn-primary py-3 w-100 mb-4">
