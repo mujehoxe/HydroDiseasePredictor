@@ -43,6 +43,13 @@ function SignIn() {
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handleLogin();
+      console.log('Enter key pressed');
+    }
+  };
+
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
       <div className="container-fluid">
@@ -64,6 +71,7 @@ function SignIn() {
                   placeholder={language === 'fr' ? 'Adresse mail' : 'البريد الإلكتروني'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleKeyDown}
                 />
                 <label htmlFor="email">{language === 'fr' ? 'Adresse mail' : 'البريد الإلكتروني'}</label>
               </div>
@@ -76,6 +84,7 @@ function SignIn() {
                   placeholder={language === 'fr' ? 'Mot de passe' : 'كلمة السر'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
                 />
                 <label htmlFor="password">{language === 'fr' ? 'Mot de passe' : 'كلمة السر'}</label>
               </div>
