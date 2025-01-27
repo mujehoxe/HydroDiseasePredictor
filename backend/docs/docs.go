@@ -514,6 +514,11 @@ const docTemplate = `{
         },
         "/users/{id}/farms": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get all farms belonging to a specific user",
                 "consumes": [
                     "application/json"
