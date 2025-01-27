@@ -2,8 +2,8 @@
 const diseaseRiskCalculators = {
     pythium: (temperature, humidity) => {
       if (temperature < 15 || humidity < 60) return 0;
-      if (temperature >= 15 && temperature <= 25 && humidity >= 60 && humidity <= 80) return 50;
-      if (temperature > 25 && humidity > 80) return 90;
+      if (temperature >= 15 && temperature <= 24 && humidity >= 60 && humidity <= 80) return 50;
+      if (temperature > 24 && humidity > 80) return 90;
       else return 80;
     },
     botrytis: (temperature, humidity) => {

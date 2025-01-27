@@ -23,7 +23,7 @@ const diseasesDescriptions = {
   mildiou: {
     name: { fr: "Mildiou", ar: " البياض الزغبي" },
     description: {
-      fr: "Le Mildiou est une maladie fongique qui se manifeste par des taches jaunes sur les feuilles, suivies d'une moisissure blanche au revers. Elle affecte également les fruits et les tiges.",
+      fr: "Le Mildiou est une maladie fongique causée par le pathogène 'Bremia lactucae'. Il se manifeste par des taches jaunes sur les feuilles, suivies d'une moisissure blanche au revers. Elle affecte également les fruits et les tiges.",
       ar: "البياض الزغبي هو مرض فطري يظهر كبقع صفراء على الأوراق، يتبعها عفن أبيض على الجانب السفلي. يصيب الثمار والسيقان أيضًا.",
     },
   },
