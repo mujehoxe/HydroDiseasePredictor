@@ -467,6 +467,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Get user's farms
       tags:
       - farms

@@ -17,6 +17,10 @@ import (
 	_ "github.com/Amir-Bitam/vite-project/backend/docs"
 )
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 // @title Farm Management API
 // @version 1.0
 // @description This is a farm management server.
@@ -84,6 +88,7 @@ type Server struct {
 // @Param id path int true "User ID"
 // @Success 200 {array} Farm
 // @Failure 500 {string} string "Internal server error"
+// @Security BearerAuth
 // @Router /users/{id}/farms [get]
 func (s *Server) getUserFarms(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

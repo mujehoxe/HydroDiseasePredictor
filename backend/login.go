@@ -251,7 +251,8 @@ func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
 // @Router /users [get]
 func (s *Server) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	var users []User
-	result := s.db.Select("id", "email", "name", "type", "created_at").Find(&users) // Exclude sensitive fields
+
+	result := s.db.Select("id", "email", "name", "role", "created_at").Find(&users) // Exclude sensitive fields
 
 	if result.Error != nil {
 		http.Error(w, "Failed to fetch users: "+result.Error.Error(), http.StatusInternalServerError)
