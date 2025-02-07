@@ -30,10 +30,16 @@ const diseaseRiskCalculators = {
     return Math.max(Math.min(risk, 100), 0);
 },
     botrytis: (temperature, humidity) => {
-      if (temperature < 10 || humidity < 70) return 0;
-      if (temperature >= 10 && temperature <= 20 && humidity >= 70 && humidity <= 90) return 60;
-      if (temperature > 20 && humidity > 90) return 80;
-      else return 70;
+      let risk = 0;
+      risk = -0.00108 * Math.pow(temperature, 4) 
+           + 0.0286 * Math.pow(temperature, 3) 
+           - 0.0982 * Math.pow(temperature, 2) 
+           + 0.964 * temperature 
+           + 12.03;
+      if (humidity >= 90){
+        risk += (53-(35/(humidity + 0.65)));
+      }
+           return Math.round(risk);
     },
     fusarium: (temperature, humidity) => {
       if (temperature < 20 || humidity < 50) return 0;
