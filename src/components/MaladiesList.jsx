@@ -4,14 +4,14 @@ import { getRecommendation } from "../js/getRecommendation";
 import diseasesDescriptions from "../assets/diseaseDescriptions";
 import Maladie from "./Maladie";
 
-const MaladiesList = ({ temperature, humidity, language }) => {
+const MaladiesList = ({ temperature, humidity, dissolvedOxygen, language }) => {
   const diseases = Object.keys(diseasesDescriptions);
 
   return (
     <div>
       {diseases.map((diseaseKey, index) => {
         const normalizedKey = diseaseKey.toLowerCase();
-        const risk = diseaseRiskCalculators[normalizedKey](temperature, humidity);
+        const risk = diseaseRiskCalculators[normalizedKey](temperature, humidity, dissolvedOxygen);
         const recommendation = getRecommendation(normalizedKey, risk, language);
 
         return (

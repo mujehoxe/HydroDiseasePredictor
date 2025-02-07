@@ -11,10 +11,11 @@ export async function getWeather(city) {
     const temperature = data.current.temp_c;
     const humidity = data.current.humidity;
     const uv = data.uv;
+    const dissolvedOxygen = 1 ;
 
-    return { temperature, humidity, uv }; // Return an object with the values
+    return { temperature, humidity, uv, dissolvedOxygen }; // Return an object with the values
   } catch (error) {
     console.error('Error fetching weather data:', error);
-    return { temperature: null, humidity: null, uv: null }; // Handle errors
+    return { temperature: null, humidity: null, uv: null, dissolvedOxygen: null }; // Handle errors
   }
 }

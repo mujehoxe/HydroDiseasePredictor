@@ -4,7 +4,6 @@ import { useLanguage } from './LanguageContext';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './components/SidebarOffcanvas';
-import Maladie from './components/Maladie';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import MaladiesList from './components/MaladiesList';
 
@@ -20,7 +19,7 @@ function Tableaudebord() {
 
   const [temperature, setTemperature] = useState(null); // State for temperature
   const [humidity, setHumidity] = useState(null); // State for humidity
-
+  const [dissolvedOxygen, setDissolvedOxygen] = useState(null); 
   // Fetch the temperature when the component mounts
   useEffect(() => {
     if (address) {
@@ -28,6 +27,7 @@ function Tableaudebord() {
         console.log(data); // Check the returned object structure in the console
         setTemperature(data.temperature); // Extract the temperature field
         setHumidity(data.humidity);
+        setDissolvedOxygen(data.dissolvedOxygen);
       });
     }
   }, [address]);
@@ -78,7 +78,7 @@ function Tableaudebord() {
                   {(() => {
                     try {
                       return <MaladiesList 
-                      language={language} temperature={temperature} humidity={humidity} dissolvedOxygen={2}
+                      language={language} temperature={temperature} humidity={humidity} dissolvedOxygen={dissolvedOxygen}
                       />;
                     } catch (error) {
                       console.error('Error rendering MaladiesList:', error);
