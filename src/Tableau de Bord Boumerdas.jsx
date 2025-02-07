@@ -78,7 +78,7 @@ function Tableaudebord() {
                   {(() => {
                     try {
                       return <MaladiesList 
-                      language={language} temperature={temperature} humidity={humidity}
+                      language={language} temperature={temperature} humidity={humidity} dissolvedOxygen={2}
                       />;
                     } catch (error) {
                       console.error('Error rendering MaladiesList:', error);
@@ -98,8 +98,8 @@ function Tableaudebord() {
                   <div className="d-flex">
                     <div className="flex-grow-1">{address || 'Location not provided'}</div>
                   </div>
-                  <div className="d-flex flex-column text-center mt-5 mb-4">
-                    <h6 className="display-4 mb-0 font-weight-bold" style={{ color: '#1C2331' }}>
+                  <div className="d-flex flex-column text-center mt-2 mb-2">
+                    <h6 className="display-6 mb-0 font-weight-bold" style={{ color: '#1C2331' }}>
                       {temperature !== null ? `${temperature}°C` : 'Loading...'}
                     </h6>
                   </div>
@@ -112,6 +112,22 @@ function Tableaudebord() {
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
                         <span className="ms-1"> Humidity: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                      </div>
+                      <div>
+                        <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
+                        <span className="ms-1"> Weter temperature: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                      </div>
+                      <div>
+                        <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
+                        <span className="ms-1"> pH: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                      </div>
+                      <div>
+                        <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
+                        <span className="ms-1"> EC: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                      </div>
+                      <div>
+                        <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
+                        <span className="ms-1"> Dissolved oxygen: {2} </span>
                       </div>
                       <div>
                         <i className="fas fa-sun fa-fw" style={{ color: '#868B94' }}></i>

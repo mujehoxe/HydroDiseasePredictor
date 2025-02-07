@@ -1,11 +1,36 @@
 
 const diseaseRiskCalculators = {
-    pythium: (temperature, humidity) => {
-      if (temperature < 15 || humidity < 60) return 0;
-      if (temperature >= 15 && temperature <= 24 && humidity >= 60 && humidity <= 80) return 50;
-      if (temperature > 24 && humidity > 80) return 90;
-      else return 80;
-    },
+  pythium: (temperature, dissolvedOxygen, humidity) => {
+    let risk = 0;
+
+    // Risque lié à la température
+   /* if (temperature > 30) {
+        risk += 100; // Risque maximal
+    } else if (temperature > 25) {
+        risk += (temperature - 25) * 20; // Risque proportionnel
+    } */
+
+    if (2==2){
+      risk=dissolvedOxygen
+    } 
+    // Risque lié à l'oxygène dissous
+    /*if (dissolvedOxygen < 5) {
+        risk += 50; // Risque important si faible oxygène
+    } else {
+        risk += (5 - dissolvedOxygen) * 10; // Risque proportionnel
+    }*/
+
+    // Risque lié à l'humidité
+   /* if (humidity > 80) {
+        risk += 50; // Risque élevé si humidité élevée
+    } else if (humidity > 60) {
+        risk += (humidity - 60) * 5; // Risque proportionnel
+    }*/
+
+    // Limiter le risque à 100
+    return Math.min(risk, 100);
+    //return Math.max(Math.min(risk, 100), 0);
+},
     botrytis: (temperature, humidity) => {
       if (temperature < 10 || humidity < 70) return 0;
       if (temperature >= 10 && temperature <= 20 && humidity >= 70 && humidity <= 90) return 60;
