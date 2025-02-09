@@ -31,15 +31,18 @@ const diseaseRiskCalculators = {
 },
     botrytis: (temperature, humidity) => {
       let risk = 0;
-      risk = -0.00108 * Math.pow(temperature, 4) 
+      if (temperature < 25 || temperature >-2){
+        risk = -0.00108 * Math.pow(temperature, 4) 
            + 0.0286 * Math.pow(temperature, 3) 
            - 0.0982 * Math.pow(temperature, 2) 
            + 0.964 * temperature 
            + 12.03;
+      } else {risk = 0; }
+      
       if (humidity >= 90){
         risk += (53-(35/(humidity + 0.65)));
       }
-           return Math.round(risk);
+           return Math.round(Math.min(risk, 100));
     },
     fusarium: (temperature, humidity) => {
       if (temperature < 20 || humidity < 50) return 0;
@@ -48,10 +51,19 @@ const diseaseRiskCalculators = {
       else return 90;
     },
     mildiou: (temperature, humidity) => {
-      if (temperature < 15 || humidity < 70) return 0;
-      if (temperature >= 15 && temperature <= 25 && humidity >= 70 && humidity <= 90) return 50;
-      if (temperature > 25 && humidity > 90) return 85;
-      else return 80;
+      let risk = 0;
+      if (temperature < 24.1 || temperature >5){
+        risk = -0.0056 * Math.pow(temperature, 4) 
+        + 0.2793 * Math.pow(temperature, 3) 
+        - 4.957 * Math.pow(temperature, 2) 
+        + 40.10 * temperature 
+        - 107.19;
+      } else {risk = 0; }
+      
+      if (humidity >= 90){
+        risk += (53-(35/(humidity + 0.65)));
+      }
+           return Math.round(Math.min(risk, 100));
     },
     oidium: (temperature, humidity) => {
       if (temperature < 18 || humidity < 40) return 0;
