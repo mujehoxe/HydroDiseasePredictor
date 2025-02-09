@@ -66,10 +66,9 @@ const diseaseRiskCalculators = {
            return Math.round(Math.min(risk, 100));
     },
     oidium: (temperature, humidity) => {
-      if (temperature < 18 || humidity < 40) return 0;
-      if (temperature >= 18 && temperature <= 28 && humidity >= 40 && humidity <= 60) return 50;
-      if (temperature > 28 && humidity > 60) return 70;
-      else return 75;
+     let risk = 0;
+      risk = 100 - Math.pow((temperature-18), 2);
+     return Math.round(Math.max(risk), 0);
     },
   };
   
