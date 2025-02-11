@@ -44,7 +44,7 @@ const diseaseRiskCalculators = {
       }
            return Math.round(Math.min(risk, 100));
     },
-    fusarium: (temperature, humidity) => {
+    xanthomonas: (temperature, humidity) => {
       if (temperature < 20 || humidity < 50) return 0;
       if (temperature >= 20 && temperature <= 30 && humidity >= 50 && humidity <= 70) return 40;
       if (temperature > 30 && humidity > 70) return 70;

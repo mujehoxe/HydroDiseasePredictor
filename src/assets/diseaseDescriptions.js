@@ -13,13 +13,13 @@ const diseasesDescriptions = {
       ar: "البوتريتيس هو مرض فطري يتميز بظهور عفن رمادي على الأوراق والأزهار والثمار. يزدهر في الظروف الرطبة وسوء تهوية الهواء.",
     },
   },
-  fusarium: {
-    name: { fr: "Fusarium", ar: " فيوزاريوم" },
+  xanthomonas: {
+    name: { fr: "Tache bactérienne des feuilles", ar: "التبقع البكتيري للأوراق" },
     description: {
-      fr: "Le Fusarium est une maladie causée par un champignon qui provoque le flétrissement des plantes en obstruant leurs vaisseaux conducteurs. Les symptômes incluent un jaunissement des feuilles, un retard de croissance et une nécrose des tissus.",
-      ar: "الفيوزاريوم هو مرض ناتج عن فطر يسبب ذبول النباتات عن طريق سد الأوعية الناقلة. تشمل الأعراض اصفرار الأوراق، وتباطؤ النمو، ونخر الأنسجة.",
+      fr: "La tache bactérienne des feuilles de la laitue est causée par la bactérie *Xanthomonas campestris pv. vitians*. Elle se manifeste par l'apparition de petites lésions angulaires imbibées d'eau, qui deviennent brunes à noires avec le temps. Ces taches sont souvent bordées d'un halo jaune et peuvent fusionner, entraînant un dessèchement du feuillage. La maladie est favorisée par une humidité élevée, des éclaboussures d'eau et des températures modérées. Elle se propage principalement par les semences infectées, l'eau d'irrigation contaminée et les éclaboussures de pluie.",
+      ar: "يُسبَّب التبقع البكتيري للأوراق في الخس بواسطة البكتيريا *Xanthomonas campestris pv. vitians*. يتميز بظهور آفات صغيرة مبللة بالماء ذات شكل زاوي، تتحول تدريجيًا إلى اللون البني أو الأسود. غالبًا ما تكون هذه البقع محاطة بهالة صفراء، وقد تتحد معًا مما يؤدي إلى جفاف الأوراق. تزدهر هذه العدوى في الظروف الرطبة، وتنتقل عبر البذور المصابة، ومياه الري الملوثة، ورذاذ المطر.",
     },
-  },
+},
   mildiou: {
     name: { fr: "Mildiou", ar: " البياض الزغبي" },
     description: {

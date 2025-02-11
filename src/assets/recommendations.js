@@ -23,7 +23,7 @@ const recommendations = {
         { range: [70, 100], action: "قم بتطبيق مبيد فطري محدد." },
       ],
     },
-    fusarium: {
+    xanthomonas: {
       fr: [
         { range: [0, 60], action: null },
         { range: [60, 80], action: "Renforcer la ventilation et surveiller." },
