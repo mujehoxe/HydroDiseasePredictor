@@ -6,6 +6,8 @@ import Accordion from 'react-bootstrap/Accordion';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import { useLanguage } from '../LanguageContext';
+import FarmsList from './farmsList';
+
 
 function UserRow({ id, name, email, farms, role,password, onEdit, onDelete }) {
   const { language } = useLanguage();
@@ -120,57 +122,6 @@ function UserRow({ id, name, email, farms, role,password, onEdit, onDelete }) {
                   <option value="admin">{language === 'fr' ? 'Admin' : 'مسؤول'}</option>
                 </Form.Select>
               </Form.Group>
-
-              {/* Edit Farms Section */}
-              <Form.Group className="mb-3" controlId="editFarm">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <Form.Label>{language === 'fr' ? 'Editer les fermes' : 'تعديل المزارع'}</Form.Label>
-                  <Button variant="primary" size="sm" onClick={() => setShowAddFarm(true)}>
-                    {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}
-                  </Button>
-                </div>
-                
-                {["Farm 1", "Farm 2", "Farm 3"].map((farmName, index) => (
-                  <Card className="mb-3" key={index}>
-                    <Card.Header className="d-flex justify-content-between align-items-center">
-                      <span>{farmName}</span>
-                      <div>
-                        <Button
-                          variant="primary"
-                          className="me-2"
-                          onClick={() => toggleFarmAccordion(index)}
-                        >
-                          {language === 'fr' ? 'Editer' : 'تعديل'}
-                        </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => console.log(`Delete ${farmName}`)}
-                        >
-                          {language === 'fr' ? 'Supprimer' : 'حذف'}
-                        </Button>
-                      </div>
-                    </Card.Header>
-                    <Accordion activeKey={activeFarmAccordion === index ? '0' : null}>
-                      <Card>
-                        <Accordion.Collapse eventKey="0">
-                          <Card.Body>
-                            <Form.Control
-                              type="text"
-                              placeholder={language === 'fr' ? 'Nouveau nom de la ferme' : 'الاسم الجديد للمزرعة'}
-                            />
-                            <Form.Select className="mt-3" aria-label="Default select example">
-                              <option>{language === 'fr' ? 'Wilaya/Région' : 'الولاية/المنطقة'}</option>
-                              <option value="1">Alger</option>
-                              <option value="2">Oran</option>
-                              <option value="3">Setef</option>
-                            </Form.Select>
-                          </Card.Body>
-                        </Accordion.Collapse>
-                      </Card>
-                    </Accordion>
-                  </Card>
-                ))}
-              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -223,15 +174,7 @@ function UserRow({ id, name, email, farms, role,password, onEdit, onDelete }) {
             <Modal.Title>{language === 'fr' ? 'Fermes' : 'المزارع'}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <ul>
-              {(farms || '')
-                .split(',')
-                .map((farm) => farm.trim())
-                .filter((farm) => farm)
-                .map((farm, index) => (
-                  <li key={index}>{farm}</li>
-                ))}
-            </ul>
+            <FarmsList userId = {id}/>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowFarmsModal(false)}>
