@@ -417,6 +417,30 @@ paths:
       tags:
       - users
   /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: User deleted successfully
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Delete a user
+      tags:
+      - users
     get:
       consumes:
       - application/json
