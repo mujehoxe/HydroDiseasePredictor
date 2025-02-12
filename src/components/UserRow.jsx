@@ -224,7 +224,7 @@ function UserRow({ id, usersince, fullName, email, farms, role, onEdit, onDelete
           </Modal.Header>
           <Modal.Body>
           <ul>
-            {farms
+            {(farms || '') // Ensure farms is a string
               .split(',')
               .map((farm) => farm.trim())
               .filter((farm) => farm) // Remove empty entries

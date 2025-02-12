@@ -14,7 +14,7 @@ import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 
 import { useLanguage } from './LanguageContext';
-
+import { useNavigate } from 'react-router-dom';
 import UserRow from './components/UserRow';
 
 function UsersManagement() {
@@ -22,11 +22,11 @@ function UsersManagement() {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const handleCloseOffcanvas = () => setShowOffcanvas(false);
   const handleShowOffcanvas = () => setShowOffcanvas(true);
-
-
-
+  const token = sessionStorage.getItem('authToken');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const { language } = useLanguage();
-  const [loading] = useState(false);
   const [error] = useState('');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -45,6 +45,35 @@ function UsersManagement() {
     const { name, value } = e.target;
     setNewUser({ ...newUser, [name]: value });
   };
+
+  useEffect(() => {
+    // TEST : Fetch the list of users from the API and log it to the console
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/users', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setUsers(result.data || []);
+        } else {
+          setError('Failed to fetch users');
+        }
+      } catch (error) {
+        setError('Error fetching users');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [navigate, language]);
 
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
@@ -143,24 +172,10 @@ function UsersManagement() {
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {[
-                      { id: '001', usersince: '27/12/2024', fullName: 'Test User 1', email: 'test1@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger),ouled hedaj(oran),jsp wch nsemi hadi(alger)', role: 'admin' },
-                      { id: '002', usersince: '27/12/2024', fullName: 'Test User 2', email: 'test2@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger)', role: 'utilisateur' },
-                      { id: '003', usersince: '27/12/2024', fullName: 'Test User 3', email: 'test3@mail.com', farms: 'ouled hedaj(oran),jsp wch nsemi hadi(alger),ouled hedaj(oran),jsp wch nsemi hadi(alger),jsp wch nsemi hadi(alger)', role: 'admin' }
-                    ].map((user) => (
-                      <UserRow
-                        key={user.id}
-                        id={user.id}
-                        usersince={user.usersince}
-                        fullName={user.fullName}
-                        email={user.email}
-                        farms={user.farms}
-                        role={user.role}
-                        onEdit={() => console.log(`Edit ${user.fullName}`)}
-                        onDelete={() => console.log(`Delete ${user.fullName}`)}
-                      />
-                    ))}
-                  </Tbody>
+                  {users.map((user, index) => (
+                    <UserRow key={user.id} id={user.id} fullName={user.name} email={user.email} role={user.role} onEdit={() => console.log(`Edit ${user.name}`)} onDelete={() => console.log(`Delete ${user.name}`)} />
+                  ))}
+                </Tbody>
                 </Table>
               )}
             </div>
