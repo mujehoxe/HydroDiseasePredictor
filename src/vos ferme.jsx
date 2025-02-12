@@ -56,30 +56,7 @@ function VosFermes() {
       }
     };
 
-    // Fetch the list of users from the API and log it to the console
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/users', {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const users = await response.json();
-          console.log('Users:', users);
-        } else {
-          console.error('Failed to fetch users:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
     fetchFarms();
-    fetchUsers();
   }, [navigate, language]);
 
   const handleFarmClick = (farm) => {
