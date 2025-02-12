@@ -35,6 +35,13 @@ function UsersManagement() {
 
   // Handle user deletion
   const handleDeleteUser = async (userId) => {
+    const confirmDelete = window.confirm(
+      language === 'fr'
+        ? 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?\nCette action est irréversible.'
+        : 'هل أنت متأكد أنك تريد حذف هذا المستخدم؟\nهذا الإجراء لا رجوع فيه.'
+    );
+
+    if (!confirmDelete) return;
     try {
       // Update UI optimistically
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
