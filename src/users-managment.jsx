@@ -149,10 +149,7 @@ function UsersManagement() {
                 <Table>
                   <Thead>
                     <Tr>
-                      <Th>#</Th>
-                      <Th>
-                        {language === 'fr' ? 'Utilisateur depuis' : 'المستخدم منذ'}
-                      </Th>
+                      <Th>ID</Th>
                       <Th>
                         {language === 'fr' ? 'Nom complet' : 'الاسم الكامل'}
                       </Th>
