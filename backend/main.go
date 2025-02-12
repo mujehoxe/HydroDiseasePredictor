@@ -204,6 +204,29 @@ func (s *Server) deleteFarm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary Delete a user
+// @Description Delete a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 204 "User deleted successfully"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Security Bearer
+// @Router /users/{id} [delete]
+func (s *Server) deleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var user User
+
+	if result := s.db.First(&user, vars["id"]); result.Error != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	s.db.Delete(&user)
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // @Summary Add a crop to a farm
 // @Description Add a new crop to a specific farm
 // @Tags crops
@@ -298,7 +321,7 @@ func (s *Server) setupRoutes() {
 	// Protected routes (admin only)
 	s.router.HandleFunc("/users", s.authMiddleware(s.adminMiddleware(s.getAllUsers))).Methods("GET", "OPTIONS")
 	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.adminMiddleware(s.getUser))).Methods("GET", "OPTIONS")
-
+	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.deleteUser)).Methods("DELETE", "OPTIONS")
 	// Swagger documentation
 	s.router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 }
