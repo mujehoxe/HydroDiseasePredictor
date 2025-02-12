@@ -6,6 +6,7 @@ import './css/bootstrap.min.css';
 import './css/style.css';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
+import FarmsList from './components/FarmsList';
 
 function VosFermes() {
   const { language } = useLanguage();
@@ -13,19 +14,19 @@ function VosFermes() {
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Retrieve userId and authToken from sessionStorage
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const token = sessionStorage.getItem('authToken');
 
+  if (!user || !user.id || !token) {
+    // Redirect to login if userId or token is missing
+    navigate('/');
+    return;
+  }
+
+  const userId = user.id;
   useEffect(() => {
-    // Retrieve userId and authToken from sessionStorage
-    const user = JSON.parse(sessionStorage.getItem('user'));
-    const token = sessionStorage.getItem('authToken');
 
-    if (!user || !user.id || !token) {
-      // Redirect to login if userId or token is missing
-      navigate('/');
-      return;
-    }
-
-    const userId = user.id;
 
     // Fetch the user's farms from the API
     const fetchFarms = async () => {
@@ -112,51 +113,7 @@ function VosFermes() {
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <h3>{language === 'fr' ? 'Vos Fermes' : 'مزارعك'}</h3>
               </div>
-              <div className="text-center">
-                {loading ? (
-                  <p>{language === 'fr' ? 'Chargement...' : 'جار التحميل...'}</p>
-                ) : error ? (
-                  <p className="text-danger">{error}</p>
-                ) : farms.length > 0 ? (
-                  farms.map((farm) => (
-                    <div key={farm.id} className="mb-3">
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => handleFarmClick(farm)}
-                      >
-                        {farm.name}
-                      </button>
-                      <img
-                        src={editIcon}
-                        alt="Edit"
-                        className="ms-2"
-                        style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                        onClick={() => handleEdit(farm)}
-                      />
-                      <img
-                        src={deleteIcon}
-                        alt="Delete"
-                        className="ms-2"
-                        style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                        onClick={() => handleDelete(farm.id)}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <p>{language === 'fr' ? 'Aucune ferme trouvée.' : 'لم يتم العثور على أي مزرعة.'}</p>
-                )}
-              </div>
-              <div onClick={handleAjout} className="text-center mt-4" style={{ cursor: 'pointer' }}>
-                {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}
-                <img
-                  id="plusIcon"
-                  src={plusicon}
-                  alt="Plus icon"
-                  className="ms-2"
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                />
-              </div>
+              <FarmsList userId = {user.id} />
             </div>
           </div>
           <div className="col-12 col-md-6 d-flex">
