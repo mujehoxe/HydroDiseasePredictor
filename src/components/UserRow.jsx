@@ -7,7 +7,7 @@ import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import { useLanguage } from '../LanguageContext';
 
-function UserRow({ id, name, email, farms, role, onEdit, onDelete }) {
+function UserRow({ id, name, email, farms, role,password, onEdit, onDelete }) {
   const { language } = useLanguage();
   const [showEdit, setShowEdit] = useState(false);
   const [activeFarmAccordion, setActiveFarmAccordion] = useState(null);
