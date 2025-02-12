@@ -27,10 +27,10 @@ function UsersManagement() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [error] = useState('');
+ // const [error] = useState('');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [newUser, setNewUser] = useState({
-    fullName: '',
+  /*const [newUser, setNewUser] = useState({
+    name: '',
     email: '',
     farms: '',
   });
@@ -44,7 +44,50 @@ function UsersManagement() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewUser({ ...newUser, [name]: value });
-  };
+  }; */
+
+  const [newUser, setNewUser] = useState({
+      name: '',
+      email: '',
+      password: '',
+      role: '',
+    });
+  
+    const roles = [
+      'admin', 'farmer',
+    ];
+  
+    const [error, setError] = useState(null);
+  
+    // Handle input changes
+    const handleInputChange = (e) => {
+      const { id, value } = e.target;
+      setNewUser((prevData) => ({ ...prevData, [id]: value }));
+    };
+  
+    // Handle form submission
+    const handleAddUser = async () => {
+      try {
+        const response = await fetch('https://vite-project-9cea.onrender.com/api/v1/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newUser),
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          setError(errorData.message || 'Registration failed');
+          return;
+        }
+  
+        // If successful, navigate to the desired page
+        navigate('/');
+      } catch (err) {
+        setError('An error occurred. Please try again later.');
+      }
+    };
 
   useEffect(() => {
     // TEST : Fetch the list of users from the API and log it to the console
@@ -158,7 +201,7 @@ function UsersManagement() {
                       </Th>
                       
                       <Th>
-                        {language === 'fr' ? 'Liste des fermes' : 'قائمة المزارع'}
+                        {language === 'fr' ? 'Fermes' : 'المزارع'}
                       </Th>
                       <Th>
                         {language === 'fr' ? 'Rôle' : 'الدور'}
@@ -170,7 +213,7 @@ function UsersManagement() {
                   </Thead>
                   <Tbody>
                   {users.map((user, index) => (
-                    <UserRow key={user.id} id={user.id} fullName={user.name} email={user.email} role={user.role} onEdit={() => console.log(`Edit ${user.name}`)} onDelete={() => console.log(`Delete ${user.name}`)} />
+                    <UserRow key={user.id} id={user.id} name={user.name} email={user.email} role={user.role} onEdit={() => console.log(`Edit ${user.name}`)} onDelete={() => console.log(`Delete ${user.name}`)} />
                   ))}
                 </Tbody>
                 </Table>
@@ -206,13 +249,13 @@ function UsersManagement() {
         <Modal.Body>
           <Form>
             {/* Name Section */}
-            <Form.Group className="mb-3" controlId="fullName">
+            <Form.Group className="mb-3" controlId="name">
               <Form.Label>{language === 'fr' ? 'Nom complet' : 'الاسم الكامل'}</Form.Label>
               <Form.Control
                 type="text"
-                name="fullName"
+                name="name"
                 placeholder={language === 'fr' ? 'Entrez le nom complet' : 'أدخل الاسم الكامل'}
-                value={newUser.fullName}
+                value={newUser.name}
                 onChange={handleInputChange}
               />
             </Form.Group>
@@ -242,16 +285,17 @@ function UsersManagement() {
             </Form.Group>
 
             {/* role Section */}
-            <Form.Group className="mb-3" controlId="role">
+            <Form.Group className="mb-3" controlId="role" >
               <Form.Label>{language === 'fr' ? 'Selectioner le role' : 'حدد الدور'}</Form.Label>
-              <Form.Select  aria-label="select role">
+              <Form.Select  aria-label="select role" 
+              name="role" 
+              onChange={handleInputChange}
+              value={newUser.password}>
               <option>{language === 'fr' ? 'Admin/Utilisateur' : 'مستخدم/مسؤول'}</option>
-              <option value="1">{language === 'fr' ? 'Utilisateur' : 'مستخدم'}</option>
-              <option value="2">{language === 'fr' ? 'Admin' : 'مسؤول'}</option>
+              <option value="farmer">{language === 'fr' ? 'Utilisateur' : 'مستخدم'}</option>
+              <option value="admin">{language === 'fr' ? 'Admin' : 'مسؤول'}</option>
             </Form.Select>
             </Form.Group>
-
-
             
           </Form>
         </Modal.Body>
