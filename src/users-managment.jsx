@@ -191,6 +191,7 @@ function UsersManagement() {
                           name={user.name}
                           email={user.email}
                           farms={user.farms}
+                          password={user.password}
                           role={user.role}
                           onDelete={handleDeleteUser}
                         />
