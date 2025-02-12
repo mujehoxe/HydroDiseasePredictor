@@ -9,7 +9,7 @@ import { useLanguage } from '../LanguageContext';
 import FarmsList from './farmsList';
 
 
-function UserRow({ id, name, email, farms, role,password, onEdit, onDelete }) {
+function UserRow({ id, name, email, farms, role, password, onEdit, onDelete }) {
   const { language } = useLanguage();
   const [showEdit, setShowEdit] = useState(false);
   const [activeFarmAccordion, setActiveFarmAccordion] = useState(null);

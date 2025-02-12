@@ -20,7 +20,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/ajoutferme" element={<Ajoutferme />} />
           <Route path="/vosfermes" element={<VosFermes />} />
           <Route path="/tableaudebord" element={<Tableaudebord />} />
-          <Route path="/useersmanagment" element={<UsersManagement/>}/>
+          <Route path="/usersmanagment" element={<UsersManagement/>}/>
         </Routes>
       </Router>
     </LanguageProvider>

@@ -170,7 +170,7 @@ function UsersManagement() {
                     style={{ width: '250px' }}
                   />
                   <Button variant="primary" onClick={() => setShowAddUserModal(true)}>
-                    {language === 'fr' ? 'Ajouter un nouveau utilisateur' : 'إضافة مستخدم جديد'}
+                    {language === 'fr' ? 'Ajouter un nouvel utilisateur' : 'إضافة مستخدم جديد'}
                   </Button>
                 </div>
 
