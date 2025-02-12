@@ -227,6 +227,36 @@ func (s *Server) deleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary Update user details
+// @Description Update information about a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Param user body User true "User object"
+// @Success 200 {object} User "User updated successfully"
+// @Failure 400 {object} ErrorResponse "Invalid request payload"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Security Bearer
+// @Router /users/{id} [put]
+func (s *Server) updateUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var user User
+
+	if result := s.db.First(&user, vars["id"]); result.Error != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s.db.Save(&user)
+	json.NewEncoder(w).Encode(user)
+}
+
 // @Summary Add a crop to a farm
 // @Description Add a new crop to a specific farm
 // @Tags crops
@@ -317,6 +347,7 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE", "OPTIONS")
 	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.addCrop)).Methods("POST", "OPTIONS")
 	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET", "OPTIONS")
+	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.updateUser)).Methods("PUT", "OPTIONS")
 
 	// Protected routes (admin only)
 	s.router.HandleFunc("/users", s.authMiddleware(s.adminMiddleware(s.getAllUsers))).Methods("GET", "OPTIONS")

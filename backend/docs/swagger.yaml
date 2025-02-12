@@ -441,6 +441,42 @@ paths:
       summary: Delete a user
       tags:
       - users
+    put:
+      consumes:
+      - application/json
+      description: Update information about a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            $ref: '#/definitions/main.User'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Update user details
+      tags:
+      - farms
     get:
       consumes:
       - application/json
