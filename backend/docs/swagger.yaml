@@ -441,6 +441,32 @@ paths:
       summary: Delete a user
       tags:
       - users
+    get:
+      consumes:
+      - application/json
+      description: Get user details including their farms
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details retrieved successfully
+          schema:
+            $ref: '#/definitions/main.User'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get a user by ID
+      tags:
+      - users
     put:
       consumes:
       - application/json
@@ -476,32 +502,6 @@ paths:
       - Bearer: []
       summary: Update user details
       tags:
-      - farms
-    get:
-      consumes:
-      - application/json
-      description: Get user details including their farms
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User details retrieved successfully
-          schema:
-            $ref: '#/definitions/main.User'
-        "404":
-          description: User not found
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Get a user by ID
-      tags:
       - users
   /users/{id}/farms:
     get:
@@ -532,4 +532,9 @@ paths:
       summary: Get user's farms
       tags:
       - farms
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
