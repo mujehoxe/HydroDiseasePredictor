@@ -71,7 +71,7 @@ definitions:
       updated_at:
         example: "2024-01-01T00:00:00Z"
         type: string
-      user_id:
+      user__id:
         example: 1
         type: integer
     type: object

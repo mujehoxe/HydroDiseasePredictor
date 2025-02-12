@@ -57,7 +57,7 @@ type Farm struct {
 	Name        string     `json:"name" example:"Green Acres"`
 	Address     string     `json:"address" example:"123 Farm Lane, Kansas City, KS 66101"`
 	Size        float64    `json:"size" example:"100.5"`
-	UserID      uint       `json:"user_id" example:"1"`
+	UserID      uint       `json:"user__id" example:"1"`
 	CropTypes   []Crop     `json:"crops,omitempty"`
 	LastHarvest time.Time  `json:"last_harvest" example:"2024-01-01T00:00:00Z"`
 	Status      string     `json:"status" example:"active" enums:"active,inactive"`
@@ -94,7 +94,7 @@ func (s *Server) getUserFarms(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var farms []Farm
 
-	if result := s.db.Where("user_id = ?", vars["id"]).Preload("CropTypes").Find(&farms); result.Error != nil {
+	if result := s.db.Where("user__id = ?", vars["id"]).Preload("CropTypes").Find(&farms); result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 		return
 	}

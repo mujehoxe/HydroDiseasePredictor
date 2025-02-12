@@ -657,7 +657,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-01T00:00:00Z"
                 },
-                "user_id": {
+                "user__id": {
                     "type": "integer",
                     "example": 1
                 }
