@@ -55,7 +55,7 @@ type LoginResponse struct {
 
 // Claims represents JWT claims
 type Claims struct {
-	UserID uint   `json:"user__id"`
+	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
@@ -93,14 +93,14 @@ func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		// Add user ID to request context
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "user__id", claims.UserID)
+		ctx = context.WithValue(ctx, "user_id", claims.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
 
 func (s *Server) adminMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value("user__id")
+		userID := r.Context().Value("user_id")
 		if userID == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
