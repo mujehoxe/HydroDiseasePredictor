@@ -11,6 +11,7 @@ function UserRow({ user, id, name, email, farms, role, password, onEdit, onDelet
   const { language } = useLanguage();
   const [showFarmsModal, setShowFarmsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedFarms, setSelectedFarms] = useState(false);
 
   const handleShowFarms = (farms) => {
     setSelectedFarms(farms);

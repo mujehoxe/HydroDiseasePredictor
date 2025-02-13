@@ -10,7 +10,7 @@ import Form from 'react-bootstrap/Form';
 import { useLanguage } from '../LanguageContext';
 import { useNavigate } from 'react-router-dom';
 
-function AddUserModal({ show, handleClose, userToEdit, refreshUsers }) {
+function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
     
     const isEdit = !!userToEdit;
     const token = sessionStorage.getItem('authToken');
@@ -60,14 +60,15 @@ function AddUserModal({ show, handleClose, userToEdit, refreshUsers }) {
                 body: JSON.stringify(user)
             });
             
-            if (!response.ok) {
+            if (response.ok){
+                fetchUsers(); // Refresh users after adding/editing
+                handleClose(); // Close the modal
+            } else {
                 const errorData = await response.json();
                 setError(errorData.message || 'Operation failed');
                 return;
             }
-            
-            handleClose();
-            refreshUsers();
+    
         } catch (err) {
             console.error('Error:', err);
             setError(language === 'fr' ? 'Erreur de connexion au serveur.' : 'خطأ في الاتصال بالخادم.');

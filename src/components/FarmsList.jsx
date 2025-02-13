@@ -14,6 +14,9 @@ function FarmsList({userId}){
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const handleFarmClick = (farm) => {
+      navigate('/Tableaudebord', { state: { name: farm.name, address: farm.address } });
+    };
 
     useEffect(() => {
         // Retrieve userId and authToken from sessionStorage

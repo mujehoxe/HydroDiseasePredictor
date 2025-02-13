@@ -192,9 +192,13 @@ function UsersManagement() {
       {showAddUserModal && (
                 <AddUserModal
                     show={showAddUserModal}
-                    handleClose={() => setShowAddUserModal(false)}
+                    handleClose={() => {
+                      setShowAddUserModal(false);
+                      fetchUsers(); // Refresh the list after closing
+                    }}
                     onUserAddedOrUpdated={handleUserAddedOrUpdated}
                     userToEdit={userToEdit}
+                    fetchUsers={fetchUsers}
                 />
             )}
     </div>
