@@ -19,7 +19,9 @@ function Tableaudebord() {
 
   const [temperature, setTemperature] = useState(null); // State for temperature
   const [humidity, setHumidity] = useState(null); // State for humidity
-  const [dissolvedOxygen, setDissolvedOxygen] = useState(null); 
+  const [dissolvedOxygen, setDissolvedOxygen] = useState(null);
+  const [isOutside, setIsOutside] = useState(false); // Toggle state
+
   // Fetch the temperature when the component mounts
   useEffect(() => {
     if (address) {
@@ -31,6 +33,10 @@ function Tableaudebord() {
       });
     }
   }, [address]);
+
+  const toggleEnvironment = () => {
+    setIsOutside((prev) => !prev);
+  };
 
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
@@ -67,6 +73,18 @@ function Tableaudebord() {
         </nav>
         {/* Navbar End */}
 
+        {/* Toggle Button Start */}
+        <div className="container-fluid pt-4 px-4">
+          <div className="row g-4">
+            <div className="col-12 d-flex justify-content-center">
+              <button className="btn btn-primary" onClick={toggleEnvironment}>
+                {isOutside ? (language === 'fr' ? 'En plein champs' : 'في الهواء الطلق') : (language === 'fr' ? 'Environnement contrôlé' : 'بيئة خاضعة للرقابة')}
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* Toggle Button End */}
+
         {/* Button Start */}
         <div className="container-fluid pt-4 px-4">
           <div className="row g-4">
@@ -78,7 +96,7 @@ function Tableaudebord() {
                   {(() => {
                     try {
                       return <MaladiesList 
-                      language={language} temperature={temperature} humidity={humidity} dissolvedOxygen={dissolvedOxygen}
+                      language={language} temperature={temperature} humidity={humidity} dissolvedOxygen={dissolvedOxygen} isOutside={isOutside} 
                       />;
                     } catch (error) {
                       console.error('Error rendering MaladiesList:', error);
@@ -88,7 +106,6 @@ function Tableaudebord() {
                 </div>
               </div>
             </div>
-
 
             {/* Meteo */}
             <div className="col-sm-12 col-xl-6">
