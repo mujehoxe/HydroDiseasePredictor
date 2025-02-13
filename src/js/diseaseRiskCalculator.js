@@ -16,15 +16,15 @@ const diseaseRiskCalculators = {
     if (dissolvedOxygen < 5) {
         risk += (5 - dissolvedOxygen)*15 ; // Risquye important si faible oxygène
     } else {
-        risk += 0; // Risque proportionnel
+        risk += 0; 
     }
 
     // Risque lié à l'humidité
-    if (humidity > 80) {
-        risk += 50; // Risque élevé si humidité élevée
-    } else if (humidity > 60) {
-        risk += (humidity - 60) * 5; // Risque proportionnel
-    }
+    if (humidity > 85) {
+        risk += (humidity - 80) * 5; // Risque proportionnel
+    } else {
+      risk += 0; 
+  }
 
     // Limiter le risque entre 0 et 100
     return Math.max(Math.min(risk, 100), 0);

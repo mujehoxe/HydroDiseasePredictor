@@ -38,13 +38,13 @@ const recommendations = {
     additionalConditions: {
       humidity: {
         threshold: 85,
-        fr: "aérer la serre",
+        fr: "Aérer la serre",
         ar: "تهوية الدفيئة"
       },
       dissolvedOxygen: {
-        threshold: 5,
+        threshold: 6,
         comparison: "below",
-        fr: "oxygener la solution nutritive",
+        fr: "Oxygener la solution nutritive jusqu'à atteindre 6 ppm (mg/L) minimum",
         ar: "أكسج المحلول المغذي"
       }
     }
@@ -63,7 +63,7 @@ const recommendations = {
     additionalConditions: {
       humidity: {
         threshold: 85,
-        fr: "aérer la serre",
+        fr: "Aérer la serre",
         ar: "تهوية الدفيئة"
       }
     }
@@ -82,7 +82,7 @@ const recommendations = {
     additionalConditions: {
       humidity: {
         threshold: 85,
-        fr: "aérer la serre",
+        fr: "Aérer la serre",
         ar: "تهوية الدفيئة"
       }
     }
@@ -101,7 +101,7 @@ const recommendations = {
     additionalConditions: {
       humidity: {
         threshold: 85,
-        fr: "aérer la serre",
+        fr: "Aérer la serre",
         ar: "تهوية الدفيئة"
       }
     }
