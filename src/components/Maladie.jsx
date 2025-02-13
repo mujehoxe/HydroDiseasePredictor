@@ -63,7 +63,9 @@ function Maladie({ name, risk, info, recommendation }) {
         <Modal.Header closeButton>
           <Modal.Title>{language === 'fr' ? 'Recommandations' : 'توصيات'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{recommendation}</Modal.Body>
+        <Modal.Body className="recommendations">{Array.isArray(recommendation) && recommendation.map((rec, index) => (
+          <p key={index}>{rec}</p>
+        ))}</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseRecommendations}>
             {language === 'fr' ? 'Fermer' : 'غلق'}

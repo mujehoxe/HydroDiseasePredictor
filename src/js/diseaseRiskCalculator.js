@@ -74,7 +74,7 @@ const diseaseRiskCalculators = {
       }
            return Math.round(Math.min(risk, 100));
     },
-    oidium: (temperature, humidity) => {
+    oidium: (temperature) => {
      let risk = 0;
       risk = 100 - Math.pow((temperature-18), 2);
      return Math.round(Math.max(risk), 0);
