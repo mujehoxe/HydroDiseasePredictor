@@ -92,10 +92,6 @@ function SignIn() {
               <button onClick={handleLogin} className="btn btn-primary py-3 w-100 mb-4">
                 {language === 'fr' ? 'Se connecter' : 'تسجيل الدخول'}
               </button>
-              <p className="text-center mb-0">
-                {language === 'fr' ? "Vous n'avez pas de compte ?" : ' ليس لديك حساب؟'}{' '}
-                <a href="/signup">{language === 'fr' ? " S'inscrire" : 'إنشاء حساب '}</a>
-              </p>
             </div>
             <div className="d-flex justify-content-center">
               <a
