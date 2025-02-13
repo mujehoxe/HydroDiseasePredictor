@@ -9,7 +9,8 @@ export function getRecommendation(disease, risk, humidity, dissolvedOxygen, lang
   // Get risk-based recommendation
   for (const { range, action } of langRecommendations) {
     if (risk >= range[0] && risk < range[1] && action) {
-      allRecommendations.push(action);
+      // If action is already an array, spread it; if it's a string, make it an array item
+      allRecommendations = Array.isArray(action) ? [...action] : [action];
       break;
     }
   }

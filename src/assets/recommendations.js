@@ -1,39 +1,14 @@
-/**
- * @typedef {Object} Recommendation
- * @property {[number, number]} range - Risk range [min, max]
- * @property {string|null} action - Recommended action or null
- */
-
-/**
- * @typedef {Object} AdditionalCondition
- * @property {number} threshold - Threshold value
- * @property {string} fr - French recommendation
- * @property {string} ar - Arabic recommendation
- * @property {string} [comparison] - Comparison type ('above' or 'below')
- */
-
-/**
- * @typedef {Object} DiseaseRecommendations
- * @property {Recommendation[]} fr - French recommendations
- * @property {Recommendation[]} ar - Arabic recommendations
- * @property {Object} [additionalConditions] - Additional environmental conditions
- * @property {AdditionalCondition} [additionalConditions.humidity]
- * @property {AdditionalCondition} [additionalConditions.dissolvedOxygen]
- */
-
-/** @type {Object.<string, DiseaseRecommendations>} */
-
 const recommendations = {
   pythium: {
     fr: [
       { range: [0, 50], action: null },
-      { range: [50, 70], action: "Appliquer un traitement préventif." },
-      { range: [70, 101], action: "Appliquer un traitement curatif." },
+      { range: [50, 70], action: ["Faire le tour de la serre et retirer les plantes malades"] },
+      { range: [70, 101], action: ["Faire le tour de la serre et retirer les plantes malades"] },
     ],
     ar: [
       { range: [0, 50], action: null },
-      { range: [50, 70], action: "قم بتطبيق علاج وقائي." },
-      { range: [70, 101], action: "قم بتطبيق علاج علاجي." },
+      { range: [50, 70], action: ["تفقد الدفيئة وإزالة النباتات المصابة."] },
+      { range: [70, 101], action: ["تفقد الدفيئة وإزالة النباتات المصابة وتطبيق علاج علاجي."] },
     ],
     additionalConditions: {
       humidity: {
@@ -45,24 +20,24 @@ const recommendations = {
         threshold: 6,
         comparison: "below",
         fr: "Oxygener la solution nutritive jusqu'à atteindre 6 ppm (mg/L) minimum",
-        ar: "أكسج المحلول المغذي"
+        ar: "أكسجة المحلول المغذي حتى يصل إلى 6 جزء في المليون (ملغ/لتر) على الأقل."
       }
     }
   },
   botrytis: {
     fr: [
       { range: [0, 40], action: null },
-      { range: [40, 70], action: "Surveiller les plantes et réduire l'humidité." },
-      { range: [70, 101], action: "Appliquer un fongicide spécifique." },
+      { range: [40, 70], action: ["Faire un tour et éliminer les plants malades"] },
+      { range: [70, 101], action: ["Faire un tour et éliminer les plants malades"] },
     ],
     ar: [
       { range: [0, 40], action: null },
-      { range: [40, 70], action: "راقب النباتات وقلل الرطوبة." },
-      { range: [70, 101], action: "قم بتطبيق مبيد فطري محدد." },
+      { range: [40, 70], action: ["مراقبة النباتات وتقليل الرطوبة"] },
+      { range: [70, 101], action: ["إزالة النباتات المصابة", "تطبيق مبيد فطري مناسب"] },
     ],
     additionalConditions: {
       humidity: {
-        threshold: 85,
+        threshold: 92,
         fr: "Aérer la serre",
         ar: "تهوية الدفيئة"
       }
@@ -71,13 +46,13 @@ const recommendations = {
   xanthomonas: {
     fr: [
       { range: [0, 60], action: null },
-      { range: [60, 80], action: "Renforcer la ventilation et surveiller." },
-      { range: [80, 101], action: "Utiliser un traitement antifongique." },
+      { range: [60, 80], action: ["Désinfecter periodiquement le système"] },
+      { range: [80, 101], action: ["En cas de présence de plantes malades, desinfecter tout le système et détruire les plantes atteintes"] },
     ],
     ar: [
       { range: [0, 60], action: null },
-      { range: [60, 80], action: "عزز التهوية وراقب." },
-      { range: [80, 101], action: "استخدم علاج مضاد للفطريات." },
+      { range: [60, 80], action: ["تطهير النظام بشكل دوري"] },
+      { range: [80, 101], action: ["تطهير النظام بالكامل", "إزالة النباتات المصابة"] },
     ],
     additionalConditions: {
       humidity: {
@@ -90,13 +65,13 @@ const recommendations = {
   mildiou: {
     fr: [
       { range: [0, 30], action: null },
-      { range: [30, 60], action: "Appliquer un traitement préventif léger." },
-      { range: [60, 101], action: "Appliquer un traitement curatif." },
+      { range: [30, 60], action: ["Augmenter l'éclairage de la ferme"] },
+      { range: [60, 101], action: ["Faire un tour et éliminer les plants malades", "Augmenter l'éclairage de la ferme"] },
     ],
     ar: [
       { range: [0, 30], action: null },
-      { range: [30, 60], action: "قم بتطبيق علاج وقائي خفيف." },
-      { range: [60, 101], action: "قم بتطبيق علاج علاجي." },
+      { range: [30, 60], action: ["زيادة الإضاءة في المزرعة"] },
+      { range: [60, 101], action: ["إزالة النباتات المصابة", "زيادة الإضاءة في المزرعة"] },
     ],
     additionalConditions: {
       humidity: {
@@ -109,15 +84,14 @@ const recommendations = {
   oidium: {
     fr: [
       { range: [0, 40], action: null },
-      { range: [40, 70], action: "Utiliser un traitement préventif." },
-      { range: [70, 101], action: "Appliquer un traitement curatif." },
+      { range: [40, 70], action: ["Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage"] },
+      { range: [70, 101], action: ["Faire un tour et éliminer les plants malades", "Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage"] },
     ],
     ar: [
       { range: [0, 40], action: null },
-      { range: [40, 70], action: "استخدم علاجًا وقائيًا." },
-      { range: [70, 101], action: "قم بتطبيق علاج علاجي." },
+      { range: [40, 70], action: ["تجنب الإفراط في استخدام النيتروجين في التسميد", "ضمان إضاءة جيدة"] },
+      { range: [70, 101], action: ["إزالة النباتات المصابة", "تجنب الإفراط في استخدام النيتروجين في التسميد", "ضمان إضاءة جيدة"] },
     ],
-    // No additionalConditions for oidium as per requirements
   },
 };
 

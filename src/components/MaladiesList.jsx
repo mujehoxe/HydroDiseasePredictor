@@ -12,7 +12,7 @@ const MaladiesList = ({ temperature, humidity, dissolvedOxygen, language }) => {
       {diseases.map((diseaseKey, index) => {
         const normalizedKey = diseaseKey.toLowerCase();
         const risk = diseaseRiskCalculators[normalizedKey](temperature, humidity, dissolvedOxygen);
-        const recommendation = getRecommendation(normalizedKey, risk, humidity, dissolvedOxygen, language);
+        const recommendations = getRecommendation(normalizedKey, risk, humidity, dissolvedOxygen, language);
 
         return (
           <div key={normalizedKey}>
@@ -28,9 +28,9 @@ const MaladiesList = ({ temperature, humidity, dissolvedOxygen, language }) => {
                   ? diseasesDescriptions[normalizedKey].description.fr
                   : diseasesDescriptions[normalizedKey].description.ar
               }
-              recommendation={recommendation}
+              recommendation={recommendations}
             />
-            {index < diseases.length - 1 && <hr />} {/* Add line separator except for the last item */}
+            {index < diseases.length - 1 && <hr />}
           </div>
         );
       })}
