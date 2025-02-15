@@ -25,6 +25,17 @@ function UsersManagement() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [error, setError] = useState(null);
 
+  // Retrieve userId and authToken from sessionStorage
+  const user = JSON.parse(sessionStorage.getItem('user'));
+
+  if (!user || !user.id || !token || !user.role) {
+    // Redirect to login if userId or token is missing
+    navigate('/');
+    return;
+  } else if (user.role !== 'admin'){
+    navigate('/');
+  }
+
   // Handle user deletion
   const handleDeleteUser = async (userId) => {
     const confirmDelete = window.confirm(

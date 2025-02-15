@@ -8,6 +8,16 @@ import Offcanvas from 'react-bootstrap/Offcanvas';
 import MaladiesList from './components/MaladiesList';
 
 function Tableaudebord() {
+    // Retrieve userId and authToken from sessionStorage
+    const user = JSON.parse(sessionStorage.getItem('user'));
+    const token = sessionStorage.getItem('authToken');
+  
+    if (!user || !user.id || !token) {
+      // Redirect to login if userId or token is missing
+      navigate('/');
+      return;
+    }
+  
   const { language } = useLanguage();
   const location = useLocation();
   const { name, address } = location.state || {}; // Get farm name and address from props
