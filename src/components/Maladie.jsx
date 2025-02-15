@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import infoicone from '../imgtest/help-question-1-circle-faq-frame-help-info-mark-more-query-ques.svg';
 import Recommendationsicone from '../imgtest/group-2572.png';
-
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import { useLanguage } from '../LanguageContext';
-
-
 
 function Maladie({ name, risk, info, recommendation }) {
   const { language } = useLanguage();
