@@ -132,12 +132,6 @@ function UsersManagement() {
             <div className="col-12">
               <div className="bg-light rounded h-100 p-4">
                 <div className="mb-3 d-flex justify-content-between align-items-center">
-                  <input
-                    type="text"
-                    className="form-control me-2"
-                    placeholder={language === 'fr' ? 'Rechercher...' : 'ابحث هنا...'}
-                    style={{ width: '250px' }}
-                  />
                   <Button variant="primary" onClick={() => setShowAddUserModal(true)}>
                     {language === 'fr' ? 'Ajouter un nouvel utilisateur' : 'إضافة مستخدم جديد'}
                   </Button>
