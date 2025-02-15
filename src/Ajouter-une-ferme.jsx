@@ -5,11 +5,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
 
 function Ajoutferme() {
-  const { language } = useLanguage();
-  const navigate = useNavigate();
   const location = useLocation();
   const { state } = location;
-
+  const { userId, farm } = location.state || {};
+  const { language } = useLanguage();
+  const navigate = useNavigate();
+  
   // Determine if this is an edit or add operation
   const isEdit = state?.isEdit || false;
   const farmToEdit = state?.farm || {};
@@ -38,7 +39,6 @@ function Ajoutferme() {
     try {
       // Decode the token to get the user ID
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const userId = payload.user_id; // Extract user ID from token payload
 
       // Fetch the user's existing farms to determine the next unique ID
       const farmsResponse = await fetch(`https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`, {

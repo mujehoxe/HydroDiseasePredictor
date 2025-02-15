@@ -93,11 +93,11 @@ function FarmsList({userId}){
       };
 
       const handleEdit = (farm) => {
-        navigate('/Ajoutferme', { state: { farm, isEdit: true } });
+        navigate('/Ajoutferme', { state: { farm, isEdit: true, userId : userId } });
       };
     
       const handleAjout = () => {
-        navigate('/Ajoutferme', { state: { isEdit: false } });
+        navigate('/Ajoutferme', { state: { isEdit: false, userId : userId } });
       };
 
 

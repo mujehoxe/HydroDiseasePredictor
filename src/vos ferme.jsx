@@ -93,14 +93,6 @@ function VosFermes() {
     }
   };
 
-  const handleEdit = (farm) => {
-    navigate('/Ajoutferme', { state: { farm, isEdit: true } });
-  };
-
-  const handleAjout = () => {
-    navigate('/Ajoutferme', { state: { isEdit: false } });
-  };
-
   const handleUsersManagement = () => {
     navigate('/usersmanagment');
   };
@@ -122,7 +114,7 @@ function VosFermes() {
                   </button>
                 )}
               </div>
-              <FarmsList userId = {user.id} />
+              <FarmsList userId = {userId} />
             </div>
           </div>
           <div className="col-12 col-md-6 d-flex">
