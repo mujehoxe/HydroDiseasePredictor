@@ -2,19 +2,16 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import React, { useEffect, useState } from 'react';
 import '../css/bootstrap.min.css';
 import '../css/style.css';
-import { Table, Thead, Tbody, Tr, Th } from 'react-super-responsive-table';
 import '../css/SuperResponsiveTableStyle.css';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import { useLanguage } from '../LanguageContext';
-import { useNavigate } from 'react-router-dom';
 
 function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
     
     const isEdit = !!userToEdit;
     const token = sessionStorage.getItem('authToken');
-    const navigate = useNavigate();
     const { language } = useLanguage();
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
