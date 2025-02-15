@@ -8,8 +8,6 @@ import './css/style.css';
 import { Table, Thead, Tbody, Tr, Th } from 'react-super-responsive-table';
 import './css/SuperResponsiveTableStyle.css';
 import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Form from 'react-bootstrap/Form';
 import { useLanguage } from './LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import UserRow from './components/UserRow';
@@ -191,7 +189,6 @@ function UsersManagement() {
                       fetchUsers(); // Refresh the list after closing
                     }}
                     onUserAddedOrUpdated={handleUserAddedOrUpdated}
-                    userToEdit={userToEdit}
                     fetchUsers={fetchUsers}
                 />
             )}
