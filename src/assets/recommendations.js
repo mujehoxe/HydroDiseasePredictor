@@ -2,12 +2,12 @@ const recommendations = {
   pythium: {
     fr: [
       { range: [0, 50], action: null },
-      { range: [50, 70], action: ["Faire le tour de la serre et retirer les plantes malades"] },
-      { range: [70, 101], action: ["Faire le tour de la serre et retirer les plantes malades"] },
+      { range: [50, 70], action: ["Faire un tour et éliminer les plants malades"] },
+      { range: [70, 101], action: ["Faire un tour et éliminer les plants malades"] },
     ],
     ar: [
       { range: [0, 50], action: null },
-      { range: [50, 70], action: ["تفقد الدفيئة وإزالة النباتات المصابة."] },
+      { range: [50, 70], action: ["إزالة النباتات المصابة."] },
       { range: [70, 101], action: ["تفقد الدفيئة وإزالة النباتات المصابة وتطبيق علاج علاجي."] },
     ],
     additionalConditions: {
@@ -65,13 +65,13 @@ const recommendations = {
   mildiou: {
     fr: [
       { range: [0, 30], action: null },
-      { range: [30, 60], action: ["Augmenter l'éclairage de la ferme"] },
-      { range: [60, 101], action: ["Faire un tour et éliminer les plants malades", "Augmenter l'éclairage de la ferme"] },
+      { range: [30, 60], action: ["Assurer un bon éclairage de la ferme"] },
+      { range: [60, 101], action: ["Faire un tour et éliminer les plants malades", "Assurer un bon éclairage de la ferme"] },
     ],
     ar: [
       { range: [0, 30], action: null },
-      { range: [30, 60], action: ["زيادة الإضاءة في المزرعة"] },
-      { range: [60, 101], action: ["إزالة النباتات المصابة", "زيادة الإضاءة في المزرعة"] },
+      { range: [30, 60], action: ["ضمان إضاءة جيدة"]  },
+      { range: [60, 101], action: ["إزالة النباتات المصابة", "ضمان إضاءة جيدة"] },
     ],
     additionalConditions: {
       humidity: {
@@ -84,7 +84,7 @@ const recommendations = {
   oidium: {
     fr: [
       { range: [0, 40], action: null },
-      { range: [40, 70], action: ["Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage"] },
+      { range: [40, 70], action: ["Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage de la ferme"] },
       { range: [70, 101], action: ["Faire un tour et éliminer les plants malades", "Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage"] },
     ],
     ar: [
