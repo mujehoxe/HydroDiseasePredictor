@@ -29,7 +29,7 @@ const diseaseRiskCalculators = {
     risk=risk*0.6;
    }
     // Limiter le risque entre 0 et 100
-    return Math.max(Math.min(risk, 100), 0);
+    return Math.round(Math.max(Math.min(risk, 100), 0));
 },
     botrytis: (temperature, humidity, dissolvedOxygen, isOutside) => {
       let risk = 0;
@@ -47,7 +47,7 @@ const diseaseRiskCalculators = {
       if (isOutside==false){
         risk=risk*0.6;
        }
-           return Math.round(Math.min(risk, 100));
+           return Math.round(Math.max(Math.min(risk, 100), 0));
     },
     xanthomonas: (temperature, humidity, dissolvedOxygen, isOutside) => {
       let risk = 0;
@@ -65,7 +65,7 @@ const diseaseRiskCalculators = {
       if (isOutside==false){
         risk=risk*0.6;
        }
-           return Math.round(Math.min(risk, 100));
+       return Math.round(Math.max(Math.min(risk, 100), 0));
     },
     mildiou: (temperature, humidity, dissolvedOxygen, isOutside) => {
       let risk = 0;
@@ -83,7 +83,7 @@ const diseaseRiskCalculators = {
       if (isOutside==false){
         risk=risk*0.6;
        }
-           return Math.round(Math.min(risk, 100));
+       return Math.round(Math.max(Math.min(risk, 100), 0));
     },
     oidium: (temperature, humidity, dissolvedOxygen, isOutside) => {
      let risk = 0;
@@ -91,7 +91,7 @@ const diseaseRiskCalculators = {
       if (isOutside==false){
       risk=risk*0.6;
      }
-     return Math.round(Math.max(risk), 0);
+     return Math.round(Math.max(Math.min(risk, 100), 0));
     },
   };
   
