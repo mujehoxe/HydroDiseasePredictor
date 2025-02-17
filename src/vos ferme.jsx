@@ -121,11 +121,6 @@ function VosFermes() {
             <div className="bg-light rounded p-4 my-4 mx-3 w-100">
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <h3>{language === 'fr' ? 'Vos Fermes' : 'مزارعك'}</h3>
-                {user?.role === 'admin' && (
-                  <button className="btn btn-primary" onClick={handleUsersManagement}>
-                    {language === 'fr' ? 'Gestion des utilisateurs' : 'إدارة المستخدمين'}
-                  </button>
-                )}
               </div>
               <FarmsList userId={userId} />
             </div>
