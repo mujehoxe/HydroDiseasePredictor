@@ -15,10 +15,9 @@ function Sidebar() {
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-   // Retrieve userId and authToken from sessionStorage
-   const user = JSON.parse(sessionStorage.getItem('user'));
-   const token = sessionStorage.getItem('authToken');
+  // Retrieve userId and authToken from sessionStorage
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const token = sessionStorage.getItem('authToken');
 
    if (!user || !user.id || !token) {
      // Redirect to login if userId or token is missing
@@ -27,6 +26,11 @@ function Sidebar() {
    }
 
    const userId = user.id; 
+
+// Handle clicking "Vos Fermes" (Navigate to /vosfermes)
+const handleVosFermesClick = () => {
+  navigate('/vosfermes');
+};
 
   useEffect(() => {
    
@@ -121,64 +125,21 @@ function Sidebar() {
           </h3>
         </div>
         <nav className="navbar bg-light navbar-light">
-        <div className="navbar-nav w-100">
+        <ul className="navbar-nav w-100">
                {user?.role === 'admin' && (
-                  <Dropdown className="nav-item nav-link " onClick={handleUsersManagement} >
+                  <li className="nav-item nav-link " onClick={handleUsersManagement} >
                     {language === 'fr' ? 'Gestion des utilisateurs' : 'إدارة المستخدمين'}
-                  </Dropdown>
+                  </li>
                 )}
 
-              <Dropdown className="nav-item nav-link ">
-              <Dropdown.Toggle
+              <li className="nav-item nav-link "
                 variant="link"
                 id="dropdown-basic"
-                className="w-100 d-flex justify-content-between align-items-center"
-                style={{ textDecoration: 'none', outline: 'none', boxShadow: 'none', border: 'none', padding: '0.5rem' }} 
+                onClick={handleVosFermesClick}
               >
                 {language === 'fr' ? 'Vos fermes' : 'مزارعكم'}
-              </Dropdown.Toggle>
-
-                <Dropdown.Menu className="bg-transparent border-0">
-                {farms.length > 0 ? (
-                  farms.map((farm) => (
-                  <Dropdown.Item 
-                  key={farm.id} 
-                  onClick={() => handleFarmClick(farm)} 
-                  className="dropdown-item">{farm.name}
-                    <img
-                      src={editIcon}
-                      alt="Edit"
-                      className="ms-2"
-                      style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent the event from bubbling up
-                        handleEdit(farm);
-                      }}
-                    />
-                    <img
-                      src={deleteIcon}
-                      alt="Delete"
-                      className="ms-2"
-                      style={{ width: '15px', height: '15px', cursor: 'pointer' }}
-                      onClick={() => handleDelete(farm.id)}
-                    />
-                  </Dropdown.Item>
-                ))
-              ) : (
-                <p>{language === 'fr' ? 'Aucune ferme trouvée.' : 'لم يتم العثور على أي مزرعة.'}</p>
-              )}
-                  <Dropdown.Item onClick={handleAjout} className="dropdown-item" >
-                    <img
-                      src={plusicone}
-                      alt="Plus icon"
-                      className="me-2"
-                      style={{ width: '16px', height: '16px' }}
-                    />
-                    {language === 'fr' ? 'Ajouter une ferme' : 'أضف مزرعة'}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </div>
+              </li>
+            </ul>
         </nav>
         <div className="d-flex justify-content-center mt-auto mb-3">
       <a onClick={toggleLanguage} className="text-black fw-bold text-decoration-underline" style={{ fontSize: '16px', cursor: 'pointer' }}>{language === 'fr' ? 'العربية' : 'Français'}</a>
