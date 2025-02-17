@@ -1,6 +1,6 @@
 import recommendations from "../assets/recommendations";
 
-export function getRecommendation(disease, risk, humidity, dissolvedOxygen, language = "fr") {
+export function getRecommendation(disease, risk, humidity, dissolvedOxygen, language) {
   const diseaseRecommendations = recommendations[disease];
   const langRecommendations = diseaseRecommendations[language];
   
