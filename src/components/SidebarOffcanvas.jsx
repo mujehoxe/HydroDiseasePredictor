@@ -107,6 +107,10 @@ function Sidebar() {
     navigate('/Ajoutferme', { state: { isEdit: false, userId : userId } });
   };
 
+  const handleUsersManagement = () => {
+    navigate('/usersmanagment');
+  };
+
   return (
     <>
       {/* Sidebar for large screens */}
@@ -169,7 +173,11 @@ function Sidebar() {
                 </Dropdown.Menu>
               </Dropdown>
 
-              
+              {user?.role === 'admin' && (
+                  <button className="nav-item nav-link " onClick={handleUsersManagement} >
+                    {language === 'fr' ? 'Gestion des utilisateurs' : 'إدارة المستخدمين'}
+                  </button>
+                )}
             </div>
         </nav>
         <div className="d-flex justify-content-center mt-auto mb-3">
