@@ -101,7 +101,7 @@ function Tableaudebord() {
             {/* Maladies */}
             <div className="col-sm-12 col-xl-6">
               <div className="bg-light rounded h-100 p-4">
-                <h6 className="mb-4">{language === 'fr' ? 'Maladies :' : 'الأمراض :'}</h6>
+                <h6 className="mb-4" style={{ textAlign: language === 'ar' ? 'right' : 'left' }}>{language === 'fr' ? 'Maladies' : 'الأمراض'}</h6>
                 <div>
                   {(() => {
                     try {
@@ -120,7 +120,7 @@ function Tableaudebord() {
             {/* Meteo */}
             <div className="col-sm-12 col-xl-6">
               <div className="bg-light rounded h-100 p-4">
-                <h6 className="mb-4">{language === 'fr' ? 'Meteo :' : 'تقرير الطقس :'}</h6>
+                <h6 className="mb-4" style={{ textAlign: language === 'ar' ? 'right' : 'left' }}>{language === 'fr' ? 'Meteo' : 'تقرير الطقس'}</h6>
                 <div>
                   <div className="d-flex">
                     <div className="flex-grow-1">{address || 'Location not provided'}</div>
@@ -134,31 +134,31 @@ function Tableaudebord() {
                     <div className="flex-grow-1" style={{ fontSize: '1rem' }}>
                       <div>
                         <i className="fas fa-wind fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> 40 km/h </span>
+                        <span className="ms-1"> {language === 'fr' ? 'Vent' : 'سرعة الرياح'} 0 km/h </span>
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> Humidity: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                        <span className="ms-1"> {language === 'fr' ? 'Humidité ambiante' : 'الرطوبة الجوية'} : {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> Weter temperature: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                        <span className="ms-1"> {language === 'fr' ? 'Température de l\'eau' : 'درجة حرارة الماء'} : {humidity !== null ? `${temperature}°C` : 'Loading...'} </span>
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> pH: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                        <span className="ms-1"> pH: {7} </span>
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> EC: {humidity !== null ? `${humidity}%` : 'Loading...'} </span>
+                        <span className="ms-1"> {language === 'fr' ? 'EC' : 'التوصيلية الكهربائية'} : {1.5} </span>
                       </div>
                       <div>
                         <i className="fas fa-tint fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> Dissolved oxygen: {2} </span>
+                        <span className="ms-1"> {language === 'fr' ? 'Oxygène dissout' : 'الأوكسجين المذاب'} : {2} </span>
                       </div>
                       <div>
                         <i className="fas fa-sun fa-fw" style={{ color: '#868B94' }}></i>
-                        <span className="ms-1"> UV index: </span>
+                        <span className="ms-1"> {language === 'fr' ? 'Index UV' : 'مؤشر الأشعة فوق البنفسجية'} : </span>
                       </div>
                     </div>
                   </div>

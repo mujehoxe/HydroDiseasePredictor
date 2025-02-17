@@ -32,7 +32,7 @@ function Maladie({ name, risk, info, recommendation }) {
           />
         </div>
         <div>
-          Risques : {risk}% {/* Risk percentage as a prop */}
+        Risque : {risk}% {/* Risk percentage as a prop */}
           <img
             src={Recommendationsicone}
             className="ms-2"
