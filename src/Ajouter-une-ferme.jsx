@@ -120,7 +120,7 @@ function Ajoutferme() {
                 id="farmName"
                 placeholder={language === 'fr' ? 'Nom de la ferme' : 'اسم المزرعة'}
                 value={farmName}
-                onChange={(e) => setFarmName(e.target.value)}
+                onChange={(e) => setFarmName(e.target.value.trimStart())}
               />
               <label htmlFor="farmName">{language === 'fr' ? 'Nom de la ferme' : 'اسم المزرعة'}</label>
             </div>

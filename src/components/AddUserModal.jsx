@@ -37,8 +37,11 @@ function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
 
     const handleInputChange = (e) => {
         const { id, value } = e.target;
-        setUser((prevData) => ({ ...prevData, [id]: value }));
-    };
+        setFormData((prevData) => ({
+          ...prevData,
+          [id]: id === 'name' ? value.trimStart() : value.trim(),
+        }));
+      };
 
     const handleSubmit = async () => {
         try {

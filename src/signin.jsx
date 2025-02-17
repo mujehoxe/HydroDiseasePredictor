@@ -70,7 +70,7 @@ function SignIn() {
                   id="email"
                   placeholder={language === 'fr' ? 'Adresse mail' : 'البريد الإلكتروني'}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.trim())}
                   onKeyDown={handleKeyDown}
                 />
                 <label htmlFor="email">{language === 'fr' ? 'Adresse mail' : 'البريد الإلكتروني'}</label>
@@ -83,7 +83,7 @@ function SignIn() {
                   id="password"
                   placeholder={language === 'fr' ? 'Mot de passe' : 'كلمة السر'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value.trimStart())}
                   onKeyDown={handleKeyDown}
                 />
                 <label htmlFor="password">{language === 'fr' ? 'Mot de passe' : 'كلمة السر'}</label>
