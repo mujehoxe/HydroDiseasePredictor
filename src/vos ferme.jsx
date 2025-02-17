@@ -7,6 +7,8 @@ import FarmsList from './components/FarmsList';
 import diseaseRiskCalculators from "./js/diseaseRiskCalculator";
 import { getRecommendation } from "./js/getRecommendation";
 import { getWeather } from './js/weatherAPI';
+import Offcanvas from 'react-bootstrap/Offcanvas';
+import Sidebar from './components/SidebarOffcanvas';
 
 function VosFermes() {
   const { language } = useLanguage();
@@ -16,6 +18,11 @@ function VosFermes() {
   const [summaries, setSummaries] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+    // State to manage the Offcanvas visibility
+    const [showOffcanvas, setShowOffcanvas] = useState(false);
+    const handleCloseOffcanvas = () => setShowOffcanvas(false);
+    const handleShowOffcanvas = () => setShowOffcanvas(true);
 
   // Retrieve userId and authToken from sessionStorage
   const user = JSON.parse(sessionStorage.getItem('user'));
@@ -73,6 +80,38 @@ function VosFermes() {
 
   return (
     <div className="container-xxl position-relative bg-white d-flex p-0">
+            {/* Sidebar Start */}
+            <div className="desktop-sidebar">
+        <Sidebar />
+      </div>
+      
+      {/* Sidebar End */}
+
+      {/* Content Start */}
+      <div className="content">
+        {/* Navbar Start */}
+        <nav className="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+          <a 
+            href="#" 
+            className="sidebar-toggler flex-shrink-0 d-lg-none" 
+            onClick={handleShowOffcanvas}
+          >
+            <i className="fa fa-bars"></i>
+          </a>
+          <div
+            style={{
+              display: 'flex',
+              color: 'black',
+              fontSize: '25px',
+              height: '64px',
+              alignItems: 'center',
+              paddingLeft: '20px',
+            }}
+          >
+            {language === 'fr' ? 'Tableau de Bord' : 'لوحة مراقبة'}
+          </div>
+        </nav>
+        {/* Navbar End */}
       <div
         className="container-fluid pt-4 px-4 d-flex justify-content-center align-items-center"
         style={{ minHeight: '100vh' }}
@@ -114,7 +153,18 @@ function VosFermes() {
             </div>
           </div>
         </div>
+        <Offcanvas
+          show={showOffcanvas}
+          onHide={handleCloseOffcanvas}
+          className="custom-offcanvas"
+        >
+          <Offcanvas.Header closeButton className="d-flex justify-content-end" />
+          <Offcanvas.Body>
+            <Sidebar />
+          </Offcanvas.Body>
+        </Offcanvas>
       </div>
+    </div>
     </div>
   );
 }
