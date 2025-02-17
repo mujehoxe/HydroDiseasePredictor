@@ -37,13 +37,33 @@ function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
 
     const handleInputChange = (e) => {
         const { id, value } = e.target;
-        setFormData((prevData) => ({
+        setUser((prevData) => ({
           ...prevData,
           [id]: id === 'name' ? value.trimStart() : value.trim(),
         }));
-      };
+    };
 
+    const isValidEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+    
     const handleSubmit = async () => {
+        // FORM VALIDATION ONLY IF isEdit === false
+        if (!isEdit) {
+            const { name, email, password, role } = user;
+            
+            if (!name || !email || !password || !role) {
+                setError(language === 'fr' ? 'Tous les champs sont obligatoires.' : 'جميع الحقول مطلوبة.');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                setError(language === 'fr' ? 'Veuillez entrer une adresse e-mail valide.' : 'يرجى إدخال بريد إلكتروني صالح.');
+                return;
+            }
+        }
+
         try {
             setLoading(true);
             const url = isEdit
@@ -60,7 +80,7 @@ function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
                 body: JSON.stringify(user)
             });
             
-            if (response.ok){
+            if (response.ok) {
                 fetchUsers(); // Refresh users after adding/editing
                 handleClose(); // Close the modal
             } else {
@@ -101,7 +121,7 @@ function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
                     <Form.Group className="mb-3" controlId="role">
                         <Form.Label>{language === 'fr' ? 'Sélectionner le rôle' : 'حدد الدور'}</Form.Label>
                         <Form.Select aria-label="select role" onChange={handleInputChange} value={user.role}>
-                            <option>{language === 'fr' ? 'Admin/Utilisateur' : 'مستخدم/مسؤول'}</option>
+                            <option value="" disabled>{language === 'fr' ? 'Admin/Utilisateur' : 'مستخدم/مسؤول'}</option>
                             <option value="user">{language === 'fr' ? 'Utilisateur' : 'مستخدم'}</option>
                             <option value="admin">{language === 'fr' ? 'Admin' : 'مسؤول'}</option>
                         </Form.Select>
