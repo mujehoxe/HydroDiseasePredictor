@@ -122,6 +122,12 @@ function Sidebar() {
         </div>
         <nav className="navbar bg-light navbar-light">
         <div className="navbar-nav w-100">
+               {user?.role === 'admin' && (
+                  <Dropdown className="nav-item nav-link " onClick={handleUsersManagement} >
+                    {language === 'fr' ? 'Gestion des utilisateurs' : 'إدارة المستخدمين'}
+                  </Dropdown>
+                )}
+
               <Dropdown className="nav-item nav-link ">
               <Dropdown.Toggle
                 variant="link"
@@ -172,12 +178,6 @@ function Sidebar() {
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
-
-              {user?.role === 'admin' && (
-                  <button className="nav-item nav-link " onClick={handleUsersManagement} >
-                    {language === 'fr' ? 'Gestion des utilisateurs' : 'إدارة المستخدمين'}
-                  </button>
-                )}
             </div>
         </nav>
         <div className="d-flex justify-content-center mt-auto mb-3">
