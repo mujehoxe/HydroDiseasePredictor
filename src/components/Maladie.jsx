@@ -18,6 +18,10 @@ function Maladie({ name, risk, info, recommendation }) {
   const handleCloseRecommendations = () => setShowRecommendations(false);
   const handleShowRecommendations = () => setShowRecommendations(true);
 
+  const noRecommendationText = language === 'fr' 
+  ? 'Pas de recommandations pour le moment' 
+  : 'لا توجد توصيات في الوقت الحالي';
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center">
@@ -60,11 +64,14 @@ function Maladie({ name, risk, info, recommendation }) {
         <Modal.Header closeButton>
           <Modal.Title>{language === 'fr' ? 'Recommandations' : 'توصيات'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="recommendations">{Array.isArray(recommendation) && recommendation.length > 0 && (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {recommendation.map((rec, index) => (
-              <li key={index} style={{ marginBottom: '8px' }}>{rec}</li>
-            ))} </ul>
+        <Modal.Body className="recommendations" style={{ textAlign: language === 'ar' ? 'right' : 'left' }}>{Array.isArray(recommendation) && recommendation.length > 0 ? (
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {recommendation.map((rec, index) => (
+                <li key={index} style={{ marginBottom: '8px' }}>{rec}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>{noRecommendationText}</p>
           )}
             </Modal.Body>
         <Modal.Footer>
