@@ -85,7 +85,7 @@ const recommendations = {
     fr: [
       { range: [0, 40], action: null },
       { range: [40, 70], action: ["Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage de la ferme"] },
-      { range: [70, 101], action: ["Faire un tour et éliminer les plants malades", "Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage"] },
+      { range: [70, 101], action: ["Faire un tour et éliminer les plants malades", "Éviter un excès d'azote dans la fertilisation", "Assurer un bon éclairage de la ferme"] },
     ],
     ar: [
       { range: [0, 40], action: null },
