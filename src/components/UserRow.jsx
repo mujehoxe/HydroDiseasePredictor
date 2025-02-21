@@ -3,7 +3,7 @@ import { Table, Tr, Td } from 'react-super-responsive-table';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import { useLanguage } from '../LanguageContext';
-import FarmsList from './farmsList';
+import FarmsList from './FarmsList';
 import AddUserModal from './AddUserModal';
 
 
