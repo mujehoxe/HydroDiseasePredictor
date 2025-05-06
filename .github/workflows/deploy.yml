@@ -68,17 +68,43 @@ jobs:
           echo 'set PORT=8080' >> deploy/start-app.bat
           echo 'set JWT_SECRET=your_secret_here' >> deploy/start-app.bat
           echo 'cd /d "%~dp0"' >> deploy/start-app.bat
-          echo 'echo Starting application on port %PORT%...' >> deploy/start-app.bat
-          echo 'app.exe > app.log 2>&1' >> deploy/start-app.bat
+          echo 'echo %DATE% %TIME% - Starting application on port %PORT%... >> app.log' >> deploy/start-app.bat
+          echo 'echo Current directory: %CD% >> app.log' >> deploy/start-app.bat
+          echo 'echo Environment variables: >> app.log' >> deploy/start-app.bat
+          echo 'echo PORT=%PORT% >> app.log' >> deploy/start-app.bat
+          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/start-app.bat
+          echo 'echo Files in directory: >> app.log' >> deploy/start-app.bat
+          echo 'dir >> app.log' >> deploy/start-app.bat
+          echo 'echo. >> app.log' >> deploy/start-app.bat
+          echo 'echo Starting app.exe... >> app.log' >> deploy/start-app.bat
+          echo 'app.exe >> app.log 2>&1' >> deploy/start-app.bat
+          echo 'if %ERRORLEVEL% NEQ 0 (' >> deploy/start-app.bat
+          echo '  echo %DATE% %TIME% - ERROR: Application failed to start with code %ERRORLEVEL% >> app.log' >> deploy/start-app.bat
+          echo ')' >> deploy/start-app.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/start-app.bat
 
           # Create a service restart script
           echo '@echo on' > deploy/restart-service.bat
+          echo 'echo %DATE% %TIME% - Restarting application... >> app.log' >> deploy/restart-service.bat
           echo 'taskkill /F /IM app.exe /T' >> deploy/restart-service.bat
+          echo 'echo %DATE% %TIME% - Stopped previous instance >> app.log' >> deploy/restart-service.bat
           echo 'timeout /t 2' >> deploy/restart-service.bat
           echo 'cd /d "%~dp0"' >> deploy/restart-service.bat
-          echo 'start /b app.exe > app.log 2>&1' >> deploy/restart-service.bat
+          echo 'echo %DATE% %TIME% - Starting application in background... >> app.log' >> deploy/restart-service.bat
+          echo 'echo Current directory: %CD% >> app.log' >> deploy/restart-service.bat
+          echo 'echo Environment variables: >> app.log' >> deploy/restart-service.bat
+          echo 'echo PORT=%PORT% >> app.log' >> deploy/restart-service.bat
+          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/restart-service.bat
+          echo 'start /b cmd /c "app.exe >> app.log 2>&1"' >> deploy/restart-service.bat
+          echo 'echo %DATE% %TIME% - Started application process >> app.log' >> deploy/restart-service.bat
+          echo 'timeout /t 5' >> deploy/restart-service.bat
+          echo 'echo %DATE% %TIME% - Checking if application is running... >> app.log' >> deploy/restart-service.bat
+          echo 'netstat -ano | findstr :8080 >> app.log' >> deploy/restart-service.bat
+          echo 'if %ERRORLEVEL% NEQ 0 (' >> deploy/restart-service.bat
+          echo '  echo %DATE% %TIME% - WARNING: Application may not be running on port 8080 >> app.log' >> deploy/restart-service.bat
+          echo '  echo Check application log for errors >> app.log' >> deploy/restart-service.bat
+          echo ')' >> deploy/restart-service.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/restart-service.bat
 
@@ -205,6 +231,20 @@ jobs:
           # Convert PowerShell script to Windows line endings
           sed -i 's/$/\r/' deploy/setup-service.ps1
 
+          # Create a direct-run batch file for debugging
+          echo '@echo on' > deploy/direct-run.bat
+          echo 'set PORT=8080' >> deploy/direct-run.bat
+          echo 'set JWT_SECRET=your_secret_here' >> deploy/direct-run.bat
+          echo 'cd /d "%~dp0"' >> deploy/direct-run.bat
+          echo 'echo Running app.exe directly with console output...' >> deploy/direct-run.bat
+          echo 'echo.' >> deploy/direct-run.bat
+          echo 'app.exe' >> deploy/direct-run.bat
+          echo 'echo.' >> deploy/direct-run.bat
+          echo 'echo Application exited with code %ERRORLEVEL%' >> deploy/direct-run.bat
+          echo 'pause' >> deploy/direct-run.bat
+          # Convert to Windows line endings
+          sed -i 's/$/\r/' deploy/direct-run.bat
+
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
@@ -252,6 +292,10 @@ jobs:
           # Copy diagnostics.bat
           echo "Copying diagnostics.bat..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          
+          # Copy direct-run.bat
+          echo "Copying direct-run.bat..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/direct-run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
@@ -318,6 +362,10 @@ jobs:
           # Copy diagnostics.bat
           echo "Copying diagnostics.bat..."
           scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          
+          # Copy direct-run.bat
+          echo "Copying direct-run.bat..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/direct-run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
           # Create a file list
           echo "Listing all files to be copied to build directory..."
