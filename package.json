@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "chmod +x ./update-api-urls.sh && ./update-api-urls.sh",
     "build": "vite build",
+    "postbuild": "cp -r dist backend/build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

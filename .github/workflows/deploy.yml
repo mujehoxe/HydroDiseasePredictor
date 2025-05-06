@@ -23,8 +23,15 @@ jobs:
       - name: Install Node dependencies
         run: npm install
 
+      - name: Update API URLs to local
+        run: |
+          chmod +x ./update-api-urls.sh
+          ./update-api-urls.sh
+
       - name: Build frontend
         run: npm run build
+        env:
+          VITE_API_URL: "/api/v1" # Use local API path for production
 
       # Setup Go for backend
       - name: Setup Go
