@@ -55,58 +55,62 @@ jobs:
           echo 'set JWT_SECRET=%JWT_SECRET%' >> deploy/start-app.bat
           echo 'app.exe' >> deploy/start-app.bat
 
-      # Deploy using WinSCP/SFTP approach
-      - name: Install WinSCP
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
+      # Deploy via SSH with rsync
+      - name: Install rsync
+        run: sudo apt-get install -y rsync openssh-client sshpass
 
-      - name: Deploy to Windows server
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          username: ${{ secrets.SSH_USERNAME }}
-          server: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          local_path: "./deploy/*"
-          remote_path: ${{ secrets.DEPLOY_PATH }}
-          sftp_only: true
-          password: ${{ secrets.SSH_PASSWORD }}
-
-      # Alternative deployment if SFTP doesn't work
-      - name: Deploy with SCP (alternative)
-        if: ${{ failure() }}
+      - name: Setup SSH key
         run: |
-          echo "Trying alternative SCP deployment..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
         continue-on-error: true
 
-      # Use PowerShell remoting or another Windows-friendly approach for remote execution
+      - name: Deploy with rsync
+        run: |
+          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            rsync -avz -e "ssh -p ${{ secrets.SSH_PORT }}" deploy/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          else
+            sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no" deploy/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          fi
+        continue-on-error: true
+
+      # Fallback to pure SCP if rsync fails
+      - name: Fallback to SCP
+        if: ${{ failure() }}
+        run: |
+          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            scp -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          else
+            sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          fi
+        continue-on-error: true
+
+      # Setup Windows Server
       - name: Setup on Windows server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
 
-            # Set environment variables
-            setx PORT "${{ secrets.PORT }}"
-            setx JWT_SECRET "${{ secrets.JWT_SECRET }}"
+            # Set environment variables (Windows command)
+            powershell -Command "& {[Environment]::SetEnvironmentVariable('PORT', '${{ secrets.PORT }}', 'Machine'); [Environment]::SetEnvironmentVariable('JWT_SECRET', '${{ secrets.JWT_SECRET }}', 'Machine')}"
 
-            # Create a Windows service for the Go app using NSSM
-            # First check if NSSM is available
-            if (Test-Path "C:\Program Files\nssm\nssm.exe") {
-              # Stop service if it exists
-              sc stop GoAppService
-              # Create/update service
-              "C:\Program Files\nssm\nssm.exe" install GoAppService "${{ secrets.DEPLOY_PATH }}\app.exe"
-              "C:\Program Files\nssm\nssm.exe" set GoAppService AppDirectory "${{ secrets.DEPLOY_PATH }}"
-              "C:\Program Files\nssm\nssm.exe" set GoAppService AppEnvironmentExtra "PORT=${{ secrets.PORT }}" "JWT_SECRET=${{ secrets.JWT_SECRET }}"
-              # Start service
-              sc start GoAppService
+            # Stop existing service if running (using sc command for Windows)
+            powershell -Command "& {Stop-Service -Name GoAppService -ErrorAction SilentlyContinue}"
+
+            # Create a Windows service using sc (or fallback to running the batch file)
+            powershell -Command "& {if(Get-Command nssm -ErrorAction SilentlyContinue) { 
+              & nssm install GoAppService '${{ secrets.DEPLOY_PATH }}\app.exe'
+              & nssm set GoAppService AppDirectory '${{ secrets.DEPLOY_PATH }}'
+              & nssm set GoAppService AppEnvironmentExtra 'PORT=${{ secrets.PORT }}' 'JWT_SECRET=${{ secrets.JWT_SECRET }}'
+              & nssm start GoAppService
             } else {
-              # Fallback: run the app directly using the batch file
-              Start-Process -FilePath "${{ secrets.DEPLOY_PATH }}\start-app.bat" -WindowStyle Hidden
-            }
+              Start-Process -FilePath '${{ secrets.DEPLOY_PATH }}\start-app.bat' -WindowStyle Hidden
+            }}"
