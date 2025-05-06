@@ -56,49 +56,78 @@ jobs:
           cp -r backend/app.exe deploy/
           cp -r backend/build deploy/
           cp -r backend/farm.db deploy/ || true
-          # Create a batch file to start the app on Windows
+
+          # Create a batch file to start the app on Windows with proper Windows line endings
           echo '@echo off' > deploy/start-app.bat
-          echo 'set PORT=%PORT%' >> deploy/start-app.bat
-          echo 'set JWT_SECRET=%JWT_SECRET%' >> deploy/start-app.bat
+          echo 'set PORT=8080' >> deploy/start-app.bat
+          echo 'set JWT_SECRET=your_secret_here' >> deploy/start-app.bat
           echo 'app.exe' >> deploy/start-app.bat
+          # Convert to Windows line endings
+          sed -i 's/$/\r/' deploy/start-app.bat
 
           # Create PowerShell script for setting up the service
-          cat > deploy/setup-service.ps1 << 'EOL'
-          $ErrorActionPreference = "Continue"
-
-          # Set environment variables
-          [Environment]::SetEnvironmentVariable('PORT', '${{ secrets.PORT }}', 'Machine')
-          [Environment]::SetEnvironmentVariable('JWT_SECRET', '${{ secrets.JWT_SECRET }}', 'Machine')
-
-          # Try to stop existing service if running
-          try {
-            Stop-Service -Name GoAppService -ErrorAction SilentlyContinue
-          } catch {
-            Write-Host "No existing service found or could not stop it."
-          }
-
-          # Check if NSSM is available
-          $nssmPath = ""
-          if (Test-Path "C:\Program Files\nssm\nssm.exe") {
-            $nssmPath = "C:\Program Files\nssm\nssm.exe"
-          } elseif (Test-Path "C:\nssm\nssm.exe") {
-            $nssmPath = "C:\nssm\nssm.exe"
-          }
-
-          if ($nssmPath -ne "") {
-            # Create/update the service using NSSM
-            Write-Host "Using NSSM to create service"
-            & $nssmPath install GoAppService "$PSScriptRoot\app.exe"
-            & $nssmPath set GoAppService AppDirectory "$PSScriptRoot"
-            & $nssmPath set GoAppService AppEnvironmentExtra "PORT=${{ secrets.PORT }}" "JWT_SECRET=${{ secrets.JWT_SECRET }}"
-            & $nssmPath start GoAppService
-          } else {
-            # Fallback to running the batch file
-            Write-Host "NSSM not found, running app directly"
-            Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden
-          }
-          Write-Host "Setup complete!"
-          EOL
+          echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
+          echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Debug - show current directory' >> deploy/setup-service.ps1
+          echo 'Write-Host "Current directory: $pwd"' >> deploy/setup-service.ps1
+          echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
+          echo 'Get-ChildItem' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Set environment variables' >> deploy/setup-service.ps1
+          echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
+          echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
+          echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Try to stop existing service if running' >> deploy/setup-service.ps1
+          echo 'Write-Host "Checking for existing service..."' >> deploy/setup-service.ps1
+          echo 'try {' >> deploy/setup-service.ps1
+          echo '  Stop-Service -Name GoAppService -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo '  Write-Host "Stopped existing service."' >> deploy/setup-service.ps1
+          echo '} catch {' >> deploy/setup-service.ps1
+          echo '  Write-Host "No existing service found or could not stop it."' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Check if NSSM is available' >> deploy/setup-service.ps1
+          echo 'Write-Host "Checking for NSSM..."' >> deploy/setup-service.ps1
+          echo '$nssmPath = ""' >> deploy/setup-service.ps1
+          echo 'if (Test-Path "C:\Program Files\nssm\nssm.exe") {' >> deploy/setup-service.ps1
+          echo '  $nssmPath = "C:\Program Files\nssm\nssm.exe"' >> deploy/setup-service.ps1
+          echo '  Write-Host "Found NSSM at: $nssmPath"' >> deploy/setup-service.ps1
+          echo '} elseif (Test-Path "C:\nssm\nssm.exe") {' >> deploy/setup-service.ps1
+          echo '  $nssmPath = "C:\nssm\nssm.exe"' >> deploy/setup-service.ps1
+          echo '  Write-Host "Found NSSM at: $nssmPath"' >> deploy/setup-service.ps1
+          echo '} else {' >> deploy/setup-service.ps1
+          echo '  Write-Host "NSSM not found."' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo 'if ($nssmPath -ne "") {' >> deploy/setup-service.ps1
+          echo '  # Create/update the service using NSSM' >> deploy/setup-service.ps1
+          echo '  Write-Host "Using NSSM to create service at: $PSScriptRoot\app.exe"' >> deploy/setup-service.ps1
+          echo '  & $nssmPath install GoAppService "$PSScriptRoot\app.exe"' >> deploy/setup-service.ps1
+          echo '  & $nssmPath set GoAppService AppDirectory "$PSScriptRoot"' >> deploy/setup-service.ps1
+          echo '  & $nssmPath set GoAppService AppEnvironmentExtra "PORT=8080" "JWT_SECRET=your_secret_here"' >> deploy/setup-service.ps1
+          echo '  & $nssmPath start GoAppService' >> deploy/setup-service.ps1
+          echo '  Write-Host "Service created and started with NSSM."' >> deploy/setup-service.ps1
+          echo '} else {' >> deploy/setup-service.ps1
+          echo '  # Fallback to running the batch file' >> deploy/setup-service.ps1
+          echo '  Write-Host "NSSM not found, running app directly"' >> deploy/setup-service.ps1
+          echo '  Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden' >> deploy/setup-service.ps1
+          echo '  Write-Host "Started app via batch file."' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Verify app is running' >> deploy/setup-service.ps1
+          echo 'Write-Host "Checking if app is running..."' >> deploy/setup-service.ps1
+          echo '$running = netstat -ano | Select-String -Pattern ":8080"' >> deploy/setup-service.ps1
+          echo 'if ($running) {' >> deploy/setup-service.ps1
+          echo '  Write-Host "App is running and listening on port 8080!"' >> deploy/setup-service.ps1
+          echo '} else {' >> deploy/setup-service.ps1
+          echo '  Write-Host "WARNING: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo 'Write-Host "Setup complete!"' >> deploy/setup-service.ps1
+          # Convert PowerShell script to Windows line endings
+          sed -i 's/$/\r/' deploy/setup-service.ps1
 
       # Install necessary tools
       - name: Install SSH tools
@@ -113,13 +142,24 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Try to use scp to copy files
-          echo "Copying files with SCP..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          # Create deployment directory and build subdirectory on remote server first
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }} && mkdir -p ${{ secrets.DEPLOY_PATH }}/build"
 
-          # Run the setup script on the remote server
+          # Copy each file individually to ensure everything transfers
+          echo "Copying files with SCP..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/build/
+
+          # Verify the files were copied
+          echo "Verifying files were copied..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "dir ${{ secrets.DEPLOY_PATH }}"
+
+          # Run the setup script on the remote server with proper PowerShell execution
           echo "Running setup script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -File setup-service.ps1"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -NoProfile -File \"${{ secrets.DEPLOY_PATH }}\setup-service.ps1\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -133,13 +173,24 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Try to use scp to copy files
-          echo "Copying files with SCP..."
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          # Create deployment directory and build subdirectory on remote server first
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }} && mkdir -p ${{ secrets.DEPLOY_PATH }}/build"
 
-          # Run the setup script on the remote server
+          # Copy each file individually to ensure everything transfers
+          echo "Copying files with SCP..."
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/build/
+
+          # Verify the files were copied
+          echo "Verifying files were copied..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "dir ${{ secrets.DEPLOY_PATH }}"
+
+          # Run the setup script on the remote server with proper PowerShell execution
           echo "Running setup script..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -File setup-service.ps1"
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -NoProfile -File \"${{ secrets.DEPLOY_PATH }}\setup-service.ps1\""
         continue-on-error: true
 
       # Manual instructions if all else fails
