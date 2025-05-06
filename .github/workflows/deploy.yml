@@ -142,8 +142,8 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory and build subdirectory on remote server first
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }} && mkdir -p ${{ secrets.DEPLOY_PATH }}/build"
+          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "if not exist \"${{ secrets.DEPLOY_PATH }}\" mkdir \"${{ secrets.DEPLOY_PATH }}\" && if not exist \"${{ secrets.DEPLOY_PATH }}\build\" mkdir \"${{ secrets.DEPLOY_PATH }}\build\""
 
           # Copy each file individually to ensure everything transfers
           echo "Copying files with SCP..."
@@ -173,8 +173,8 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory and build subdirectory on remote server first
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }} && mkdir -p ${{ secrets.DEPLOY_PATH }}/build"
+          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "if not exist \"${{ secrets.DEPLOY_PATH }}\" mkdir \"${{ secrets.DEPLOY_PATH }}\" && if not exist \"${{ secrets.DEPLOY_PATH }}\build\" mkdir \"${{ secrets.DEPLOY_PATH }}\build\""
 
           # Copy each file individually to ensure everything transfers
           echo "Copying files with SCP..."
