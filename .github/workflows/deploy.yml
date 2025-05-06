@@ -113,6 +113,97 @@ jobs:
           echo 'exit' >> deploy/diagnostics.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/diagnostics.bat
+          
+          # Create PowerShell script for setting up the service
+          echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
+          echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Debug - show current directory' >> deploy/setup-service.ps1
+          echo 'Write-Host "Current directory: $pwd"' >> deploy/setup-service.ps1
+          echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
+          echo 'Get-ChildItem' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Verify database file exists and is accessible' >> deploy/setup-service.ps1
+          echo 'if (Test-Path "farm.db") {' >> deploy/setup-service.ps1
+          echo '    Write-Host "Database file found: farm.db"' >> deploy/setup-service.ps1
+          echo '    # Check if the file can be read/written' >> deploy/setup-service.ps1
+          echo '    try {' >> deploy/setup-service.ps1
+          echo '        $dbTest = [System.IO.File]::Open("$PSScriptRoot\farm.db", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite)' >> deploy/setup-service.ps1
+          echo '        $dbTest.Close()' >> deploy/setup-service.ps1
+          echo '        Write-Host "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
+          echo '    } catch {' >> deploy/setup-service.ps1
+          echo '        Write-Host "WARNING: Database file exists but may not be accessible: $_"' >> deploy/setup-service.ps1
+          echo '    }' >> deploy/setup-service.ps1
+          echo '} else {' >> deploy/setup-service.ps1
+          echo '    Write-Host "WARNING: Database file not found! The application may not start correctly."' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Set environment variables' >> deploy/setup-service.ps1
+          echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
+          echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
+          echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Kill any existing processes' >> deploy/setup-service.ps1
+          echo 'Write-Host "Killing any existing app processes..."' >> deploy/setup-service.ps1
+          echo 'Get-Process -Name "app" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Start the application in the background' >> deploy/setup-service.ps1
+          echo 'Write-Host "Starting application in background..."' >> deploy/setup-service.ps1
+          echo 'try {' >> deploy/setup-service.ps1
+          echo '    $startAppProcess = Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden -PassThru -ErrorAction Stop' >> deploy/setup-service.ps1
+          echo '    Write-Host "Process started with ID: $($startAppProcess.Id)"' >> deploy/setup-service.ps1
+          echo '    # Wait a moment to see if it crashes immediately' >> deploy/setup-service.ps1
+          echo '    Start-Sleep -Seconds 1' >> deploy/setup-service.ps1
+          echo '    if ($startAppProcess.HasExited) {' >> deploy/setup-service.ps1
+          echo '        Write-Host "ERROR: Process exited immediately with code $($startAppProcess.ExitCode)"' >> deploy/setup-service.ps1
+          echo '        Write-Host "Checking application log for errors:"' >> deploy/setup-service.ps1
+          echo '        if (Test-Path "$PSScriptRoot\app.log") {' >> deploy/setup-service.ps1
+          echo '            Get-Content "$PSScriptRoot\app.log" -Tail 20' >> deploy/setup-service.ps1
+          echo '        } else {' >> deploy/setup-service.ps1
+          echo '            Write-Host "No log file found"' >> deploy/setup-service.ps1
+          echo '        }' >> deploy/setup-service.ps1
+          echo '    }' >> deploy/setup-service.ps1
+          echo '} catch {' >> deploy/setup-service.ps1
+          echo '    Write-Host "ERROR: Failed to start application: $_"' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# More thorough port check' >> deploy/setup-service.ps1
+          echo 'Write-Host "Checking if application is listening on port 8080..."' >> deploy/setup-service.ps1
+          echo 'function Check-Port {' >> deploy/setup-service.ps1
+          echo '    $portCheck = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo '    return $portCheck -ne $null' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo 'if (Check-Port) {' >> deploy/setup-service.ps1
+          echo '    Write-Host "SUCCESS: App is running and listening on port 8080!"' >> deploy/setup-service.ps1
+          echo '} else {' >> deploy/setup-service.ps1
+          echo '    Write-Host "Port not open yet, waiting 10 seconds..."' >> deploy/setup-service.ps1
+          echo '    Start-Sleep -Seconds 10' >> deploy/setup-service.ps1
+          echo '    if (Check-Port) {' >> deploy/setup-service.ps1
+          echo '        Write-Host "SUCCESS: App is now running and listening on port 8080!"' >> deploy/setup-service.ps1
+          echo '    } else {' >> deploy/setup-service.ps1
+          echo '        Write-Host "ERROR: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
+          echo '        Write-Host "Checking for app process..."' >> deploy/setup-service.ps1
+          echo '        $appProcess = Get-Process -Name "app" -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo '        if ($appProcess) {' >> deploy/setup-service.ps1
+          echo '            Write-Host "Process is running but not listening on port 8080."' >> deploy/setup-service.ps1
+          echo '        } else {' >> deploy/setup-service.ps1
+          echo '            Write-Host "Process is not running!"' >> deploy/setup-service.ps1
+          echo '        }' >> deploy/setup-service.ps1
+          echo '        Write-Host "Checking application log for errors:"' >> deploy/setup-service.ps1
+          echo '        if (Test-Path "$PSScriptRoot\app.log") {' >> deploy/setup-service.ps1
+          echo '            Get-Content "$PSScriptRoot\app.log" -Tail 30' >> deploy/setup-service.ps1
+          echo '        } else {' >> deploy/setup-service.ps1
+          echo '            Write-Host "No log file found"' >> deploy/setup-service.ps1
+          echo '        }' >> deploy/setup-service.ps1
+          echo '        Write-Host "Checking Windows Event Log for errors:"' >> deploy/setup-service.ps1
+          echo '        Get-EventLog -LogName Application -Newest 10 -EntryType Error -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message' >> deploy/setup-service.ps1
+          echo '    }' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo 'Write-Host "Setup complete! The app should be running in the background."' >> deploy/setup-service.ps1
+          # Convert PowerShell script to Windows line endings
+          sed -i 's/$/\r/' deploy/setup-service.ps1
 
       # Install necessary tools
       - name: Install SSH tools
@@ -226,7 +317,7 @@ jobs:
 
           # Copy diagnostics.bat
           echo "Copying diagnostics.bat..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
           # Create a file list
           echo "Listing all files to be copied to build directory..."
@@ -234,7 +325,7 @@ jobs:
 
           # Copy build directory files
           echo "Copying build directory files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
