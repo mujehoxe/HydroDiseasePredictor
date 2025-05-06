@@ -142,24 +142,45 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "if not exist \"${{ secrets.DEPLOY_PATH }}\" mkdir \"${{ secrets.DEPLOY_PATH }}\" && if not exist \"${{ secrets.DEPLOY_PATH }}\build\" mkdir \"${{ secrets.DEPLOY_PATH }}\build\""
+          # Create deployment directory on remote server first (Windows compatible)
+          echo "Creating directories on Windows server..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp && if not exist C:\GoApp\build mkdir C:\GoApp\build\""
 
-          # Copy each file individually to ensure everything transfers
+          # Copy files with absolute paths and detailed logging
           echo "Copying files with SCP..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/build/
+
+          # Copy app.exe
+          echo "Copying app.exe..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy farm.db
+          echo "Copying farm.db..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy start-app.bat
+          echo "Copying start-app.bat..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy setup-service.ps1
+          echo "Copying setup-service.ps1..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Create a file list
+          echo "Listing all files to be copied to build directory..."
+          ls -la deploy/build/
+
+          # Copy build directory files
+          echo "Copying build directory files..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "dir ${{ secrets.DEPLOY_PATH }}"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\build\""
 
-          # Run the setup script on the remote server with proper PowerShell execution
+          # Run the setup script on the remote server (use cmd.exe to ensure PowerShell starts correctly)
           echo "Running setup script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -NoProfile -File \"${{ secrets.DEPLOY_PATH }}\setup-service.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -173,24 +194,45 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "if not exist \"${{ secrets.DEPLOY_PATH }}\" mkdir \"${{ secrets.DEPLOY_PATH }}\" && if not exist \"${{ secrets.DEPLOY_PATH }}\build\" mkdir \"${{ secrets.DEPLOY_PATH }}\build\""
+          # Create deployment directory on remote server first (Windows compatible)
+          echo "Creating directories on Windows server..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp && if not exist C:\GoApp\build mkdir C:\GoApp\build\""
 
-          # Copy each file individually to ensure everything transfers
+          # Copy files with absolute paths and detailed logging
           echo "Copying files with SCP..."
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
-          scp -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/build/
+
+          # Copy app.exe
+          echo "Copying app.exe..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy farm.db
+          echo "Copying farm.db..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy start-app.bat
+          echo "Copying start-app.bat..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Copy setup-service.ps1
+          echo "Copying setup-service.ps1..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
+          # Create a file list
+          echo "Listing all files to be copied to build directory..."
+          ls -la deploy/build/
+
+          # Copy build directory files
+          echo "Copying build directory files..."
+          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "dir ${{ secrets.DEPLOY_PATH }}"
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\""
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\build\""
 
-          # Run the setup script on the remote server with proper PowerShell execution
+          # Run the setup script on the remote server (use cmd.exe to ensure PowerShell starts correctly)
           echo "Running setup script..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -NoProfile -File \"${{ secrets.DEPLOY_PATH }}\setup-service.ps1\""
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1\""
         continue-on-error: true
 
       # Manual instructions if all else fails
