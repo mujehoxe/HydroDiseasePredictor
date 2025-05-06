@@ -42,9 +42,13 @@ jobs:
 
       - name: Build Go backend
         run: |
+          # Install Windows cross-compiler for CGO
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64
+
           cd backend
-          # Build for Windows target
-          GOOS=windows GOARCH=amd64 go build -o app.exe
+          # Build for Windows target with CGO enabled
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc go build -o app.exe
           # Copy frontend build to the backend/build directory
           mkdir -p build
           cp -r ../dist/* build/
