@@ -137,9 +137,17 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory on remote server first (Windows compatible)
+          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
           echo "Creating directories on Windows server..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp && if not exist C:\GoApp\build mkdir C:\GoApp\build\""
+
+          # Stop any running instances of the app
+          echo "Stopping any running app processes..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"taskkill /F /IM app.exe /T 2>nul || echo No process to kill\""
+
+          # Wait a moment for processes to fully stop
+          echo "Waiting for processes to stop..."
+          sleep 2
 
           # Copy files with absolute paths and detailed logging
           echo "Copying files with SCP..."
@@ -195,9 +203,17 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory on remote server first (Windows compatible)
+          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
           echo "Creating directories on Windows server..."
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp && if not exist C:\GoApp\build mkdir C:\GoApp\build\""
+
+          # Stop any running instances of the app
+          echo "Stopping any running app processes..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"taskkill /F /IM app.exe /T 2>nul || echo No process to kill\""
+
+          # Wait a moment for processes to fully stop
+          echo "Waiting for processes to stop..."
+          sleep 2
 
           # Copy files with absolute paths and detailed logging
           echo "Copying files with SCP..."
