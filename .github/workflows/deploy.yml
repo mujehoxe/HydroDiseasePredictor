@@ -99,10 +99,10 @@ jobs:
           echo 'echo PORT=%PORT% >> app.log' >> deploy/restart-service.bat
           echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/restart-service.bat
           echo 'echo. >> app.log' >> deploy/restart-service.bat
-          
+
           # Use this approach to create a true background service that won't close when the terminal closes
           echo 'powershell -Command "Start-Process -FilePath \\"C:\\GoApp\\app.exe\\" -WindowStyle Hidden -RedirectStandardOutput \\"C:\\GoApp\\app.log\\" -RedirectStandardError \\"C:\\GoApp\\app.log\\" -NoNewWindow"' >> deploy/restart-service.bat
-          
+
           echo 'echo %DATE% %TIME% - Started application process >> app.log' >> deploy/restart-service.bat
           echo 'timeout /t 5' >> deploy/restart-service.bat
           echo 'echo %DATE% %TIME% - Checking if application is running... >> app.log' >> deploy/restart-service.bat
@@ -146,7 +146,7 @@ jobs:
           echo 'exit' >> deploy/diagnostics.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/diagnostics.bat
-          
+
           # Create PowerShell script for setting up the service
           echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
           echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
@@ -207,25 +207,78 @@ jobs:
           echo 'Unregister-ScheduledTask -TaskName "GoApp" -Confirm:\$false -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
           echo 'Register-ScheduledTask -Action \$action -Trigger \$trigger -Principal \$principal -Settings \$settings -TaskName "GoApp" -Description "Start Go Application" -Force' >> deploy/setup-service.ps1
           echo 'Add-Content -Path "app.log" -Value "Created scheduled task to run app at startup"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Start the app directly now' >> deploy/setup-service.ps1
-          echo 'Write-Host "Starting application now..."' >> deploy/setup-service.ps1
+
+          # Register as a Windows service (simpler approach)
+          echo 'Write-Host "Creating Windows service using sc.exe..."' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Attempting to create Windows service for the application"' >> deploy/setup-service.ps1
+
+          # Create a wrapper batch file for the service
+          echo 'Set-Content -Path "C:\GoApp\service-wrapper.bat" -Value "@echo off"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\service-wrapper.bat" -Value "cd /d C:\GoApp"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\service-wrapper.bat" -Value "set PORT=8080"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\service-wrapper.bat" -Value "set JWT_SECRET=your_secret_here"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\service-wrapper.bat" -Value "app.exe"' >> deploy/setup-service.ps1
+
+          # Try to remove any existing service first
+          echo 'Start-Process -FilePath "sc.exe" -ArgumentList "delete", "GoAppService" -NoNewWindow -Wait' >> deploy/setup-service.ps1
+
+          # Create the service
+          echo 'Start-Process -FilePath "sc.exe" -ArgumentList "create", "GoAppService", "binPath=", """C:\GoApp\service-wrapper.bat""", "start=", "auto", "DisplayName=", """Go Application Service""" -NoNewWindow -Wait' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Created Windows service: GoAppService"' >> deploy/setup-service.ps1
+
+          # Set the service to ignore errors
+          echo 'Start-Process -FilePath "sc.exe" -ArgumentList "failure", "GoAppService", "reset=", "0", "actions=", "restart/60000" -NoNewWindow -Wait' >> deploy/setup-service.ps1
+
+          # Try to start the service
+          echo 'Start-Process -FilePath "sc.exe" -ArgumentList "start", "GoAppService" -NoNewWindow -Wait' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Attempted to start GoAppService"' >> deploy/setup-service.ps1
+
+          # Also try direct start as fallback
+          echo '# Start the app directly as a fallback' >> deploy/setup-service.ps1
+          echo 'Write-Host "Starting application directly as fallback..."' >> deploy/setup-service.ps1
           echo 'try {' >> deploy/setup-service.ps1
           echo '    \$env:PORT = "8080"' >> deploy/setup-service.ps1
           echo '    \$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
-          echo '    \$proc = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -PassThru -NoNewWindow' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Started app with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
-          echo '    Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
-          echo '    if (-not (Get-Process -Id \$proc.Id -ErrorAction SilentlyContinue)) {' >> deploy/setup-service.ps1
-          echo '        Write-Host "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
-          echo '    } else {' >> deploy/setup-service.ps1
-          echo '        Write-Host "Application started successfully with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "Application started successfully with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Fallback: Starting app directly"' >> deploy/setup-service.ps1
+          echo '    \$pinfo = New-Object System.Diagnostics.ProcessStartInfo' >> deploy/setup-service.ps1
+          echo '    \$pinfo.FileName = "C:\GoApp\app.exe"' >> deploy/setup-service.ps1
+          echo '    \$pinfo.WorkingDirectory = "C:\GoApp"' >> deploy/setup-service.ps1
+          echo '    \$pinfo.UseShellExecute = \$false' >> deploy/setup-service.ps1
+          echo '    \$pinfo.CreateNoWindow = \$false' >> deploy/setup-service.ps1
+          echo '    \$pinfo.RedirectStandardOutput = \$true' >> deploy/setup-service.ps1
+          echo '    \$pinfo.RedirectStandardError = \$true' >> deploy/setup-service.ps1
+          echo '    \$pinfo.EnvironmentVariables["PORT"] = "8080"' >> deploy/setup-service.ps1
+          echo '    \$pinfo.EnvironmentVariables["JWT_SECRET"] = "your_secret_here"' >> deploy/setup-service.ps1
+          echo '    \$process = New-Object System.Diagnostics.Process' >> deploy/setup-service.ps1
+          echo '    \$process.StartInfo = \$pinfo' >> deploy/setup-service.ps1
+          echo '    \$process.Start() | Out-Null' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Fallback: Started app with process ID: \$(\$process.Id)"' >> deploy/setup-service.ps1
           echo '} catch {' >> deploy/setup-service.ps1
-          echo '    Write-Host "ERROR: Failed to start application: \$_"' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "ERROR: Failed to start application: \$_"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Fallback: Error starting app: \$_"' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+
+          # Use the most basic direct approach to start the app
+          echo 'Write-Host "Simplifying approach: just run the executable directly"' >> deploy/setup-service.ps1
+
+          # Create a run-at-login batch file
+          echo 'Add-Content -Path "app.log" -Value "Creating startup batch file"' >> deploy/setup-service.ps1
+          echo 'Set-Content -Path "C:\GoApp\start-at-login.bat" -Value "@echo off"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\start-at-login.bat" -Value "cd /d C:\GoApp"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "C:\GoApp\start-at-login.bat" -Value "start /min cmd /c \"set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1\""' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Created start-at-login.bat"' >> deploy/setup-service.ps1
+
+          # Just start the process directly with correct environment variables
+          echo 'try {' >> deploy/setup-service.ps1
+          echo '    Write-Host "Starting application directly"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Starting application directly via PowerShell..."' >> deploy/setup-service.ps1
+          echo '    \$env:PORT = "8080"' >> deploy/setup-service.ps1
+          echo '    \$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
+          echo '    Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -NoNewWindow' >> deploy/setup-service.ps1
+          echo '    Write-Host "Done. Application should be running."' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Executed direct start command"' >> deploy/setup-service.ps1
+          echo '} catch {' >> deploy/setup-service.ps1
+          echo '    Write-Host "Error starting application: \$_"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Error during direct start: \$_"' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
           # Convert PowerShell script to Windows line endings
           sed -i 's/$/\r/' deploy/setup-service.ps1
@@ -291,7 +344,7 @@ jobs:
           # Copy diagnostics.bat
           echo "Copying diagnostics.bat..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-          
+
           # Copy direct-run.bat
           echo "Copying direct-run.bat..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/direct-run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
@@ -314,6 +367,24 @@ jobs:
           # Retrieve the log file to diagnose startup issues
           echo "Retrieving application log file..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
+
+          # Try force starting the app directly (as a fallback)
+          echo "Trying to force start the application directly..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && set PORT=8080 && set JWT_SECRET=your_secret_here && start /b app.exe\""
+
+          # Check again after direct start
+          echo "Waiting after force start..."
+          sleep 5
+          echo "Checking if app is running now..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Get process list to see if app is running
+          echo "Checking running processes..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist | findstr app.exe\""
+
+          # Check Windows event logs for any relevant errors
+          echo "Checking Windows Application Event Log for errors..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -361,7 +432,7 @@ jobs:
           # Copy diagnostics.bat
           echo "Copying diagnostics.bat..."
           scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-          
+
           # Copy direct-run.bat
           echo "Copying direct-run.bat..."
           scp -v -r -P ${{ secrets.SSH_PORT }} deploy/direct-run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
@@ -392,6 +463,24 @@ jobs:
           # Retrieve the log file to diagnose startup issues
           echo "Retrieving application log file..."
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
+
+          # Try force starting the app directly (as a fallback)
+          echo "Trying to force start the application directly..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && set PORT=8080 && set JWT_SECRET=your_secret_here && start /b app.exe\""
+
+          # Check again after direct start
+          echo "Waiting after force start..."
+          sleep 5
+          echo "Checking if app is running now..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Get process list to see if app is running
+          echo "Checking running processes..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist | findstr app.exe\""
+
+          # Check Windows event logs for any relevant errors
+          echo "Checking Windows Application Event Log for errors..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
         continue-on-error: true
 
       # Manual instructions if all else fails
