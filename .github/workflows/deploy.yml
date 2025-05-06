@@ -385,6 +385,22 @@ jobs:
           # Check Windows event logs for any relevant errors
           echo "Checking Windows Application Event Log for errors..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
+
+          # Get app.log
+          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Content -Path 'C:\GoApp\app.log'\""
+
+          # Get process list to see if app is running
+          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Process | Where-Object {`$_.Name -like '*app*'} | Select-Object Id, ProcessName, StartTime\""
+
+          # Check if TCP port 8080 is listening (indicates app is running)
+          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State\""
+
+          # Wait a bit and verify we can connect to the application
+          echo "Waiting 5 seconds for application to start..."
+          sleep 5
+
+          # Try to connect to the application and get response
+          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Invoke-WebRequest -Uri 'http://localhost:8080/' -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue | Select-Object StatusCode, StatusDescription\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -481,6 +497,22 @@ jobs:
           # Check Windows event logs for any relevant errors
           echo "Checking Windows Application Event Log for errors..."
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
+
+          # Get app.log
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Content -Path 'C:\GoApp\app.log'\""
+
+          # Get process list to see if app is running
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Process | Where-Object {`$_.Name -like '*app*'} | Select-Object Id, ProcessName, StartTime\""
+
+          # Check if TCP port 8080 is listening (indicates app is running)
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State\""
+
+          # Wait a bit and verify we can connect to the application
+          echo "Waiting 5 seconds for application to start..."
+          sleep 5
+
+          # Try to connect to the application and get response
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Invoke-WebRequest -Uri 'http://localhost:8080/' -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue | Select-Object StatusCode, StatusDescription\""
         continue-on-error: true
 
       # Manual instructions if all else fails
