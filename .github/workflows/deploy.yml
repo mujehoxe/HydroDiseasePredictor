@@ -70,6 +70,15 @@ jobs:
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/start-app.bat
 
+          # Create a service restart script
+          echo '@echo on' > deploy/restart-service.bat
+          echo 'taskkill /F /IM app.exe /T' >> deploy/restart-service.bat
+          echo 'timeout /t 2' >> deploy/restart-service.bat
+          echo 'cd /d "%~dp0"' >> deploy/restart-service.bat
+          echo 'start /b app.exe > app.log 2>&1' >> deploy/restart-service.bat
+          # Convert to Windows line endings
+          sed -i 's/$/\r/' deploy/restart-service.bat
+
           # Create PowerShell script for setting up the service
           echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
           echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
@@ -84,68 +93,34 @@ jobs:
           echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
           echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Try to stop existing service if running' >> deploy/setup-service.ps1
-          echo 'Write-Host "Checking for existing service..."' >> deploy/setup-service.ps1
-          echo 'try {' >> deploy/setup-service.ps1
-          echo '  Stop-Service -Name GoAppService -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo '  Write-Host "Stopped existing service."' >> deploy/setup-service.ps1
-          echo '} catch {' >> deploy/setup-service.ps1
-          echo '  Write-Host "No existing service found or could not stop it."' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
+          echo '# Kill any existing processes' >> deploy/setup-service.ps1
+          echo 'Write-Host "Killing any existing app processes..."' >> deploy/setup-service.ps1
+          echo 'Get-Process -Name "app" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Check if NSSM is available' >> deploy/setup-service.ps1
-          echo 'Write-Host "Checking for NSSM..."' >> deploy/setup-service.ps1
-          echo '$nssmPath = ""' >> deploy/setup-service.ps1
-          echo 'if (Test-Path "C:\Program Files\nssm\nssm.exe") {' >> deploy/setup-service.ps1
-          echo '  $nssmPath = "C:\Program Files\nssm\nssm.exe"' >> deploy/setup-service.ps1
-          echo '  Write-Host "Found NSSM at: $nssmPath"' >> deploy/setup-service.ps1
-          echo '} elseif (Test-Path "C:\nssm\nssm.exe") {' >> deploy/setup-service.ps1
-          echo '  $nssmPath = "C:\nssm\nssm.exe"' >> deploy/setup-service.ps1
-          echo '  Write-Host "Found NSSM at: $nssmPath"' >> deploy/setup-service.ps1
-          echo '} else {' >> deploy/setup-service.ps1
-          echo '  Write-Host "NSSM not found."' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
+          echo '# Start the application in the background' >> deploy/setup-service.ps1
+          echo 'Write-Host "Starting application in background..."' >> deploy/setup-service.ps1
+          echo 'Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo 'if ($nssmPath -ne "") {' >> deploy/setup-service.ps1
-          echo '  # Create/update the service using NSSM' >> deploy/setup-service.ps1
-          echo '  Write-Host "Using NSSM to create service at: $PSScriptRoot\app.exe"' >> deploy/setup-service.ps1
-          echo '  & $nssmPath install GoAppService "$PSScriptRoot\app.exe"' >> deploy/setup-service.ps1
-          echo '  & $nssmPath set GoAppService AppDirectory "$PSScriptRoot"' >> deploy/setup-service.ps1
-          echo '  & $nssmPath set GoAppService AppEnvironmentExtra "PORT=8080" "JWT_SECRET=your_secret_here"' >> deploy/setup-service.ps1
-          echo '  & $nssmPath start GoAppService' >> deploy/setup-service.ps1
-          echo '  Write-Host "Service created and started with NSSM."' >> deploy/setup-service.ps1
-          echo '} else {' >> deploy/setup-service.ps1
-          echo '  # Fallback to running the batch file' >> deploy/setup-service.ps1
-          echo '  Write-Host "NSSM not found, running app directly"' >> deploy/setup-service.ps1
-          echo '  # Run in foreground to catch any immediate errors' >> deploy/setup-service.ps1
-          echo '  Write-Host "First, trying to run app in foreground to check for immediate errors:"' >> deploy/setup-service.ps1
-          echo '  try {' >> deploy/setup-service.ps1
-          echo '    Set-Location $PSScriptRoot' >> deploy/setup-service.ps1 
-          echo '    $env:PORT = "8080"' >> deploy/setup-service.ps1
-          echo '    $env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
-          echo '    Start-Process -FilePath "$PSScriptRoot\app.exe" -NoNewWindow -Wait -ErrorAction SilentlyContinue -ErrorVariable startError' >> deploy/setup-service.ps1
-          echo '    if ($startError) {' >> deploy/setup-service.ps1
-          echo '      Write-Host "Error starting app: $startError"' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
-          echo '  } catch {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Exception while starting app: $_"' >> deploy/setup-service.ps1
-          echo '  }' >> deploy/setup-service.ps1
-          echo '  # Now start in background with the batch file' >> deploy/setup-service.ps1
-          echo '  Write-Host "Now starting app in background via batch file:"' >> deploy/setup-service.ps1
-          echo '  Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden' >> deploy/setup-service.ps1
-          echo '  Write-Host "Started app via batch file."' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
+          echo '# Give the app a few seconds to start' >> deploy/setup-service.ps1
+          echo 'Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Verify app is running' >> deploy/setup-service.ps1
-          echo 'Write-Host "Checking if app is running..."' >> deploy/setup-service.ps1
-          echo '$running = netstat -ano | Select-String -Pattern ":8080"' >> deploy/setup-service.ps1
+          echo '# Check if the app is running' >> deploy/setup-service.ps1
+          echo '$running = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
           echo 'if ($running) {' >> deploy/setup-service.ps1
-          echo '  Write-Host "App is running and listening on port 8080!"' >> deploy/setup-service.ps1
+          echo '    Write-Host "App is running and listening on port 8080!"' >> deploy/setup-service.ps1
           echo '} else {' >> deploy/setup-service.ps1
-          echo '  Write-Host "WARNING: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
+          echo '    Write-Host "Waiting a bit longer..."' >> deploy/setup-service.ps1
+          echo '    Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
+          echo '    $running = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo '    if ($running) {' >> deploy/setup-service.ps1
+          echo '        Write-Host "App is now running and listening on port 8080!"' >> deploy/setup-service.ps1
+          echo '    } else {' >> deploy/setup-service.ps1
+          echo '        Write-Host "WARNING: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
+          echo '        Write-Host "Check app.log for errors."' >> deploy/setup-service.ps1
+          echo '    }' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo 'Write-Host "Setup complete!"' >> deploy/setup-service.ps1
+          echo 'Write-Host "Setup complete! The app should be running in the background."' >> deploy/setup-service.ps1
           # Convert PowerShell script to Windows line endings
           sed -i 's/$/\r/' deploy/setup-service.ps1
 
@@ -200,7 +175,13 @@ jobs:
 
           # Run the setup script on the remote server (use cmd.exe to ensure PowerShell starts correctly)
           echo "Running setup script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -Command \"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1' -WindowStyle Hidden\"\""
+
+          # Verify the app is running (give it a moment to start)
+          echo "Waiting for app to start..."
+          sleep 10
+          echo "Checking if app is running..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -252,7 +233,13 @@ jobs:
 
           # Run the setup script on the remote server (use cmd.exe to ensure PowerShell starts correctly)
           echo "Running setup script..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1\""
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -Command \"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1' -WindowStyle Hidden\"\""
+
+          # Verify the app is running (give it a moment to start)
+          echo "Waiting for app to start..."
+          sleep 10
+          echo "Checking if app is running..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
         continue-on-error: true
 
       # Manual instructions if all else fails
