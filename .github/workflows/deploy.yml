@@ -87,16 +87,22 @@ jobs:
           # Create a service restart script
           echo '@echo on' > deploy/restart-service.bat
           echo 'echo %DATE% %TIME% - Restarting application... >> app.log' >> deploy/restart-service.bat
-          echo 'taskkill /F /IM app.exe /T' >> deploy/restart-service.bat
+          echo 'taskkill /F /IM app.exe /T 2>nul' >> deploy/restart-service.bat
           echo 'echo %DATE% %TIME% - Stopped previous instance >> app.log' >> deploy/restart-service.bat
           echo 'timeout /t 2' >> deploy/restart-service.bat
           echo 'cd /d "%~dp0"' >> deploy/restart-service.bat
           echo 'echo %DATE% %TIME% - Starting application in background... >> app.log' >> deploy/restart-service.bat
           echo 'echo Current directory: %CD% >> app.log' >> deploy/restart-service.bat
+          echo 'set PORT=8080' >> deploy/restart-service.bat
+          echo 'set JWT_SECRET=your_secret_here' >> deploy/restart-service.bat
           echo 'echo Environment variables: >> app.log' >> deploy/restart-service.bat
           echo 'echo PORT=%PORT% >> app.log' >> deploy/restart-service.bat
           echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/restart-service.bat
-          echo 'start /b cmd /c "app.exe >> app.log 2>&1"' >> deploy/restart-service.bat
+          echo 'echo. >> app.log' >> deploy/restart-service.bat
+          
+          # Use this approach to create a true background service that won't close when the terminal closes
+          echo 'powershell -Command "Start-Process -FilePath \\"C:\\GoApp\\app.exe\\" -WindowStyle Hidden -RedirectStandardOutput \\"C:\\GoApp\\app.log\\" -RedirectStandardError \\"C:\\GoApp\\app.log\\" -NoNewWindow"' >> deploy/restart-service.bat
+          
           echo 'echo %DATE% %TIME% - Started application process >> app.log' >> deploy/restart-service.bat
           echo 'timeout /t 5' >> deploy/restart-service.bat
           echo 'echo %DATE% %TIME% - Checking if application is running... >> app.log' >> deploy/restart-service.bat
@@ -105,6 +111,7 @@ jobs:
           echo '  echo %DATE% %TIME% - WARNING: Application may not be running on port 8080 >> app.log' >> deploy/restart-service.bat
           echo '  echo Check application log for errors >> app.log' >> deploy/restart-service.bat
           echo ')' >> deploy/restart-service.bat
+          echo 'exit /b 0' >> deploy/restart-service.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/restart-service.bat
 
@@ -149,6 +156,17 @@ jobs:
           echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
           echo 'Get-ChildItem' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
+          echo '# Create log file if it doesn't exist' >> deploy/setup-service.ps1
+          echo 'if (-not (Test-Path "app.log")) {' >> deploy/setup-service.ps1
+          echo '    New-Item -Path "app.log" -ItemType File -Force | Out-Null' >> deploy/setup-service.ps1
+          echo '    Write-Host "Created new log file"' >> deploy/setup-service.ps1
+          echo '}' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Log start time and system info' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "====== SERVER SETUP LOG $(Get-Date) ======"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Server: $env:COMPUTERNAME"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Directory: $pwd"' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
           echo '# Verify database file exists and is accessible' >> deploy/setup-service.ps1
           echo 'if (Test-Path "farm.db") {' >> deploy/setup-service.ps1
           echo '    Write-Host "Database file found: farm.db"' >> deploy/setup-service.ps1
@@ -157,77 +175,58 @@ jobs:
           echo '        $dbTest = [System.IO.File]::Open("$PSScriptRoot\farm.db", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite)' >> deploy/setup-service.ps1
           echo '        $dbTest.Close()' >> deploy/setup-service.ps1
           echo '        Write-Host "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
           echo '    } catch {' >> deploy/setup-service.ps1
           echo '        Write-Host "WARNING: Database file exists but may not be accessible: $_"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "WARNING: Database file exists but may not be accessible: $_"' >> deploy/setup-service.ps1
           echo '    }' >> deploy/setup-service.ps1
           echo '} else {' >> deploy/setup-service.ps1
           echo '    Write-Host "WARNING: Database file not found! The application may not start correctly."' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "WARNING: Database file not found! The application may not start correctly."' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Set environment variables' >> deploy/setup-service.ps1
+          echo '# Set environment variables for the machine and current session' >> deploy/setup-service.ps1
           echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
           echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
           echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
+          echo '$env:PORT = "8080"' >> deploy/setup-service.ps1
+          echo '$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Set environment variables: PORT=8080, JWT_SECRET=****"' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
           echo '# Kill any existing processes' >> deploy/setup-service.ps1
           echo 'Write-Host "Killing any existing app processes..."' >> deploy/setup-service.ps1
           echo 'Get-Process -Name "app" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Killed any existing app processes"' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Start the application in the background' >> deploy/setup-service.ps1
-          echo 'Write-Host "Starting application in background..."' >> deploy/setup-service.ps1
+          echo '# Create a scheduled task to run the app at startup' >> deploy/setup-service.ps1
+          echo 'Write-Host "Creating Windows scheduled task to run app.exe when system starts..."' >> deploy/setup-service.ps1
+          echo '$action = New-ScheduledTaskAction -Execute "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp"' >> deploy/setup-service.ps1
+          echo '$trigger = New-ScheduledTaskTrigger -AtStartup' >> deploy/setup-service.ps1
+          echo '$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest' >> deploy/setup-service.ps1
+          echo '$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd' >> deploy/setup-service.ps1
+          echo 'Unregister-ScheduledTask -TaskName "GoApp" -Confirm:$false -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo 'Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "GoApp" -Description "Start Go Application" -Force' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Created scheduled task to run app at startup"' >> deploy/setup-service.ps1
+          echo '' >> deploy/setup-service.ps1
+          echo '# Start the app directly now' >> deploy/setup-service.ps1
+          echo 'Write-Host "Starting application now..."' >> deploy/setup-service.ps1
           echo 'try {' >> deploy/setup-service.ps1
-          echo '    $startAppProcess = Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden -PassThru -ErrorAction Stop' >> deploy/setup-service.ps1
-          echo '    Write-Host "Process started with ID: $($startAppProcess.Id)"' >> deploy/setup-service.ps1
-          echo '    # Wait a moment to see if it crashes immediately' >> deploy/setup-service.ps1
-          echo '    Start-Sleep -Seconds 1' >> deploy/setup-service.ps1
-          echo '    if ($startAppProcess.HasExited) {' >> deploy/setup-service.ps1
-          echo '        Write-Host "ERROR: Process exited immediately with code $($startAppProcess.ExitCode)"' >> deploy/setup-service.ps1
-          echo '        Write-Host "Checking application log for errors:"' >> deploy/setup-service.ps1
-          echo '        if (Test-Path "$PSScriptRoot\app.log") {' >> deploy/setup-service.ps1
-          echo '            Get-Content "$PSScriptRoot\app.log" -Tail 20' >> deploy/setup-service.ps1
-          echo '        } else {' >> deploy/setup-service.ps1
-          echo '            Write-Host "No log file found"' >> deploy/setup-service.ps1
-          echo '        }' >> deploy/setup-service.ps1
+          echo '    $env:PORT = "8080"' >> deploy/setup-service.ps1
+          echo '    $env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
+          echo '    $proc = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -PassThru -NoNewWindow' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Started app with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
+          echo '    Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
+          echo '    if (-not (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue)) {' >> deploy/setup-service.ps1
+          echo '        Write-Host "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
+          echo '    } else {' >> deploy/setup-service.ps1
+          echo '        Write-Host "Application started successfully with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "Application started successfully with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
           echo '    }' >> deploy/setup-service.ps1
           echo '} catch {' >> deploy/setup-service.ps1
           echo '    Write-Host "ERROR: Failed to start application: $_"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "ERROR: Failed to start application: $_"' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# More thorough port check' >> deploy/setup-service.ps1
-          echo 'Write-Host "Checking if application is listening on port 8080..."' >> deploy/setup-service.ps1
-          echo 'function Check-Port {' >> deploy/setup-service.ps1
-          echo '    $portCheck = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo '    return $portCheck -ne $null' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo 'if (Check-Port) {' >> deploy/setup-service.ps1
-          echo '    Write-Host "SUCCESS: App is running and listening on port 8080!"' >> deploy/setup-service.ps1
-          echo '} else {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Port not open yet, waiting 10 seconds..."' >> deploy/setup-service.ps1
-          echo '    Start-Sleep -Seconds 10' >> deploy/setup-service.ps1
-          echo '    if (Check-Port) {' >> deploy/setup-service.ps1
-          echo '        Write-Host "SUCCESS: App is now running and listening on port 8080!"' >> deploy/setup-service.ps1
-          echo '    } else {' >> deploy/setup-service.ps1
-          echo '        Write-Host "ERROR: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
-          echo '        Write-Host "Checking for app process..."' >> deploy/setup-service.ps1
-          echo '        $appProcess = Get-Process -Name "app" -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo '        if ($appProcess) {' >> deploy/setup-service.ps1
-          echo '            Write-Host "Process is running but not listening on port 8080."' >> deploy/setup-service.ps1
-          echo '        } else {' >> deploy/setup-service.ps1
-          echo '            Write-Host "Process is not running!"' >> deploy/setup-service.ps1
-          echo '        }' >> deploy/setup-service.ps1
-          echo '        Write-Host "Checking application log for errors:"' >> deploy/setup-service.ps1
-          echo '        if (Test-Path "$PSScriptRoot\app.log") {' >> deploy/setup-service.ps1
-          echo '            Get-Content "$PSScriptRoot\app.log" -Tail 30' >> deploy/setup-service.ps1
-          echo '        } else {' >> deploy/setup-service.ps1
-          echo '            Write-Host "No log file found"' >> deploy/setup-service.ps1
-          echo '        }' >> deploy/setup-service.ps1
-          echo '        Write-Host "Checking Windows Event Log for errors:"' >> deploy/setup-service.ps1
-          echo '        Get-EventLog -LogName Application -Newest 10 -EntryType Error -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo 'Write-Host "Setup complete! The app should be running in the background."' >> deploy/setup-service.ps1
           # Convert PowerShell script to Windows line endings
           sed -i 's/$/\r/' deploy/setup-service.ps1
 
