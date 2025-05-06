@@ -63,9 +63,12 @@ jobs:
 
           # Create a batch file to start the app on Windows with proper Windows line endings
           echo '@echo on' > deploy/start-app.bat
+          echo 'setx PORT 8080' >> deploy/start-app.bat
+          echo 'setx JWT_SECRET your_secret_here' >> deploy/start-app.bat
           echo 'set PORT=8080' >> deploy/start-app.bat
           echo 'set JWT_SECRET=your_secret_here' >> deploy/start-app.bat
           echo 'cd /d "%~dp0"' >> deploy/start-app.bat
+          echo 'echo Starting application on port %PORT%...' >> deploy/start-app.bat
           echo 'app.exe > app.log 2>&1' >> deploy/start-app.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/start-app.bat
@@ -79,50 +82,37 @@ jobs:
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/restart-service.bat
 
-          # Create PowerShell script for setting up the service
-          echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
-          echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Debug - show current directory' >> deploy/setup-service.ps1
-          echo 'Write-Host "Current directory: $pwd"' >> deploy/setup-service.ps1
-          echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
-          echo 'Get-ChildItem' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Set environment variables' >> deploy/setup-service.ps1
-          echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
-          echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
-          echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Kill any existing processes' >> deploy/setup-service.ps1
-          echo 'Write-Host "Killing any existing app processes..."' >> deploy/setup-service.ps1
-          echo 'Get-Process -Name "app" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Start the application in the background' >> deploy/setup-service.ps1
-          echo 'Write-Host "Starting application in background..."' >> deploy/setup-service.ps1
-          echo 'Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Give the app a few seconds to start' >> deploy/setup-service.ps1
-          echo 'Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Check if the app is running' >> deploy/setup-service.ps1
-          echo '$running = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo 'if ($running) {' >> deploy/setup-service.ps1
-          echo '    Write-Host "App is running and listening on port 8080!"' >> deploy/setup-service.ps1
-          echo '} else {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Waiting a bit longer..."' >> deploy/setup-service.ps1
-          echo '    Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
-          echo '    $running = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo '    if ($running) {' >> deploy/setup-service.ps1
-          echo '        Write-Host "App is now running and listening on port 8080!"' >> deploy/setup-service.ps1
-          echo '    } else {' >> deploy/setup-service.ps1
-          echo '        Write-Host "WARNING: App does not appear to be running on port 8080."' >> deploy/setup-service.ps1
-          echo '        Write-Host "Check app.log for errors."' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo 'Write-Host "Setup complete! The app should be running in the background."' >> deploy/setup-service.ps1
-          # Convert PowerShell script to Windows line endings
-          sed -i 's/$/\r/' deploy/setup-service.ps1
+          # Create a diagnostic batch file
+          echo '@echo on' > deploy/diagnostics.bat
+          echo 'echo === APPLICATION STATUS ===' >> deploy/diagnostics.bat
+          echo 'echo.' >> deploy/diagnostics.bat
+          echo 'echo Checking if app is running:' >> deploy/diagnostics.bat
+          echo 'tasklist | findstr app.exe' >> deploy/diagnostics.bat
+          echo 'echo.' >> deploy/diagnostics.bat
+          echo 'echo Checking if port 8080 is open:' >> deploy/diagnostics.bat
+          echo 'netstat -ano | findstr :8080' >> deploy/diagnostics.bat
+          echo 'echo.' >> deploy/diagnostics.bat
+          echo 'echo === ENVIRONMENT VARIABLES ===' >> deploy/diagnostics.bat
+          echo 'echo PORT=%PORT%' >> deploy/diagnostics.bat
+          echo 'echo JWT_SECRET=%JWT_SECRET%' >> deploy/diagnostics.bat
+          echo 'echo.' >> deploy/diagnostics.bat
+          echo 'echo === LAST 10 LINES OF LOG ===' >> deploy/diagnostics.bat
+          echo 'powershell -Command "if (Test-Path app.log) { Get-Content app.log -Tail 10 } else { echo \"Log file not found\" }"' >> deploy/diagnostics.bat
+          echo 'echo.' >> deploy/diagnostics.bat
+          echo 'echo === RESTART OPTIONS ===' >> deploy/diagnostics.bat
+          echo 'echo 1. Press R to restart the application' >> deploy/diagnostics.bat
+          echo 'echo 2. Press Q to exit' >> deploy/diagnostics.bat
+          echo 'choice /C RQ /N /M "Choose an option:"' >> deploy/diagnostics.bat
+          echo 'if errorlevel 2 goto end' >> deploy/diagnostics.bat
+          echo 'if errorlevel 1 goto restart' >> deploy/diagnostics.bat
+          echo ':restart' >> deploy/diagnostics.bat
+          echo 'echo Restarting application...' >> deploy/diagnostics.bat
+          echo 'call restart-service.bat' >> deploy/diagnostics.bat
+          echo 'goto end' >> deploy/diagnostics.bat
+          echo ':end' >> deploy/diagnostics.bat
+          echo 'exit' >> deploy/diagnostics.bat
+          # Convert to Windows line endings
+          sed -i 's/$/\r/' deploy/diagnostics.bat
 
       # Install necessary tools
       - name: Install SSH tools
@@ -168,13 +158,9 @@ jobs:
           echo "Copying setup-service.ps1..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
-          # Create a file list
-          echo "Listing all files to be copied to build directory..."
-          ls -la deploy/build/
-
-          # Copy build directory files
-          echo "Copying build directory files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
+          # Copy diagnostics.bat
+          echo "Copying diagnostics.bat..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
@@ -190,6 +176,10 @@ jobs:
           sleep 10
           echo "Checking if app is running..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Retrieve the log file to diagnose startup issues
+          echo "Retrieving application log file..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -234,13 +224,17 @@ jobs:
           echo "Copying setup-service.ps1..."
           scp -v -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
+          # Copy diagnostics.bat
+          echo "Copying diagnostics.bat..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+
           # Create a file list
           echo "Listing all files to be copied to build directory..."
           ls -la deploy/build/
 
           # Copy build directory files
           echo "Copying build directory files..."
-          scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/build/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/build/
 
           # Verify the files were copied
           echo "Verifying files were copied..."
@@ -256,6 +250,10 @@ jobs:
           sleep 10
           echo "Checking if app is running..."
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Retrieve the log file to diagnose startup issues
+          echo "Retrieving application log file..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
         continue-on-error: true
 
       # Manual instructions if all else fails
