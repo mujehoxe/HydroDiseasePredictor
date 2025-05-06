@@ -156,24 +156,24 @@ jobs:
           echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
           echo 'Get-ChildItem' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
-          echo '# Create log file if it doesn't exist' >> deploy/setup-service.ps1
+          echo '# Create log file if it doesn'"'"'t exist' >> deploy/setup-service.ps1
           echo 'if (-not (Test-Path "app.log")) {' >> deploy/setup-service.ps1
           echo '    New-Item -Path "app.log" -ItemType File -Force | Out-Null' >> deploy/setup-service.ps1
           echo '    Write-Host "Created new log file"' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
           echo '# Log start time and system info' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "====== SERVER SETUP LOG $(Get-Date) ======"' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Server: $env:COMPUTERNAME"' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Directory: $pwd"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "====== SERVER SETUP LOG \$(Get-Date) ======"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Server: \$env:COMPUTERNAME"' >> deploy/setup-service.ps1
+          echo 'Add-Content -Path "app.log" -Value "Directory: \$pwd"' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
           echo '# Verify database file exists and is accessible' >> deploy/setup-service.ps1
           echo 'if (Test-Path "farm.db") {' >> deploy/setup-service.ps1
           echo '    Write-Host "Database file found: farm.db"' >> deploy/setup-service.ps1
           echo '    # Check if the file can be read/written' >> deploy/setup-service.ps1
           echo '    try {' >> deploy/setup-service.ps1
-          echo '        $dbTest = [System.IO.File]::Open("$PSScriptRoot\farm.db", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite)' >> deploy/setup-service.ps1
-          echo '        $dbTest.Close()' >> deploy/setup-service.ps1
+          echo '        \$dbTest = [System.IO.File]::Open("\$PSScriptRoot\\farm.db", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite)' >> deploy/setup-service.ps1
+          echo '        \$dbTest.Close()' >> deploy/setup-service.ps1
           echo '        Write-Host "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
           echo '        Add-Content -Path "app.log" -Value "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
           echo '    } catch {' >> deploy/setup-service.ps1
@@ -189,8 +189,8 @@ jobs:
           echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
           echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
           echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
-          echo '$env:PORT = "8080"' >> deploy/setup-service.ps1
-          echo '$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
+          echo '\$env:PORT = "8080"' >> deploy/setup-service.ps1
+          echo '\$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
           echo 'Add-Content -Path "app.log" -Value "Set environment variables: PORT=8080, JWT_SECRET=****"' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
           echo '# Kill any existing processes' >> deploy/setup-service.ps1
@@ -200,32 +200,32 @@ jobs:
           echo '' >> deploy/setup-service.ps1
           echo '# Create a scheduled task to run the app at startup' >> deploy/setup-service.ps1
           echo 'Write-Host "Creating Windows scheduled task to run app.exe when system starts..."' >> deploy/setup-service.ps1
-          echo '$action = New-ScheduledTaskAction -Execute "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp"' >> deploy/setup-service.ps1
-          echo '$trigger = New-ScheduledTaskTrigger -AtStartup' >> deploy/setup-service.ps1
-          echo '$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest' >> deploy/setup-service.ps1
-          echo '$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd' >> deploy/setup-service.ps1
-          echo 'Unregister-ScheduledTask -TaskName "GoApp" -Confirm:$false -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo 'Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -TaskName "GoApp" -Description "Start Go Application" -Force' >> deploy/setup-service.ps1
+          echo '\$action = New-ScheduledTaskAction -Execute "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp"' >> deploy/setup-service.ps1
+          echo '\$trigger = New-ScheduledTaskTrigger -AtStartup' >> deploy/setup-service.ps1
+          echo '\$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest' >> deploy/setup-service.ps1
+          echo '\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd' >> deploy/setup-service.ps1
+          echo 'Unregister-ScheduledTask -TaskName "GoApp" -Confirm:\$false -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
+          echo 'Register-ScheduledTask -Action \$action -Trigger \$trigger -Principal \$principal -Settings \$settings -TaskName "GoApp" -Description "Start Go Application" -Force' >> deploy/setup-service.ps1
           echo 'Add-Content -Path "app.log" -Value "Created scheduled task to run app at startup"' >> deploy/setup-service.ps1
           echo '' >> deploy/setup-service.ps1
           echo '# Start the app directly now' >> deploy/setup-service.ps1
           echo 'Write-Host "Starting application now..."' >> deploy/setup-service.ps1
           echo 'try {' >> deploy/setup-service.ps1
-          echo '    $env:PORT = "8080"' >> deploy/setup-service.ps1
-          echo '    $env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
-          echo '    $proc = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -PassThru -NoNewWindow' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Started app with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
+          echo '    \$env:PORT = "8080"' >> deploy/setup-service.ps1
+          echo '    \$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
+          echo '    \$proc = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -PassThru -NoNewWindow' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Started app with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
           echo '    Start-Sleep -Seconds 5' >> deploy/setup-service.ps1
-          echo '    if (-not (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue)) {' >> deploy/setup-service.ps1
+          echo '    if (-not (Get-Process -Id \$proc.Id -ErrorAction SilentlyContinue)) {' >> deploy/setup-service.ps1
           echo '        Write-Host "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
           echo '        Add-Content -Path "app.log" -Value "ERROR: Process exited immediately after starting"' >> deploy/setup-service.ps1
           echo '    } else {' >> deploy/setup-service.ps1
-          echo '        Write-Host "Application started successfully with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "Application started successfully with process ID: $($proc.Id)"' >> deploy/setup-service.ps1
+          echo '        Write-Host "Application started successfully with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "Application started successfully with process ID: \$(\$proc.Id)"' >> deploy/setup-service.ps1
           echo '    }' >> deploy/setup-service.ps1
           echo '} catch {' >> deploy/setup-service.ps1
-          echo '    Write-Host "ERROR: Failed to start application: $_"' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "ERROR: Failed to start application: $_"' >> deploy/setup-service.ps1
+          echo '    Write-Host "ERROR: Failed to start application: \$_"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "ERROR: Failed to start application: \$_"' >> deploy/setup-service.ps1
           echo '}' >> deploy/setup-service.ps1
           # Convert PowerShell script to Windows line endings
           sed -i 's/$/\r/' deploy/setup-service.ps1
