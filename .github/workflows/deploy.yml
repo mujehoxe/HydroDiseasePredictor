@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [backend]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -13,65 +13,100 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Build Frontend
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install Node dependencies
         run: npm install
 
       - name: Build frontend
         run: npm run build
 
-      - name: Create deployment directory
-        run: |
-          mkdir -p deploy
-          cp -r dist deploy/
-          cp server.js deploy/
-          cp package.json deploy/
-          cp package-lock.json deploy/
-          mkdir -p deploy/src
-          cp -r src/models deploy/src/
-
-      - name: Create production .env file
-        run: |
-          cd deploy
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
-          echo "NODE_ENV=production" >> .env
-
-      - name: Deploy to server
-        uses: appleboy/scp-action@master
+      # Setup Go for backend
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "deploy/*"
-          target: ${{ secrets.DEPLOY_PATH }}
-          strip_components: 1
+          go-version: "1.22"
+          cache: true
 
-      - name: Setup and start application on server
+      - name: Build Go backend
+        run: |
+          cd backend
+          # Build for Windows target
+          GOOS=windows GOARCH=amd64 go build -o app.exe
+          # Copy frontend build to the backend/build directory
+          mkdir -p build
+          cp -r ../dist/* build/
+
+      - name: Prepare for deployment
+        run: |
+          # Create deployment directory with backend and frontend
+          mkdir -p deploy
+          cp -r backend/app.exe deploy/
+          cp -r backend/build deploy/
+          cp -r backend/farm.db deploy/ || true
+          # Create a batch file to start the app on Windows
+          echo '@echo off' > deploy/start-app.bat
+          echo 'set PORT=%PORT%' >> deploy/start-app.bat
+          echo 'set JWT_SECRET=%JWT_SECRET%' >> deploy/start-app.bat
+          echo 'app.exe' >> deploy/start-app.bat
+
+      # Deploy using WinSCP/SFTP approach
+      - name: Install WinSCP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Deploy to Windows server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SSH_USERNAME }}
+          server: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          local_path: "./deploy/*"
+          remote_path: ${{ secrets.DEPLOY_PATH }}
+          sftp_only: true
+          password: ${{ secrets.SSH_PASSWORD }}
+
+      # Alternative deployment if SFTP doesn't work
+      - name: Deploy with SCP (alternative)
+        if: ${{ failure() }}
+        run: |
+          echo "Trying alternative SCP deployment..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+        continue-on-error: true
+
+      # Use PowerShell remoting or another Windows-friendly approach for remote execution
+      - name: Setup on Windows server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            # Install PM2 globally if not already installed
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-            # Install production dependencies
-            npm install --omit=dev
-            # Stop existing app instance if running
-            pm2 stop app || true
-            pm2 delete app || true
-            # Start the app with PM2
-            pm2 start server.js --name app
-            # Save PM2 configuration
-            pm2 save
+
+            # Set environment variables
+            setx PORT "${{ secrets.PORT }}"
+            setx JWT_SECRET "${{ secrets.JWT_SECRET }}"
+
+            # Create a Windows service for the Go app using NSSM
+            # First check if NSSM is available
+            if (Test-Path "C:\Program Files\nssm\nssm.exe") {
+              # Stop service if it exists
+              sc stop GoAppService
+              # Create/update service
+              "C:\Program Files\nssm\nssm.exe" install GoAppService "${{ secrets.DEPLOY_PATH }}\app.exe"
+              "C:\Program Files\nssm\nssm.exe" set GoAppService AppDirectory "${{ secrets.DEPLOY_PATH }}"
+              "C:\Program Files\nssm\nssm.exe" set GoAppService AppEnvironmentExtra "PORT=${{ secrets.PORT }}" "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+              # Start service
+              sc start GoAppService
+            } else {
+              # Fallback: run the app directly using the batch file
+              Start-Process -FilePath "${{ secrets.DEPLOY_PATH }}\start-app.bat" -WindowStyle Hidden
+            }

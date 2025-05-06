@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -303,14 +304,12 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&User{}, &Farm{}, &Crop{})
-	if err != nil {
-		return nil, err
-	}
+	// Auto migrate models
+	db.AutoMigrate(&Farm{}, &Crop{}, &User{})
 
 	server := &Server{
 		db:     db,
-		router: mux.NewRouter().PathPrefix("/api/v1").Subrouter(),
+		router: mux.NewRouter(),
 	}
 
 	server.setupRoutes()
@@ -318,43 +317,44 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) setupRoutes() {
-	// Create a cors handler
-	s.router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	// API routes
+	apiRouter := s.router.PathPrefix("/api/v1").Subrouter()
 
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
+	// Auth routes
+	apiRouter.HandleFunc("/auth/register", s.register).Methods("POST")
+	apiRouter.HandleFunc("/auth/login", s.login).Methods("POST")
 
-			next.ServeHTTP(w, r)
-		})
+	// User routes
+	apiRouter.HandleFunc("/users/{id}", s.authMiddleware(s.getUser)).Methods("GET")
+	apiRouter.HandleFunc("/users/{id}", s.authMiddleware(s.updateUser)).Methods("PUT")
+	apiRouter.HandleFunc("/users/{id}", s.authMiddleware(s.deleteUser)).Methods("DELETE")
+	apiRouter.HandleFunc("/users", s.authMiddleware(s.adminMiddleware(s.getAllUsers))).Methods("GET")
+	apiRouter.HandleFunc("/users/{id}/farms", s.authMiddleware(s.getUserFarms)).Methods("GET")
+
+	// Farm routes
+	apiRouter.HandleFunc("/farms", s.authMiddleware(s.createFarm)).Methods("POST")
+	apiRouter.HandleFunc("/farms/{id}", s.authMiddleware(s.getFarm)).Methods("GET")
+	apiRouter.HandleFunc("/farms/{id}", s.authMiddleware(s.updateFarm)).Methods("PUT")
+	apiRouter.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE")
+	apiRouter.HandleFunc("/farms/{id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET")
+	apiRouter.HandleFunc("/farms/{id}/crops", s.authMiddleware(s.addCrop)).Methods("POST")
+
+	// Swagger docs
+	apiRouter.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
+	// Serve static files from the frontend build
+	s.router.PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./build"))))
+
+	// Serve the index.html for any other routes to support SPA routing
+	s.router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// For API requests that weren't matched, return 404
+		if r.URL.Path[:4] == "/api" {
+			http.NotFound(w, r)
+			return
+		}
+		// Otherwise serve the frontend
+		http.ServeFile(w, r, "./build/index.html")
 	})
-
-	// Auth routes (no authentication required)
-	s.router.HandleFunc("/auth/register", s.register).Methods("POST", "OPTIONS")
-	s.router.HandleFunc("/auth/login", s.login).Methods("POST", "OPTIONS")
-
-	// Protected routes (require authentication)
-	s.router.HandleFunc("/users/{id}/farms", s.authMiddleware(s.getUserFarms)).Methods("GET", "OPTIONS")
-
-	s.router.HandleFunc("/farms", s.authMiddleware(s.createFarm)).Methods("POST", "OPTIONS")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.getFarm)).Methods("GET", "OPTIONS")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.updateFarm)).Methods("PUT", "OPTIONS")
-	s.router.HandleFunc("/farms/{id}", s.authMiddleware(s.deleteFarm)).Methods("DELETE", "OPTIONS")
-	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.addCrop)).Methods("POST", "OPTIONS")
-	s.router.HandleFunc("/farms/{farm_id}/crops", s.authMiddleware(s.getFarmCrops)).Methods("GET", "OPTIONS")
-	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.updateUser)).Methods("PUT", "OPTIONS")
-
-	// Protected routes (admin only)
-	s.router.HandleFunc("/users", s.authMiddleware(s.adminMiddleware(s.getAllUsers))).Methods("GET", "OPTIONS")
-	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.adminMiddleware(s.getUser))).Methods("GET", "OPTIONS")
-	s.router.HandleFunc("/users/{id}", s.authMiddleware(s.deleteUser)).Methods("DELETE", "OPTIONS")
-	// Swagger documentation
-	s.router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 }
 
 // @Summary Get farm crops
@@ -402,6 +402,12 @@ func main() {
 		log.Fatalf("Failed to initialize server: %v", err)
 	}
 
+	// Get port from environment variable or use default
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	// CORS middleware configuration
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"http://localhost:5173", "http://localhost:3000", "*"}), // Add your frontend URLs here
@@ -410,9 +416,9 @@ func main() {
 		handlers.AllowCredentials(),
 	)
 
-	log.Println("Server starting on :8080")
-	log.Println("API documentation available at http://localhost:8080/api/v1/swagger/index.html")
-	if err := http.ListenAndServe(":8080", corsHandler(server.router)); err != nil {
+	log.Printf("Server starting on :%s", port)
+	log.Printf("API documentation available at http://localhost:%s/api/v1/swagger/index.html", port)
+	if err := http.ListenAndServe(":"+port, corsHandler(server.router)); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
