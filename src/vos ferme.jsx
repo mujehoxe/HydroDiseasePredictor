@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
 import FarmsList from "./components/FarmsList";
 import Sidebar from "./components/SidebarOffcanvas";
+import API_CONFIG from "./config/api";
 import "./css/bootstrap.min.css";
 import "./css/style.css";
 import diseaseRiskCalculators from "./js/diseaseRiskCalculator";
@@ -67,12 +68,9 @@ function VosFermes() {
   };
 
   useEffect(() => {
-    fetch(
-      `https://vite-project-9cea.onrender.com/api/v1/users/${userId}/farms`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    )
+    fetch(`${API_CONFIG.BASE_URL}users/${userId}/farms`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((response) => response.json())
       .then((data) => {
         setFarms(data);
@@ -175,7 +173,7 @@ function VosFermes() {
                       ) : (
                         <p>
                           {language === "fr"
-                            ? "Pas de recommandations disponibles pour l’instant."
+                            ? "Pas de recommandations disponibles pour l'instant."
                             : "لا توجد توصيات متاحة حاليًا."}
                         </p>
                       )}
