@@ -55,62 +55,91 @@ jobs:
           echo 'set JWT_SECRET=%JWT_SECRET%' >> deploy/start-app.bat
           echo 'app.exe' >> deploy/start-app.bat
 
-      # Deploy via SSH with rsync
-      - name: Install rsync
-        run: sudo apt-get install -y rsync openssh-client sshpass
+          # Create PowerShell script for setting up the service
+          cat > deploy/setup-service.ps1 << 'EOL'
+          $ErrorActionPreference = "Continue"
 
-      - name: Setup SSH key
+          # Set environment variables
+          [Environment]::SetEnvironmentVariable('PORT', '${{ secrets.PORT }}', 'Machine')
+          [Environment]::SetEnvironmentVariable('JWT_SECRET', '${{ secrets.JWT_SECRET }}', 'Machine')
+
+          # Try to stop existing service if running
+          try {
+            Stop-Service -Name GoAppService -ErrorAction SilentlyContinue
+          } catch {
+            Write-Host "No existing service found or could not stop it."
+          }
+
+          # Check if NSSM is available
+          $nssmPath = ""
+          if (Test-Path "C:\Program Files\nssm\nssm.exe") {
+            $nssmPath = "C:\Program Files\nssm\nssm.exe"
+          } elseif (Test-Path "C:\nssm\nssm.exe") {
+            $nssmPath = "C:\nssm\nssm.exe"
+          }
+
+          if ($nssmPath -ne "") {
+            # Create/update the service using NSSM
+            Write-Host "Using NSSM to create service"
+            & $nssmPath install GoAppService "$PSScriptRoot\app.exe"
+            & $nssmPath set GoAppService AppDirectory "$PSScriptRoot"
+            & $nssmPath set GoAppService AppEnvironmentExtra "PORT=${{ secrets.PORT }}" "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+            & $nssmPath start GoAppService
+          } else {
+            # Fallback to running the batch file
+            Write-Host "NSSM not found, running app directly"
+            Start-Process -FilePath "$PSScriptRoot\start-app.bat" -WindowStyle Hidden
+          }
+          Write-Host "Setup complete!"
+          EOL
+
+      # Install necessary tools
+      - name: Install SSH tools
+        run: sudo apt-get install -y openssh-client sshpass
+
+      # Deploy using password
+      - name: Deploy with password
         run: |
+          echo "Attempting deployment using password authentication..."
+          # Create SSH directory if it doesn't exist
+          mkdir -p ~/.ssh
+          # Disable StrictHostKeyChecking for this deployment
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
+
+          # Try to use scp to copy files
+          echo "Copying files with SCP..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -r -P ${{ secrets.SSH_PORT }} deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+          # Run the setup script on the remote server
+          echo "Running setup script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -File setup-service.ps1"
+        continue-on-error: true
+
+      # Deploy using SSH key as fallback
+      - name: Deploy with SSH key
+        if: ${{ failure() }}
+        run: |
+          echo "Attempting deployment using SSH key authentication..."
+          # Set up SSH key
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
+
+          # Try to use scp to copy files
+          echo "Copying files with SCP..."
+          scp -r -P ${{ secrets.SSH_PORT }} deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+          # Run the setup script on the remote server
+          echo "Running setup script..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && powershell -ExecutionPolicy Bypass -File setup-service.ps1"
         continue-on-error: true
 
-      - name: Deploy with rsync
-        run: |
-          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            rsync -avz -e "ssh -p ${{ secrets.SSH_PORT }}" deploy/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
-          else
-            sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz -e "ssh -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no" deploy/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
-          fi
-        continue-on-error: true
-
-      # Fallback to pure SCP if rsync fails
-      - name: Fallback to SCP
+      # Manual instructions if all else fails
+      - name: Deployment failure instructions
         if: ${{ failure() }}
         run: |
-          if [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            scp -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
-          else
-            sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
-          fi
-        continue-on-error: true
-
-      # Setup Windows Server
-      - name: Setup on Windows server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
-
-            # Set environment variables (Windows command)
-            powershell -Command "& {[Environment]::SetEnvironmentVariable('PORT', '${{ secrets.PORT }}', 'Machine'); [Environment]::SetEnvironmentVariable('JWT_SECRET', '${{ secrets.JWT_SECRET }}', 'Machine')}"
-
-            # Stop existing service if running (using sc command for Windows)
-            powershell -Command "& {Stop-Service -Name GoAppService -ErrorAction SilentlyContinue}"
-
-            # Create a Windows service using sc (or fallback to running the batch file)
-            powershell -Command "& {if(Get-Command nssm -ErrorAction SilentlyContinue) { 
-              & nssm install GoAppService '${{ secrets.DEPLOY_PATH }}\app.exe'
-              & nssm set GoAppService AppDirectory '${{ secrets.DEPLOY_PATH }}'
-              & nssm set GoAppService AppEnvironmentExtra 'PORT=${{ secrets.PORT }}' 'JWT_SECRET=${{ secrets.JWT_SECRET }}'
-              & nssm start GoAppService
-            } else {
-              Start-Process -FilePath '${{ secrets.DEPLOY_PATH }}\start-app.bat' -WindowStyle Hidden
-            }}"
+          echo "Automated deployment failed. Please try manual deployment:"
+          echo "1. Download artifacts from this build"
+          echo "2. Copy files to your Windows server at: ${{ secrets.DEPLOY_PATH }}"
+          echo "3. Run the setup-service.ps1 script with PowerShell or manually start app.exe"
