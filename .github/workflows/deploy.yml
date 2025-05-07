@@ -273,9 +273,9 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory and build subdirectory on remote server first (Windows compatible)
-          echo "Creating directories on Windows server..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp && if not exist C:\GoApp\build mkdir C:\GoApp\build\""
+          # Create deployment directory on remote server
+          echo "Creating directory on Windows server..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp\""
 
           # Stop any running instances of the app
           echo "Stopping any running app processes..."
@@ -285,82 +285,27 @@ jobs:
           echo "Waiting for processes to stop..."
           sleep 2
 
-          # Copy files with absolute paths and detailed logging
-          echo "Copying files with SCP..."
+          # Copy files
+          echo "Copying files..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
-          # Copy app.exe
-          echo "Copying app.exe..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          # Create a simple run script
+          echo "Creating run script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo app.exe >> C:\GoApp\run.bat\""
 
-          # Copy farm.db
-          echo "Copying farm.db..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          # Run the application
+          echo "Starting application..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
 
-          # Copy start-app.bat
-          echo "Copying start-app.bat..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/start-app.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Copy setup-service.ps1
-          echo "Copying setup-service.ps1..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/setup-service.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Copy diagnostics.bat
-          echo "Copying diagnostics.bat..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/diagnostics.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Copy direct-run.bat
-          echo "Copying direct-run.bat..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -v -r -P ${{ secrets.SSH_PORT }} deploy/direct-run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Verify the files were copied
-          echo "Verifying files were copied..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"dir C:\GoApp\build\""
-
-          # Run the setup script on the remote server (use cmd.exe to ensure PowerShell starts correctly)
-          echo "Running setup script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -Command \"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1' -WindowStyle Hidden\"\""
-
-          # Wait for initial startup
-          echo "Waiting for initial startup..."
-          sleep 10
-
-          # Check if the log file exists and has content
-          echo "Checking application log..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
-
-          # Try to start the application directly with detailed logging
-          echo "Attempting direct application start with detailed logging..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && echo %DATE% %TIME% - Starting application directly >> app.log && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1 & echo %DATE% %TIME% - Direct start command completed >> app.log\""
-
-          # Wait for direct start
-          echo "Waiting for direct start..."
+          # Wait for startup
+          echo "Waiting for startup..."
           sleep 5
 
-          # Check process status
-          echo "Checking process status..."
+          # Check if the application is running
+          echo "Checking application status..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
-
-          # Check port status
-          echo "Checking port status..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
-
-          # Check application log again
-          echo "Checking application log after direct start..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
-
-          # Try running the application with the direct-run.bat script
-          echo "Attempting to run application using direct-run.bat..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && direct-run.bat\""
-
-          # Wait for batch script execution
-          echo "Waiting for batch script execution..."
-          sleep 5
-
-          # Final status check
-          echo "Performing final status check..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Port Status === && netstat -ano | findstr :8080 && echo. && echo === Log Contents === && type app.log\""
-        continue-on-error: true
 
       # Deploy using SSH key as fallback
       - name: Deploy with SSH key
