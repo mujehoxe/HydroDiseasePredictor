@@ -273,7 +273,20 @@ jobs:
           echo '    Add-Content -Path "app.log" -Value "Starting application directly via PowerShell..."' >> deploy/setup-service.ps1
           echo '    \$env:PORT = "8080"' >> deploy/setup-service.ps1
           echo '    \$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
-          echo '    Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -NoNewWindow' >> deploy/setup-service.ps1
+          echo '    Write-Host "Environment variables set:"' >> deploy/setup-service.ps1
+          echo '    Write-Host "PORT: \$env:PORT"' >> deploy/setup-service.ps1
+          echo '    Write-Host "JWT_SECRET: \$env:JWT_SECRET"' >> deploy/setup-service.ps1
+          echo '    Add-Content -Path "app.log" -Value "Environment variables set - PORT: \$env:PORT"' >> deploy/setup-service.ps1
+          echo '    Write-Host "Starting app.exe..."' >> deploy/setup-service.ps1
+          echo '    \$process = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -NoNewWindow -PassThru' >> deploy/setup-service.ps1
+          echo '    Start-Sleep -Seconds 2' >> deploy/setup-service.ps1
+          echo '    if (\$process.HasExited) {' >> deploy/setup-service.ps1
+          echo '        Write-Host "Application exited immediately with code \$(\$process.ExitCode)"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "Application exited immediately with code \$(\$process.ExitCode)"' >> deploy/setup-service.ps1
+          echo '    } else {' >> deploy/setup-service.ps1
+          echo '        Write-Host "Application started successfully. Process ID: \$(\$process.Id)"' >> deploy/setup-service.ps1
+          echo '        Add-Content -Path "app.log" -Value "Application started successfully. Process ID: \$(\$process.Id)"' >> deploy/setup-service.ps1
+          echo '    }' >> deploy/setup-service.ps1
           echo '    Write-Host "Done. Application should be running."' >> deploy/setup-service.ps1
           echo '    Add-Content -Path "app.log" -Value "Executed direct start command"' >> deploy/setup-service.ps1
           echo '} catch {' >> deploy/setup-service.ps1
@@ -297,11 +310,20 @@ jobs:
           echo 'echo. >> app.log' >> deploy/direct-run.bat
           echo 'echo Running app.exe directly with console output...' >> deploy/direct-run.bat
           echo 'echo %DATE% %TIME% - Starting app.exe >> app.log' >> deploy/direct-run.bat
+          echo 'echo Current environment variables before running app.exe: >> app.log' >> deploy/direct-run.bat
+          echo 'set >> app.log' >> deploy/direct-run.bat
+          echo 'echo. >> app.log' >> deploy/direct-run.bat
+          echo 'echo Attempting to start app.exe on port %PORT%... >> app.log' >> deploy/direct-run.bat
           echo 'app.exe >> app.log 2>&1' >> deploy/direct-run.bat
           echo 'echo %DATE% %TIME% - app.exe exited with code %ERRORLEVEL% >> app.log' >> deploy/direct-run.bat
           echo 'echo.' >> deploy/direct-run.bat
           echo 'echo Application exited with code %ERRORLEVEL%' >> deploy/direct-run.bat
           echo 'echo %DATE% %TIME% - Direct run script completed >> app.log' >> deploy/direct-run.bat
+          echo 'echo Checking if port %PORT% is in use... >> app.log' >> deploy/direct-run.bat
+          echo 'netstat -ano | findstr :%PORT% >> app.log' >> deploy/direct-run.bat
+          echo 'echo. >> app.log' >> deploy/direct-run.bat
+          echo 'echo Checking running processes... >> app.log' >> deploy/direct-run.bat
+          echo 'tasklist /FI "IMAGENAME eq app.exe" /FO LIST >> app.log' >> deploy/direct-run.bat
           echo 'pause' >> deploy/direct-run.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/direct-run.bat
