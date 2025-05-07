@@ -285,14 +285,23 @@ jobs:
 
           # Create a direct-run batch file for debugging
           echo '@echo on' > deploy/direct-run.bat
+          echo 'echo %DATE% %TIME% - Starting direct run script >> app.log' >> deploy/direct-run.bat
+          echo 'echo Current directory: %CD% >> app.log' >> deploy/direct-run.bat
+          echo 'echo Environment variables: >> app.log' >> deploy/direct-run.bat
           echo 'set PORT=8080' >> deploy/direct-run.bat
           echo 'set JWT_SECRET=your_secret_here' >> deploy/direct-run.bat
-          echo 'cd /d "%~dp0"' >> deploy/direct-run.bat
+          echo 'echo PORT=%PORT% >> app.log' >> deploy/direct-run.bat
+          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/direct-run.bat
+          echo 'echo Files in directory: >> app.log' >> deploy/direct-run.bat
+          echo 'dir >> app.log' >> deploy/direct-run.bat
+          echo 'echo. >> app.log' >> deploy/direct-run.bat
           echo 'echo Running app.exe directly with console output...' >> deploy/direct-run.bat
-          echo 'echo.' >> deploy/direct-run.bat
-          echo 'app.exe' >> deploy/direct-run.bat
+          echo 'echo %DATE% %TIME% - Starting app.exe >> app.log' >> deploy/direct-run.bat
+          echo 'app.exe >> app.log 2>&1' >> deploy/direct-run.bat
+          echo 'echo %DATE% %TIME% - app.exe exited with code %ERRORLEVEL% >> app.log' >> deploy/direct-run.bat
           echo 'echo.' >> deploy/direct-run.bat
           echo 'echo Application exited with code %ERRORLEVEL%' >> deploy/direct-run.bat
+          echo 'echo %DATE% %TIME% - Direct run script completed >> app.log' >> deploy/direct-run.bat
           echo 'pause' >> deploy/direct-run.bat
           # Convert to Windows line endings
           sed -i 's/$/\r/' deploy/direct-run.bat
@@ -358,49 +367,45 @@ jobs:
           echo "Running setup script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -Command \"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1' -WindowStyle Hidden\"\""
 
-          # Verify the app is running (give it a moment to start)
-          echo "Waiting for app to start..."
+          # Wait for initial startup
+          echo "Waiting for initial startup..."
           sleep 10
-          echo "Checking if app is running..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
 
-          # Retrieve the log file to diagnose startup issues
-          echo "Retrieving application log file..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
+          # Check if the log file exists and has content
+          echo "Checking application log..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
 
-          # Try force starting the app directly (as a fallback)
-          echo "Trying to force start the application directly..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && set PORT=8080 && set JWT_SECRET=your_secret_here && start /b app.exe\""
+          # Try to start the application directly with detailed logging
+          echo "Attempting direct application start with detailed logging..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && echo %DATE% %TIME% - Starting application directly >> app.log && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1 & echo %DATE% %TIME% - Direct start command completed >> app.log\""
 
-          # Check again after direct start
-          echo "Waiting after force start..."
-          sleep 5
-          echo "Checking if app is running now..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
-
-          # Get process list to see if app is running
-          echo "Checking running processes..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist | findstr app.exe\""
-
-          # Check Windows event logs for any relevant errors
-          echo "Checking Windows Application Event Log for errors..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
-
-          # Get app.log
-          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Content -Path 'C:\GoApp\app.log'\""
-
-          # Get process list to see if app is running
-          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Process | Where-Object {`$_.Name -like '*app*'} | Select-Object Id, ProcessName, StartTime\""
-
-          # Check if TCP port 8080 is listening (indicates app is running)
-          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State\""
-
-          # Wait a bit and verify we can connect to the application
-          echo "Waiting 5 seconds for application to start..."
+          # Wait for direct start
+          echo "Waiting for direct start..."
           sleep 5
 
-          # Try to connect to the application and get response
-          sshpass -p ${{ secrets.SSH_PASSWORD }} ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Invoke-WebRequest -Uri 'http://localhost:8080/' -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue | Select-Object StatusCode, StatusDescription\""
+          # Check process status
+          echo "Checking process status..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
+
+          # Check port status
+          echo "Checking port status..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Check application log again
+          echo "Checking application log after direct start..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
+
+          # Try running the application with the direct-run.bat script
+          echo "Attempting to run application using direct-run.bat..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && direct-run.bat\""
+
+          # Wait for batch script execution
+          echo "Waiting for batch script execution..."
+          sleep 5
+
+          # Final status check
+          echo "Performing final status check..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Port Status === && netstat -ano | findstr :8080 && echo. && echo === Log Contents === && type app.log\""
         continue-on-error: true
 
       # Deploy using SSH key as fallback
@@ -470,49 +475,45 @@ jobs:
           echo "Running setup script..."
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && powershell -ExecutionPolicy Bypass -NoProfile -Command \"Start-Process powershell -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\GoApp\setup-service.ps1' -WindowStyle Hidden\"\""
 
-          # Verify the app is running (give it a moment to start)
-          echo "Waiting for app to start..."
+          # Wait for initial startup
+          echo "Waiting for initial startup..."
           sleep 10
-          echo "Checking if app is running..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
 
-          # Retrieve the log file to diagnose startup issues
-          echo "Retrieving application log file..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type C:\GoApp\app.log\""
+          # Check if the log file exists and has content
+          echo "Checking application log..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
 
-          # Try force starting the app directly (as a fallback)
-          echo "Trying to force start the application directly..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && set PORT=8080 && set JWT_SECRET=your_secret_here && start /b app.exe\""
+          # Try to start the application directly with detailed logging
+          echo "Attempting direct application start with detailed logging..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && echo %DATE% %TIME% - Starting application directly >> app.log && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1 & echo %DATE% %TIME% - Direct start command completed >> app.log\""
 
-          # Check again after direct start
-          echo "Waiting after force start..."
-          sleep 5
-          echo "Checking if app is running now..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
-
-          # Get process list to see if app is running
-          echo "Checking running processes..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist | findstr app.exe\""
-
-          # Check Windows event logs for any relevant errors
-          echo "Checking Windows Application Event Log for errors..."
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-EventLog -LogName Application -EntryType Error -Newest 5 -ErrorAction SilentlyContinue | Select-Object TimeGenerated, Source, Message | Format-List\""
-
-          # Get app.log
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Content -Path 'C:\GoApp\app.log'\""
-
-          # Get process list to see if app is running
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-Process | Where-Object {`$_.Name -like '*app*'} | Select-Object Id, ProcessName, StartTime\""
-
-          # Check if TCP port 8080 is listening (indicates app is running)
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State\""
-
-          # Wait a bit and verify we can connect to the application
-          echo "Waiting 5 seconds for application to start..."
+          # Wait for direct start
+          echo "Waiting for direct start..."
           sleep 5
 
-          # Try to connect to the application and get response
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -command \"Invoke-WebRequest -Uri 'http://localhost:8080/' -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue | Select-Object StatusCode, StatusDescription\""
+          # Check process status
+          echo "Checking process status..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
+
+          # Check port status
+          echo "Checking port status..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+
+          # Check application log again
+          echo "Checking application log after direct start..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\GoApp\app.log') { Get-Content 'C:\GoApp\app.log' } else { Write-Host 'Log file not found' }\""
+
+          # Try running the application with the direct-run.bat script
+          echo "Attempting to run application using direct-run.bat..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && direct-run.bat\""
+
+          # Wait for batch script execution
+          echo "Waiting for batch script execution..."
+          sleep 5
+
+          # Final status check
+          echo "Performing final status check..."
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Port Status === && netstat -ano | findstr :8080 && echo. && echo === Log Contents === && type app.log\""
         continue-on-error: true
 
       # Manual instructions if all else fails
