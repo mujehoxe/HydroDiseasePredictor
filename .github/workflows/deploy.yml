@@ -94,19 +94,39 @@ jobs:
           # Create and copy PowerShell script
           echo "Creating and copying PowerShell launcher..."
           echo 'Set-Location -Path "C:\GoApp"' > launch.ps1
-          echo '$env:PORT = "0.0.0.0:8080"' >> launch.ps1
+          echo '$env:PORT = "8080"' >> launch.ps1  # Change back to just the port number
           echo '$env:JWT_SECRET = "your_secret_here"' >> launch.ps1
           echo 'Write-Host "Starting application with PORT=$env:PORT"' >> launch.ps1
-          echo '$process = Start-Process -FilePath "C:\GoApp\app.exe" -PassThru -WindowStyle Hidden' >> launch.ps1
-          echo '$process.Id | Out-File -FilePath "C:\GoApp\app.pid"' >> launch.ps1
-          echo 'Write-Host "Application started with PID: $($process.Id)"' >> launch.ps1
-          echo 'Start-Sleep -Seconds 3' >> launch.ps1
-          echo '$isRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue' >> launch.ps1
-          echo 'if ($isRunning) {' >> launch.ps1
-          echo '  Write-Host "Process is still running"' >> launch.ps1
-          echo '  netstat -ano | findstr :8080' >> launch.ps1
-          echo '} else {' >> launch.ps1
-          echo '  Write-Host "WARNING: Process is no longer running!"' >> launch.ps1
+          echo 'try {' >> launch.ps1
+          echo '  $process = Start-Process -FilePath "C:\GoApp\app.exe" -PassThru -WindowStyle Normal' >> launch.ps1
+          echo '  $processId = $process.Id' >> launch.ps1
+          echo '  $processId | Out-File -FilePath "C:\GoApp\app.pid"' >> launch.ps1
+          echo '  Write-Host "Application started with PID: $processId"' >> launch.ps1
+          echo '  Start-Sleep -Seconds 3' >> launch.ps1
+          echo '  $isRunning = Get-Process -Id $processId -ErrorAction SilentlyContinue' >> launch.ps1
+          echo '  if ($isRunning) {' >> launch.ps1
+          echo '    Write-Host "Process is still running"' >> launch.ps1
+          echo '    $ports = netstat -ano | findstr ":8080"' >> launch.ps1
+          echo '    if ($ports) {' >> launch.ps1
+          echo '      Write-Host "Port 8080 is in use by process:"' >> launch.ps1
+          echo '      Write-Host $ports' >> launch.ps1
+          echo '    } else {' >> launch.ps1
+          echo '      Write-Host "Port 8080 is not in use"' >> launch.ps1
+          echo '    }' >> launch.ps1
+          echo '  } else {' >> launch.ps1
+          echo '    Write-Host "WARNING: Process is no longer running!"' >> launch.ps1
+          echo '    # Try running directly to capture output' >> launch.ps1
+          echo '    Write-Host "Running app directly to capture output:"' >> launch.ps1
+          echo '    try {' >> launch.ps1
+          echo '      $output = & "C:\GoApp\app.exe" 2>&1' >> launch.ps1
+          echo '      $output | Out-File -FilePath "C:\GoApp\direct_output.log"' >> launch.ps1
+          echo '      Write-Host $output' >> launch.ps1
+          echo '    } catch {' >> launch.ps1
+          echo '      Write-Host "Error running app directly: $_"' >> launch.ps1
+          echo '    }' >> launch.ps1
+          echo '  }' >> launch.ps1
+          echo '} catch {' >> launch.ps1
+          echo '  Write-Host "Error starting process: $_"' >> launch.ps1
           echo '}' >> launch.ps1
 
           # Create and copy batch wrapper
@@ -123,9 +143,9 @@ jobs:
           echo "Starting application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
 
-          # Check final status
+          # Check final status - using double quotes properly for PowerShell command
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === PID FILE === && type C:\GoApp\app.pid && echo === PROCESS CHECK === && powershell -Command \"Get-Process -Id (Get-Content C:\GoApp\app.pid) -ErrorAction SilentlyContinue | Format-Table Id,ProcessName,CPU,WorkingSet\" && echo === PORT CHECK === && netstat -ano | findstr :8080\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === PID FILE === && type C:\\GoApp\\app.pid && echo === DIRECT OUTPUT === && type C:\\GoApp\\direct_output.log 2>nul || echo No direct output log && echo === PORT CHECK === && netstat -ano | findstr :8080\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
