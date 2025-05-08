@@ -292,11 +292,11 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo app.exe >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo app.exe >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat > app.log 2>&1\""
 
           # Wait for startup
           echo "Waiting for startup..."
@@ -306,6 +306,7 @@ jobs:
           echo "Checking application status..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type app.log\""
 
       # Deploy using SSH key as fallback
       - name: Deploy with SSH key
