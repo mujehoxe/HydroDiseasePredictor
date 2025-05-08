@@ -292,7 +292,7 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port 8080... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WorkingDirectory 'C:\GoApp' -WindowStyle Hidden -PassThru\" >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port 8080... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WorkingDirectory 'C:\GoApp' -WindowStyle Hidden -RedirectStandardOutput 'C:\GoApp\app.log' -RedirectStandardError 'C:\GoApp\error.log' -PassThru\" >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
@@ -302,15 +302,17 @@ jobs:
           echo "Waiting for startup..."
           sleep 5
 
-          # Check if the application is running
+          # Check if the application is running and show logs
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type app.log\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Port Status === && netstat -ano | findstr :8080 && echo. && echo === Application Log === && type C:\GoApp\app.log && echo. && echo === Error Log === && type C:\GoApp\error.log\""
 
-          # If the application isn't running, try to start it directly
+          # If the application isn't running, try to start it directly with more logging
           echo "Checking if application needs to be started directly..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp\app.log (echo Starting application directly... && cd C:\GoApp && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe > app.log 2>&1 & timeout /t 5 /nobreak > nul && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST)\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp\app.log (echo Starting application directly... && cd C:\GoApp && echo Current directory: %CD% > app.log && echo Environment variables: >> app.log && set >> app.log && echo. >> app.log && echo Starting app.exe... >> app.log && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1 & timeout /t 5 /nobreak > nul && echo === Process Status After Direct Start === >> app.log && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST >> app.log && echo === Port Status After Direct Start === >> app.log && netstat -ano | findstr :8080 >> app.log && type app.log)\""
+
+          # Final status check
+          echo "Performing final status check..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Final Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Final Port Status === && netstat -ano | findstr :8080 && echo. && echo === Final Log Contents === && type C:\GoApp\app.log\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
