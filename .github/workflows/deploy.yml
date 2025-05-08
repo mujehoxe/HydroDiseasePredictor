@@ -91,28 +91,33 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
-          # Create PowerShell script for application management 
-          echo "Creating PowerShell launcher..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Set-Location -Path 'C:\GoApp' > C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$env:PORT = '0.0.0.0:8080' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$env:JWT_SECRET = 'your_secret_here' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Write-Host 'Starting application with PORT=\$env:PORT' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$process = Start-Process -FilePath 'C:\GoApp\app.exe' -PassThru -WindowStyle Hidden >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$process.Id | Out-File -FilePath 'C:\GoApp\app.pid' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Write-Host 'Application started with PID: ' \$process.Id >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Start-Sleep -Seconds 3 >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$isRunning = Get-Process -Id \$process.Id -ErrorAction SilentlyContinue >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo if (\$isRunning) { >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   Write-Host 'Process is still running' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   netstat -ano | findstr :8080 >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo } else { >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   Write-Host 'WARNING: Process is no longer running!' >> C:\GoApp\launch.ps1\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo } >> C:\GoApp\launch.ps1\""
+          # Create and copy PowerShell script
+          echo "Creating and copying PowerShell launcher..."
+          echo 'Set-Location -Path "C:\GoApp"' > launch.ps1
+          echo '$env:PORT = "0.0.0.0:8080"' >> launch.ps1
+          echo '$env:JWT_SECRET = "your_secret_here"' >> launch.ps1
+          echo 'Write-Host "Starting application with PORT=$env:PORT"' >> launch.ps1
+          echo '$process = Start-Process -FilePath "C:\GoApp\app.exe" -PassThru -WindowStyle Hidden' >> launch.ps1
+          echo '$process.Id | Out-File -FilePath "C:\GoApp\app.pid"' >> launch.ps1
+          echo 'Write-Host "Application started with PID: $($process.Id)"' >> launch.ps1
+          echo 'Start-Sleep -Seconds 3' >> launch.ps1
+          echo '$isRunning = Get-Process -Id $process.Id -ErrorAction SilentlyContinue' >> launch.ps1
+          echo 'if ($isRunning) {' >> launch.ps1
+          echo '  Write-Host "Process is still running"' >> launch.ps1
+          echo '  netstat -ano | findstr :8080' >> launch.ps1
+          echo '} else {' >> launch.ps1
+          echo '  Write-Host "WARNING: Process is no longer running!"' >> launch.ps1
+          echo '}' >> launch.ps1
 
-          # Create a simple batch wrapper
-          echo "Creating batch wrapper..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo powershell -ExecutionPolicy Bypass -File C:\GoApp\launch.ps1 >> C:\GoApp\run.bat\""
+          # Create and copy batch wrapper
+          echo "Creating and copying batch wrapper..."
+          echo '@echo off' > run.bat
+          echo 'powershell -ExecutionPolicy Bypass -File C:\GoApp\launch.ps1' >> run.bat
+
+          # Copy scripts to server
+          echo "Copying scripts to server..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} launch.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
           # Run the application
           echo "Starting application..."
