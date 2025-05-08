@@ -292,7 +292,7 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WindowStyle Hidden -RedirectStandardOutput 'C:\GoApp\app.log' -RedirectStandardError 'C:\GoApp\app.log'\" >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WindowStyle Hidden -NoNewWindow -RedirectStandardOutput 'C:\GoApp\app.log' -RedirectStandardError 'C:\GoApp\error.log'\" >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
@@ -306,7 +306,7 @@ jobs:
           echo "Checking application status..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -ano | findstr :8080\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"type app.log\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Application Log === && type app.log && echo. && echo === Error Log === && type error.log\""
 
       # Deploy using SSH key as fallback
       - name: Deploy with SSH key
