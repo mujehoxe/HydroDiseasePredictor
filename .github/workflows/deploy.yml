@@ -292,7 +292,7 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo start /B app.exe ^> app.log 2^>^&1 >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port 8080... >> C:\GoApp\run.bat && echo start /B cmd /c \"app.exe ^> app.log 2^>^&1\" >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
