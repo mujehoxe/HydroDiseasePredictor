@@ -292,11 +292,11 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo app.exe >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port %%PORT%%... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WindowStyle Hidden -RedirectStandardOutput 'C:\GoApp\app.log' -RedirectStandardError 'C:\GoApp\app.log'\" >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat > app.log 2>&1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
 
           # Wait for startup
           echo "Waiting for startup..."
