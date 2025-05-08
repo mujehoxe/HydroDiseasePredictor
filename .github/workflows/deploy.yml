@@ -61,205 +61,6 @@ jobs:
           cp -r backend/build deploy/
           cp -r backend/farm.db deploy/ || true
 
-          # Create a batch file to start the app on Windows with proper Windows line endings
-          echo '@echo on' > deploy/start-app.bat
-          echo 'setx PORT 8080' >> deploy/start-app.bat
-          echo 'setx JWT_SECRET your_secret_here' >> deploy/start-app.bat
-          echo 'set PORT=8080' >> deploy/start-app.bat
-          echo 'set JWT_SECRET=your_secret_here' >> deploy/start-app.bat
-          echo 'cd /d "%~dp0"' >> deploy/start-app.bat
-          echo 'echo %DATE% %TIME% - Starting application on port %PORT%... >> app.log' >> deploy/start-app.bat
-          echo 'echo Current directory: %CD% >> app.log' >> deploy/start-app.bat
-          echo 'echo Environment variables: >> app.log' >> deploy/start-app.bat
-          echo 'echo PORT=%PORT% >> app.log' >> deploy/start-app.bat
-          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/start-app.bat
-          echo 'echo Files in directory: >> app.log' >> deploy/start-app.bat
-          echo 'dir >> app.log' >> deploy/start-app.bat
-          echo 'echo. >> app.log' >> deploy/start-app.bat
-          echo 'echo Starting app.exe... >> app.log' >> deploy/start-app.bat
-          echo 'app.exe >> app.log 2>&1' >> deploy/start-app.bat
-          echo 'if %ERRORLEVEL% NEQ 0 (' >> deploy/start-app.bat
-          echo '  echo %DATE% %TIME% - ERROR: Application failed to start with code %ERRORLEVEL% >> app.log' >> deploy/start-app.bat
-          echo ')' >> deploy/start-app.bat
-          # Convert to Windows line endings
-          sed -i 's/$/\r/' deploy/start-app.bat
-
-          # Create a service restart script
-          echo '@echo on' > deploy/restart-service.bat
-          echo 'echo %DATE% %TIME% - Restarting application... >> app.log' >> deploy/restart-service.bat
-          echo 'taskkill /F /IM app.exe /T 2>nul' >> deploy/restart-service.bat
-          echo 'echo %DATE% %TIME% - Stopped previous instance >> app.log' >> deploy/restart-service.bat
-          echo 'timeout /t 2' >> deploy/restart-service.bat
-          echo 'cd /d "%~dp0"' >> deploy/restart-service.bat
-          echo 'echo %DATE% %TIME% - Starting application in background... >> app.log' >> deploy/restart-service.bat
-          echo 'echo Current directory: %CD% >> app.log' >> deploy/restart-service.bat
-          echo 'set PORT=8080' >> deploy/restart-service.bat
-          echo 'set JWT_SECRET=your_secret_here' >> deploy/restart-service.bat
-          echo 'echo Environment variables: >> app.log' >> deploy/restart-service.bat
-          echo 'echo PORT=%PORT% >> app.log' >> deploy/restart-service.bat
-          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/restart-service.bat
-          echo 'echo. >> app.log' >> deploy/restart-service.bat
-
-          # Use this approach to create a true background service that won't close when the terminal closes
-          echo 'powershell -Command "Start-Process -FilePath \\"C:\\GoApp\\app.exe\\" -WindowStyle Hidden -RedirectStandardOutput \\"C:\\GoApp\\app.log\\" -RedirectStandardError \\"C:\\GoApp\\app.log\\" -NoNewWindow"' >> deploy/restart-service.bat
-
-          echo 'echo %DATE% %TIME% - Started application process >> app.log' >> deploy/restart-service.bat
-          echo 'timeout /t 5' >> deploy/restart-service.bat
-          echo 'echo %DATE% %TIME% - Checking if application is running... >> app.log' >> deploy/restart-service.bat
-          echo 'netstat -ano | findstr :8080 >> app.log' >> deploy/restart-service.bat
-          echo 'if %ERRORLEVEL% NEQ 0 (' >> deploy/restart-service.bat
-          echo '  echo %DATE% %TIME% - WARNING: Application may not be running on port 8080 >> app.log' >> deploy/restart-service.bat
-          echo '  echo Check application log for errors >> app.log' >> deploy/restart-service.bat
-          echo ')' >> deploy/restart-service.bat
-          echo 'exit /b 0' >> deploy/restart-service.bat
-          # Convert to Windows line endings
-          sed -i 's/$/\r/' deploy/restart-service.bat
-
-          # Create a diagnostic batch file
-          echo '@echo on' > deploy/diagnostics.bat
-          echo 'echo === APPLICATION STATUS ===' >> deploy/diagnostics.bat
-          echo 'echo.' >> deploy/diagnostics.bat
-          echo 'echo Checking if app is running:' >> deploy/diagnostics.bat
-          echo 'tasklist | findstr app.exe' >> deploy/diagnostics.bat
-          echo 'echo.' >> deploy/diagnostics.bat
-          echo 'echo Checking if port 8080 is open:' >> deploy/diagnostics.bat
-          echo 'netstat -ano | findstr :8080' >> deploy/diagnostics.bat
-          echo 'echo.' >> deploy/diagnostics.bat
-          echo 'echo === ENVIRONMENT VARIABLES ===' >> deploy/diagnostics.bat
-          echo 'echo PORT=%PORT%' >> deploy/diagnostics.bat
-          echo 'echo JWT_SECRET=%JWT_SECRET%' >> deploy/diagnostics.bat
-          echo 'echo.' >> deploy/diagnostics.bat
-          echo 'echo === LAST 10 LINES OF LOG ===' >> deploy/diagnostics.bat
-          echo 'powershell -Command "if (Test-Path app.log) { Get-Content app.log -Tail 10 } else { echo \"Log file not found\" }"' >> deploy/diagnostics.bat
-          echo 'echo.' >> deploy/diagnostics.bat
-          echo 'echo === RESTART OPTIONS ===' >> deploy/diagnostics.bat
-          echo 'echo 1. Press R to restart the application' >> deploy/diagnostics.bat
-          echo 'echo 2. Press Q to exit' >> deploy/diagnostics.bat
-          echo 'choice /C RQ /N /M "Choose an option:"' >> deploy/diagnostics.bat
-          echo 'if errorlevel 2 goto end' >> deploy/diagnostics.bat
-          echo 'if errorlevel 1 goto restart' >> deploy/diagnostics.bat
-          echo ':restart' >> deploy/diagnostics.bat
-          echo 'echo Restarting application...' >> deploy/diagnostics.bat
-          echo 'call restart-service.bat' >> deploy/diagnostics.bat
-          echo 'goto end' >> deploy/diagnostics.bat
-          echo ':end' >> deploy/diagnostics.bat
-          echo 'exit' >> deploy/diagnostics.bat
-          # Convert to Windows line endings
-          sed -i 's/$/\r/' deploy/diagnostics.bat
-
-          # Create PowerShell script for setting up the service
-          echo 'Write-Host "Starting service setup..."' > deploy/setup-service.ps1
-          echo '$ErrorActionPreference = "Continue"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Debug - show current directory' >> deploy/setup-service.ps1
-          echo 'Write-Host "Current directory: $pwd"' >> deploy/setup-service.ps1
-          echo 'Write-Host "Listing files in current directory:"' >> deploy/setup-service.ps1
-          echo 'Get-ChildItem' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Create log file if it doesn'"'"'t exist' >> deploy/setup-service.ps1
-          echo 'if (-not (Test-Path "app.log")) {' >> deploy/setup-service.ps1
-          echo '    New-Item -Path "app.log" -ItemType File -Force | Out-Null' >> deploy/setup-service.ps1
-          echo '    Write-Host "Created new log file"' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Log start time and system info' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "====== SERVER SETUP LOG \$(Get-Date) ======"' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Server: \$env:COMPUTERNAME"' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Directory: \$pwd"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Verify database file exists and is accessible' >> deploy/setup-service.ps1
-          echo 'if (Test-Path "farm.db") {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Database file found: farm.db"' >> deploy/setup-service.ps1
-          echo '    # Check if the file can be read/written' >> deploy/setup-service.ps1
-          echo '    try {' >> deploy/setup-service.ps1
-          echo '        \$dbTest = [System.IO.File]::Open("\$PSScriptRoot\\farm.db", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite)' >> deploy/setup-service.ps1
-          echo '        \$dbTest.Close()' >> deploy/setup-service.ps1
-          echo '        Write-Host "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "Database file is accessible with read/write permissions"' >> deploy/setup-service.ps1
-          echo '    } catch {' >> deploy/setup-service.ps1
-          echo '        Write-Host "WARNING: Database file exists but may not be accessible: $_"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "WARNING: Database file exists but may not be accessible: $_"' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
-          echo '} else {' >> deploy/setup-service.ps1
-          echo '    Write-Host "WARNING: Database file not found! The application may not start correctly."' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "WARNING: Database file not found! The application may not start correctly."' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Set environment variables for the machine and current session' >> deploy/setup-service.ps1
-          echo 'Write-Host "Setting environment variables..."' >> deploy/setup-service.ps1
-          echo '[Environment]::SetEnvironmentVariable("PORT", "8080", "Machine")' >> deploy/setup-service.ps1
-          echo '[Environment]::SetEnvironmentVariable("JWT_SECRET", "your_secret_here", "Machine")' >> deploy/setup-service.ps1
-          echo '\$env:PORT = "8080"' >> deploy/setup-service.ps1
-          echo '\$env:JWT_SECRET = "your_secret_here"' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Set environment variables: PORT=8080, JWT_SECRET=****"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Kill any existing processes' >> deploy/setup-service.ps1
-          echo 'Write-Host "Killing any existing app processes..."' >> deploy/setup-service.ps1
-          echo 'Get-Process -Name "app" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue' >> deploy/setup-service.ps1
-          echo 'Add-Content -Path "app.log" -Value "Killed any existing app processes"' >> deploy/setup-service.ps1
-          echo '' >> deploy/setup-service.ps1
-          echo '# Start the app directly' >> deploy/setup-service.ps1
-          echo 'try {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Starting application directly"' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Starting application directly via PowerShell..."' >> deploy/setup-service.ps1
-          echo '    Write-Host "Environment variables set:"' >> deploy/setup-service.ps1
-          echo '    Write-Host "PORT: \$env:PORT"' >> deploy/setup-service.ps1
-          echo '    Write-Host "JWT_SECRET: \$env:JWT_SECRET"' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Environment variables set - PORT: \$env:PORT"' >> deploy/setup-service.ps1
-          echo '    Write-Host "Starting app.exe..."' >> deploy/setup-service.ps1
-          echo '    \$process = Start-Process -FilePath "C:\GoApp\app.exe" -WorkingDirectory "C:\GoApp" -NoNewWindow -PassThru' >> deploy/setup-service.ps1
-          echo '    Start-Sleep -Seconds 2' >> deploy/setup-service.ps1
-          echo '    if (\$process.HasExited) {' >> deploy/setup-service.ps1
-          echo '        Write-Host "Application exited immediately with code \$(\$process.ExitCode)"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "Application exited immediately with code \$(\$process.ExitCode)"' >> deploy/setup-service.ps1
-          echo '    } else {' >> deploy/setup-service.ps1
-          echo '        Write-Host "Application started successfully. Process ID: \$(\$process.Id)"' >> deploy/setup-service.ps1
-          echo '        Add-Content -Path "app.log" -Value "Application started successfully. Process ID: \$(\$process.Id)"' >> deploy/setup-service.ps1
-          echo '    }' >> deploy/setup-service.ps1
-          echo '    Write-Host "Done. Application should be running."' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Executed direct start command"' >> deploy/setup-service.ps1
-          echo '} catch {' >> deploy/setup-service.ps1
-          echo '    Write-Host "Error starting application: \$_"' >> deploy/setup-service.ps1
-          echo '    Add-Content -Path "app.log" -Value "Error during direct start: \$_"' >> deploy/setup-service.ps1
-          echo '}' >> deploy/setup-service.ps1
-          # Convert PowerShell script to Windows line endings
-          sed -i 's/$/\r/' deploy/setup-service.ps1
-
-          # Create a direct-run batch file for debugging
-          echo '@echo on' > deploy/direct-run.bat
-          echo 'echo %DATE% %TIME% - Starting direct run script >> app.log' >> deploy/direct-run.bat
-          echo 'echo Current directory: %CD% >> app.log' >> deploy/direct-run.bat
-          echo 'echo Environment variables: >> app.log' >> deploy/direct-run.bat
-          echo 'setx PORT 8080' >> deploy/direct-run.bat
-          echo 'setx JWT_SECRET your_secret_here' >> deploy/direct-run.bat
-          echo 'set PORT=8080' >> deploy/direct-run.bat
-          echo 'set JWT_SECRET=your_secret_here' >> deploy/direct-run.bat
-          echo 'echo PORT=%PORT% >> app.log' >> deploy/direct-run.bat
-          echo 'echo JWT_SECRET=%JWT_SECRET% >> app.log' >> deploy/direct-run.bat
-          echo 'echo Files in directory: >> app.log' >> deploy/direct-run.bat
-          echo 'dir >> app.log' >> deploy/direct-run.bat
-          echo 'echo. >> app.log' >> deploy/direct-run.bat
-          echo 'echo Running app.exe directly with console output...' >> deploy/direct-run.bat
-          echo 'echo %DATE% %TIME% - Starting app.exe >> app.log' >> deploy/direct-run.bat
-          echo 'echo Current environment variables before running app.exe: >> app.log' >> deploy/direct-run.bat
-          echo 'set >> app.log' >> deploy/direct-run.bat
-          echo 'echo. >> app.log' >> deploy/direct-run.bat
-          echo 'echo Attempting to start app.exe on port %PORT%... >> app.log' >> deploy/direct-run.bat
-          echo 'start /B app.exe >> app.log 2>&1' >> deploy/direct-run.bat
-          echo 'echo %DATE% %TIME% - Started app.exe in background >> app.log' >> deploy/direct-run.bat
-          echo 'timeout /t 2 /nobreak > nul' >> deploy/direct-run.bat
-          echo 'echo Checking if app.exe is running... >> app.log' >> deploy/direct-run.bat
-          echo 'tasklist /FI "IMAGENAME eq app.exe" /FO LIST >> app.log' >> deploy/direct-run.bat
-          echo 'echo Checking if port %PORT% is in use... >> app.log' >> deploy/direct-run.bat
-          echo 'netstat -ano | findstr :%PORT% >> app.log' >> deploy/direct-run.bat
-          echo 'echo. >> app.log' >> deploy/direct-run.bat
-          echo 'echo Checking running processes... >> app.log' >> deploy/direct-run.bat
-          echo 'tasklist /FI "IMAGENAME eq app.exe" /FO LIST >> app.log' >> deploy/direct-run.bat
-          echo 'echo %DATE% %TIME% - Direct run script completed >> app.log' >> deploy/direct-run.bat
-          echo 'pause' >> deploy/direct-run.bat
-          # Convert to Windows line endings
-          sed -i 's/$/\r/' deploy/direct-run.bat
-
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
@@ -290,34 +91,36 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
 
-          # Create a simple run script - extremely simplified
-          echo "Creating run script..."
+          # Create PowerShell script for application management 
+          echo "Creating PowerShell launcher..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Set-Location -Path 'C:\GoApp' > C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$env:PORT = '0.0.0.0:8080' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$env:JWT_SECRET = 'your_secret_here' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Write-Host 'Starting application with PORT=\$env:PORT' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$process = Start-Process -FilePath 'C:\GoApp\app.exe' -PassThru -WindowStyle Hidden >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$process.Id | Out-File -FilePath 'C:\GoApp\app.pid' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Write-Host 'Application started with PID: ' \$process.Id >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo Start-Sleep -Seconds 3 >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo \$isRunning = Get-Process -Id \$process.Id -ErrorAction SilentlyContinue >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo if (\$isRunning) { >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   Write-Host 'Process is still running' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   netstat -ano | findstr :8080 >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo } else { >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo   Write-Host 'WARNING: Process is no longer running!' >> C:\GoApp\launch.ps1\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo } >> C:\GoApp\launch.ps1\""
+
+          # Create a simple batch wrapper
+          echo "Creating batch wrapper..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo cd /d C:\GoApp >> C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo set PORT=0.0.0.0:8080 >> C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo echo Starting application... >> C:\GoApp\run.bat\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo start /B app.exe >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo powershell -ExecutionPolicy Bypass -File C:\GoApp\launch.ps1 >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
 
-          # Wait for startup
-          echo "Waiting for startup..."
-          sleep 5
-
-          # Check if the application is running - absolute simplest check
-          echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"tasklist | findstr app && echo. && echo === PORT CHECK === && netstat -ano | findstr 8080\""
-
-          # Try direct run with fixed address format
-          echo "Starting application directly with fixed address..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && set PORT=0.0.0.0:8080 && set JWT_SECRET=your_secret_here && app.exe\""
-
           # Check final status
-          echo "Checking final application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === DIRECT OUTPUT === && type C:\GoApp\direct_output.log && echo. && echo === FINAL PROCESS CHECK === && tasklist | findstr app\""
+          echo "Checking application status..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === PID FILE === && type C:\GoApp\app.pid && echo === PROCESS CHECK === && powershell -Command \"Get-Process -Id (Get-Content C:\GoApp\app.pid) -ErrorAction SilentlyContinue | Format-Table Id,ProcessName,CPU,WorkingSet\" && echo === PORT CHECK === && netstat -ano | findstr :8080\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
