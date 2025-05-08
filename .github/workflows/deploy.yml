@@ -292,7 +292,7 @@ jobs:
 
           # Create a simple run script
           echo "Creating run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Starting server on port 8080... >> C:\GoApp\run.bat && echo powershell -Command \"Start-Process -FilePath 'C:\GoApp\app.exe' -WorkingDirectory 'C:\GoApp' -WindowStyle Hidden -RedirectStandardOutput 'C:\GoApp\app.log' -RedirectStandardError 'C:\GoApp\error.log' -PassThru\" >> C:\GoApp\run.bat\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\GoApp\run.bat && echo cd /d C:\GoApp >> C:\GoApp\run.bat && echo set PORT=8080 >> C:\GoApp\run.bat && echo set JWT_SECRET=your_secret_here >> C:\GoApp\run.bat && echo echo Current Directory: %CD% > debug.log && echo Environment Variables: >> debug.log && echo PORT=%PORT% >> debug.log && echo JWT_SECRET=%JWT_SECRET% >> debug.log && echo. >> debug.log && echo Starting server on port 8080... >> C:\GoApp\run.bat && echo start /B C:\GoApp\app.exe > C:\GoApp\app.log 2>&1 && echo for /f \\\"tokens=2\\\" %%a in ('tasklist /fi \\\"imagename eq app.exe\\\" /fo list ^| findstr PID') do @echo APP PID: %%a > C:\GoApp\pid.txt >> C:\GoApp\run.bat\""
 
           # Run the application
           echo "Starting application..."
@@ -302,17 +302,17 @@ jobs:
           echo "Waiting for startup..."
           sleep 5
 
-          # Check if the application is running and show logs
+          # Check if the application is running - using more reliable methods
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Port Status === && netstat -ano | findstr :8080 && echo. && echo === Application Log === && type C:\GoApp\app.log && echo. && echo === Error Log === && type C:\GoApp\error.log\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === PID FILE CONTENTS === && type C:\GoApp\pid.txt && echo. && echo === ALL APP PROCESSES === && tasklist /fi \\\"imagename eq app*\\\" && echo. && echo === WILDCARD PROCESS SEARCH === && tasklist | findstr app && echo. && echo === PORT CHECK === && netstat -ano | findstr :8080 && echo. && echo === LOG CHECK === && type C:\GoApp\app.log && echo. && echo === DEBUG LOG === && type C:\GoApp\debug.log\""
 
-          # If the application isn't running, try to start it directly with more logging
-          echo "Checking if application needs to be started directly..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp\app.log (echo Starting application directly... && cd C:\GoApp && echo Current directory: %CD% > app.log && echo Environment variables: >> app.log && set >> app.log && echo. >> app.log && echo Starting app.exe... >> app.log && set PORT=8080 && set JWT_SECRET=your_secret_here && app.exe >> app.log 2>&1 & timeout /t 5 /nobreak > nul && echo === Process Status After Direct Start === >> app.log && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST >> app.log && echo === Port Status After Direct Start === >> app.log && netstat -ano | findstr :8080 >> app.log && type app.log)\""
+          # Try direct run with better debug info
+          echo "Starting application directly with detailed logging..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && echo ============ DIRECT RUN DEBUG ============ > direct_debug.log && echo %DATE% %TIME% >> direct_debug.log && echo Current Directory: %CD% >> direct_debug.log && echo Environment Variables: >> direct_debug.log && set >> direct_debug.log && echo. >> direct_debug.log && set PORT=8080 && set JWT_SECRET=your_secret_here && echo. >> direct_debug.log && echo Starting app.exe with PORT=%PORT%... >> direct_debug.log && app.exe >> direct_run.log 2>&1\""
 
-          # Final status check
-          echo "Performing final status check..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === Final Process Status === && tasklist /FI \"IMAGENAME eq app.exe\" /FO LIST && echo. && echo === Final Port Status === && netstat -ano | findstr :8080 && echo. && echo === Final Log Contents === && type C:\GoApp\app.log\""
+          # Check final status
+          echo "Checking final application status..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === DIRECT RUN LOG === && type C:\GoApp\direct_run.log && echo. && echo === DIRECT DEBUG LOG === && type C:\GoApp\direct_debug.log && echo. && echo === FINAL PROCESS CHECK === && tasklist /fi \\\"imagename eq app*\\\" && tasklist | findstr app\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
