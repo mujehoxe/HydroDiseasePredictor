@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Deploy (WSL)
 
 on:
   push:
@@ -40,15 +40,11 @@ jobs:
           go-version: "1.22"
           cache: true
 
-      - name: Build Go backend
+      - name: Build Go backend for Linux
         run: |
-          # Install Windows cross-compiler for CGO
-          sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64
-
           cd backend
-          # Build for Windows target with CGO enabled
-          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc go build -o app.exe
+          # Build for Linux target (WSL uses Linux binaries)
+          CGO_ENABLED=1 go build -o app
           # Copy frontend build to the backend/build directory
           mkdir -p build
           cp -r ../dist/* build/
@@ -57,9 +53,57 @@ jobs:
         run: |
           # Create deployment directory with backend and frontend
           mkdir -p deploy
-          cp -r backend/app.exe deploy/
+          cp -r backend/app deploy/
           cp -r backend/build deploy/
           cp -r backend/farm.db deploy/ || true
+
+          # Create systemd service file for the application
+          echo "[Unit]" > deploy/hydrodisease.service
+          echo "Description=HydroDisease Predictor Service" >> deploy/hydrodisease.service
+          echo "After=network.target" >> deploy/hydrodisease.service
+          echo "" >> deploy/hydrodisease.service
+          echo "[Service]" >> deploy/hydrodisease.service
+          echo "Type=simple" >> deploy/hydrodisease.service
+          echo "User=root" >> deploy/hydrodisease.service
+          echo "WorkingDirectory=/opt/hydrodisease" >> deploy/hydrodisease.service
+          echo "Environment=\"PORT=8080\"" >> deploy/hydrodisease.service
+          echo "Environment=\"JWT_SECRET=your_secret_here\"" >> deploy/hydrodisease.service
+          echo "ExecStart=/opt/hydrodisease/app" >> deploy/hydrodisease.service
+          echo "Restart=on-failure" >> deploy/hydrodisease.service
+          echo "RestartSec=5" >> deploy/hydrodisease.service
+          echo "" >> deploy/hydrodisease.service
+          echo "[Install]" >> deploy/hydrodisease.service
+          echo "WantedBy=multi-user.target" >> deploy/hydrodisease.service
+
+          # Create install script
+          echo "#!/bin/bash" > deploy/install.sh
+          echo "set -e" >> deploy/install.sh
+          echo "" >> deploy/install.sh
+          echo "echo \"Installing HydroDisease Predictor to WSL...\"" >> deploy/install.sh
+          echo "" >> deploy/install.sh
+          echo "# Create application directory" >> deploy/install.sh
+          echo "sudo mkdir -p /opt/hydrodisease" >> deploy/install.sh
+          echo "" >> deploy/install.sh
+          echo "# Copy files" >> deploy/install.sh
+          echo "sudo cp -r app /opt/hydrodisease/" >> deploy/install.sh
+          echo "sudo cp -r build /opt/hydrodisease/" >> deploy/install.sh
+          echo "sudo cp -r farm.db /opt/hydrodisease/ 2>/dev/null || echo \"No database file to copy\"" >> deploy/install.sh
+          echo "" >> deploy/install.sh
+          echo "# Install systemd service" >> deploy/install.sh
+          echo "sudo cp hydrodisease.service /etc/systemd/system/" >> deploy/install.sh
+          echo "sudo systemctl daemon-reload" >> deploy/install.sh
+          echo "sudo systemctl enable hydrodisease.service" >> deploy/install.sh
+          echo "sudo systemctl restart hydrodisease.service" >> deploy/install.sh
+          echo "" >> deploy/install.sh
+          echo "# Check status" >> deploy/install.sh
+          echo "echo \"Service installed. Checking status:\"" >> deploy/install.sh
+          echo "sudo systemctl status hydrodisease.service" >> deploy/install.sh
+          echo "echo" >> deploy/install.sh
+          echo "echo \"You can check logs with: sudo journalctl -u hydrodisease.service -f\"" >> deploy/install.sh
+          echo "echo \"Application should be available at http://localhost:8080\"" >> deploy/install.sh
+
+          # Make install script executable
+          chmod +x deploy/install.sh
 
       # Install necessary tools
       - name: Install SSH tools
@@ -68,90 +112,29 @@ jobs:
       # Deploy using password
       - name: Deploy with password
         run: |
-          echo "Attempting deployment using password authentication..."
+          echo "Attempting deployment to WSL..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create deployment directory on remote server
-          echo "Creating directory on Windows server..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if not exist C:\GoApp mkdir C:\GoApp\""
+          # Copy deployment files to server
+          echo "Copying files to WSL environment..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/hydrodisease/
 
-          # Stop any running instances of the app
-          echo "Stopping any running app processes..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"taskkill /F /IM app.exe /T 2>nul || echo No process to kill\""
+          # Run the installation script
+          echo "Running installation script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ~/hydrodisease && ./install.sh"
 
-          # Wait a moment for processes to fully stop
-          echo "Waiting for processes to stop..."
-          sleep 2
-
-          # Copy files
-          echo "Copying files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/app.exe ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deploy/farm.db ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Create and copy PowerShell script
-          echo "Creating and copying PowerShell launcher..."
-          echo 'Set-Location -Path "C:\GoApp"' > launch.ps1
-          echo '$env:PORT = "8080"' >> launch.ps1  # Change back to just the port number
-          echo '$env:JWT_SECRET = "your_secret_here"' >> launch.ps1
-          echo 'Write-Host "Starting application with PORT=$env:PORT"' >> launch.ps1
-          echo 'try {' >> launch.ps1
-          echo '  $process = Start-Process -FilePath "C:\GoApp\app.exe" -PassThru -WindowStyle Normal' >> launch.ps1
-          echo '  $processId = $process.Id' >> launch.ps1
-          echo '  $processId | Out-File -FilePath "C:\GoApp\app.pid"' >> launch.ps1
-          echo '  Write-Host "Application started with PID: $processId"' >> launch.ps1
-          echo '  Start-Sleep -Seconds 3' >> launch.ps1
-          echo '  $isRunning = Get-Process -Id $processId -ErrorAction SilentlyContinue' >> launch.ps1
-          echo '  if ($isRunning) {' >> launch.ps1
-          echo '    Write-Host "Process is still running"' >> launch.ps1
-          echo '    $ports = netstat -ano | findstr ":8080"' >> launch.ps1
-          echo '    if ($ports) {' >> launch.ps1
-          echo '      Write-Host "Port 8080 is in use by process:"' >> launch.ps1
-          echo '      Write-Host $ports' >> launch.ps1
-          echo '    } else {' >> launch.ps1
-          echo '      Write-Host "Port 8080 is not in use"' >> launch.ps1
-          echo '    }' >> launch.ps1
-          echo '  } else {' >> launch.ps1
-          echo '    Write-Host "WARNING: Process is no longer running!"' >> launch.ps1
-          echo '    # Try running directly to capture output' >> launch.ps1
-          echo '    Write-Host "Running app directly to capture output:"' >> launch.ps1
-          echo '    try {' >> launch.ps1
-          echo '      $output = & "C:\GoApp\app.exe" 2>&1' >> launch.ps1
-          echo '      $output | Out-File -FilePath "C:\GoApp\direct_output.log"' >> launch.ps1
-          echo '      Write-Host $output' >> launch.ps1
-          echo '    } catch {' >> launch.ps1
-          echo '      Write-Host "Error running app directly: $_"' >> launch.ps1
-          echo '    }' >> launch.ps1
-          echo '  }' >> launch.ps1
-          echo '} catch {' >> launch.ps1
-          echo '  Write-Host "Error starting process: $_"' >> launch.ps1
-          echo '}' >> launch.ps1
-
-          # Create and copy batch wrapper
-          echo "Creating and copying batch wrapper..."
-          echo '@echo off' > run.bat
-          echo 'powershell -ExecutionPolicy Bypass -File C:\GoApp\launch.ps1' >> run.bat
-
-          # Copy scripts to server
-          echo "Copying scripts to server..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} launch.ps1 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} run.bat ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:C:/GoApp/
-
-          # Run the application
-          echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"cd C:\GoApp && run.bat\""
-
-          # Check final status - using double quotes properly for PowerShell command
+          # Check if application is running
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo === PID FILE === && type C:\\GoApp\\app.pid && echo === DIRECT OUTPUT === && type C:\\GoApp\\direct_output.log 2>nul || echo No direct output log && echo === PORT CHECK === && netstat -ano | findstr :8080\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "curl -s http://localhost:8080 || echo 'Application not responding to HTTP requests'"
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
         if: ${{ failure() }}
         run: |
-          echo "Automated deployment failed. Please try manual deployment:"
+          echo "Automated deployment failed. Please follow these steps for manual deployment:"
           echo "1. Download artifacts from this build"
-          echo "2. Copy files to your Windows server at: ${{ secrets.DEPLOY_PATH }}"
-          echo "3. Run the setup-service.ps1 script with PowerShell or manually start app.exe"
+          echo "2. Copy files to your WSL environment"
+          echo "3. Run the install.sh script manually"
