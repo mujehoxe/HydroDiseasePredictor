@@ -1,4 +1,4 @@
-name: Build and Deploy (WSL)
+name: Build and Deploy Docker
 
 on:
   push:
@@ -33,108 +33,75 @@ jobs:
         env:
           VITE_API_URL: "/api/v1" # Use local API path for production
 
-      # Setup Go for backend
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      # Copy frontend build to backend for Docker build
+      - name: Copy frontend build to backend
+        run: |
+          mkdir -p backend/build
+          cp -r dist/* backend/build/
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          go-version: "1.22"
-          cache: true
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build Go backend for Linux
-        run: |
-          cd backend
-          # Build for Linux target (WSL uses Linux binaries)
-          CGO_ENABLED=1 go build -o app
-          # Copy frontend build to the backend/build directory
-          mkdir -p build
-          cp -r ../dist/* build/
-
-      - name: Prepare for deployment
-        run: |
-          # Create deployment directory with backend and frontend
-          mkdir -p deploy
-          cp -r backend/app deploy/
-          cp -r backend/build deploy/
-          cp -r backend/farm.db deploy/ || true
-
-          # Create systemd service file for the application
-          echo "[Unit]" > deploy/hydrodisease.service
-          echo "Description=HydroDisease Predictor Service" >> deploy/hydrodisease.service
-          echo "After=network.target" >> deploy/hydrodisease.service
-          echo "" >> deploy/hydrodisease.service
-          echo "[Service]" >> deploy/hydrodisease.service
-          echo "Type=simple" >> deploy/hydrodisease.service
-          echo "User=root" >> deploy/hydrodisease.service
-          echo "WorkingDirectory=/opt/hydrodisease" >> deploy/hydrodisease.service
-          echo "Environment=\"PORT=8080\"" >> deploy/hydrodisease.service
-          echo "Environment=\"JWT_SECRET=your_secret_here\"" >> deploy/hydrodisease.service
-          echo "ExecStart=/opt/hydrodisease/app" >> deploy/hydrodisease.service
-          echo "Restart=on-failure" >> deploy/hydrodisease.service
-          echo "RestartSec=5" >> deploy/hydrodisease.service
-          echo "" >> deploy/hydrodisease.service
-          echo "[Install]" >> deploy/hydrodisease.service
-          echo "WantedBy=multi-user.target" >> deploy/hydrodisease.service
-
-          # Create install script
-          echo "#!/bin/bash" > deploy/install.sh
-          echo "set -e" >> deploy/install.sh
-          echo "" >> deploy/install.sh
-          echo "echo \"Installing HydroDisease Predictor to WSL...\"" >> deploy/install.sh
-          echo "" >> deploy/install.sh
-          echo "# Create application directory" >> deploy/install.sh
-          echo "sudo mkdir -p /opt/hydrodisease" >> deploy/install.sh
-          echo "" >> deploy/install.sh
-          echo "# Copy files" >> deploy/install.sh
-          echo "sudo cp -r app /opt/hydrodisease/" >> deploy/install.sh
-          echo "sudo cp -r build /opt/hydrodisease/" >> deploy/install.sh
-          echo "sudo cp -r farm.db /opt/hydrodisease/ 2>/dev/null || echo \"No database file to copy\"" >> deploy/install.sh
-          echo "" >> deploy/install.sh
-          echo "# Install systemd service" >> deploy/install.sh
-          echo "sudo cp hydrodisease.service /etc/systemd/system/" >> deploy/install.sh
-          echo "sudo systemctl daemon-reload" >> deploy/install.sh
-          echo "sudo systemctl enable hydrodisease.service" >> deploy/install.sh
-          echo "sudo systemctl restart hydrodisease.service" >> deploy/install.sh
-          echo "" >> deploy/install.sh
-          echo "# Check status" >> deploy/install.sh
-          echo "echo \"Service installed. Checking status:\"" >> deploy/install.sh
-          echo "sudo systemctl status hydrodisease.service" >> deploy/install.sh
-          echo "echo" >> deploy/install.sh
-          echo "echo \"You can check logs with: sudo journalctl -u hydrodisease.service -f\"" >> deploy/install.sh
-          echo "echo \"Application should be available at http://localhost:8080\"" >> deploy/install.sh
-
-          # Make install script executable
-          chmod +x deploy/install.sh
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
 
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
 
-      # Deploy using password
-      - name: Deploy with password
+      # Deploy to Windows server using Docker
+      - name: Deploy with Docker
         run: |
-          echo "Attempting deployment to WSL..."
+          echo "Attempting Docker deployment..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Copy deployment files to server
-          echo "Copying files to WSL environment..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} -r deploy/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/hydrodisease/
+          # Check if Docker is installed and running on the server
+          echo "Checking Docker on server..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Error 'Docker not found, please install Docker Desktop on the Windows server'; exit 1 }\""
 
-          # Run the installation script
-          echo "Running installation script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cd ~/hydrodisease && ./install.sh"
+          # Pull the latest Docker image
+          echo "Pulling Docker image..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
 
-          # Check if application is running
-          echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "curl -s http://localhost:8080 || echo 'Application not responding to HTTP requests'"
+          # Stop any existing container
+          echo "Stopping existing container..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker stop hydrodiseasepredictor 2>nul || echo No container to stop"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker rm hydrodiseasepredictor 2>nul || echo No container to remove"
+
+          # Run the new container
+          echo "Starting new container..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker run -d --name hydrodiseasepredictor -p 8080:8080 -e PORT=8080 -e JWT_SECRET=your_secret_here ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+
+          # Check container status
+          echo "Checking container status..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker ps -a | findstr hydrodiseasepredictor"
+
+          # Display container logs
+          echo "Container logs:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker logs hydrodiseasepredictor"
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
         if: ${{ failure() }}
         run: |
-          echo "Automated deployment failed. Please follow these steps for manual deployment:"
-          echo "1. Download artifacts from this build"
-          echo "2. Copy files to your WSL environment"
-          echo "3. Run the install.sh script manually"
+          echo "Automated deployment failed. Please check the following:"
+          echo "1. Make sure Docker is installed on the Windows server"
+          echo "2. Make sure the Docker Hub credentials are set in the GitHub secrets"
+          echo "3. Check if port 8080 is available on the server"
+          echo "4. You can manually run the container with: docker run -d -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
