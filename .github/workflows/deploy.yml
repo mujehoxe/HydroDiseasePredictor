@@ -58,14 +58,145 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
 
-      # Install necessary tools
+      # Create artifacts for manual deployment
+      - name: Create deployment artifacts
+        run: |
+          # Save the Docker commands for manual deployment
+          mkdir -p deploy-scripts
+
+          # Create Docker deployment script
+          cat > deploy-scripts/docker-deploy.sh << 'EOF'
+          #!/bin/bash
+          # Docker deployment script
+
+          # Configuration - replace with your values
+          IMAGE_NAME="${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          CONTAINER_NAME="hydrodiseasepredictor"
+          PORT=8080
+
+          echo "Deploying $IMAGE_NAME..."
+
+          # Pull the latest image
+          docker pull $IMAGE_NAME
+
+          # Stop and remove existing container
+          docker stop $CONTAINER_NAME 2>/dev/null || true
+          docker rm $CONTAINER_NAME 2>/dev/null || true
+
+          # Run the new container
+          docker run -d --name $CONTAINER_NAME \
+            -p $PORT:$PORT \
+            -e PORT=$PORT \
+            -e JWT_SECRET=your_secret_here \
+            $IMAGE_NAME
+
+          # Show container status
+          docker ps | grep $CONTAINER_NAME
+
+          # Show logs
+          echo "Container logs:"
+          docker logs $CONTAINER_NAME
+          EOF
+
+          chmod +x deploy-scripts/docker-deploy.sh
+
+          # Create PowerShell deployment script for Windows
+          cat > deploy-scripts/docker-deploy.ps1 << 'EOF'
+          # Docker deployment script for Windows
+
+          # Configuration - replace with your values
+          $ImageName = "${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          $ContainerName = "hydrodiseasepredictor"
+          $Port = 8080
+
+          Write-Host "Deploying $ImageName..." -ForegroundColor Green
+
+          # Pull the latest image
+          docker pull $ImageName
+
+          # Stop and remove existing container
+          docker stop $ContainerName 2>$null
+          docker rm $ContainerName 2>$null
+
+          # Run the new container
+          docker run -d --name $ContainerName `
+            -p "${Port}:${Port}" `
+            -e "PORT=${Port}" `
+            -e "JWT_SECRET=your_secret_here" `
+            $ImageName
+
+          # Show container status
+          docker ps | findstr $ContainerName
+
+          # Show logs
+          Write-Host "Container logs:" -ForegroundColor Yellow
+          docker logs $ContainerName
+          EOF
+
+          # Create README with deployment instructions
+          cat > deploy-scripts/README.md << 'EOF'
+          # Deployment Instructions
+
+          ## Prerequisites
+          - Docker installed on the deployment server
+          - Access to Docker Hub (if using the pre-built image)
+
+          ## Option 1: Deploy using Docker (Recommended)
+
+          ### On Linux/macOS
+          ```bash
+          ./docker-deploy.sh
+          ```
+
+          ### On Windows
+          ```powershell
+          .\docker-deploy.ps1
+          ```
+
+          ## Option 2: Manual Docker Commands
+
+          ```bash
+          # Pull the image
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
+
+          # Stop and remove existing container
+          docker stop hydrodiseasepredictor
+          docker rm hydrodiseasepredictor
+
+          # Run the container
+          docker run -d --name hydrodiseasepredictor \
+            -p 8080:8080 \
+            -e PORT=8080 \
+            -e JWT_SECRET=your_secret_here \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
+          ```
+
+          ## Troubleshooting
+
+          - Check if the container is running: `docker ps -a`
+          - View container logs: `docker logs hydrodiseasepredictor`
+          - Check if port 8080 is accessible: `curl http://localhost:8080` or open in browser
+          EOF
+
+          # Bundle everything into a zip file
+          zip -r deployment-scripts.zip deploy-scripts/
+
+      # Upload artifacts for manual deployment
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-scripts
+          path: deployment-scripts.zip
+
+      # Install necessary tools for SSH
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
 
-      # Deploy to Windows server using Docker
-      - name: Deploy with Docker
+      # Try to deploy via SSH (this might fail if server is unreachable)
+      - name: Attempt SSH deployment
+        continue-on-error: true
         run: |
-          echo "Attempting Docker deployment..."
+          echo "Attempting Docker deployment via SSH..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
           # Disable StrictHostKeyChecking for this deployment
@@ -96,12 +227,24 @@ jobs:
           echo "Container logs:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker logs hydrodiseasepredictor"
 
-      # Manual instructions if all else fails
-      - name: Deployment failure instructions
-        if: ${{ failure() }}
+      # Manual instructions
+      - name: Manual deployment instructions
         run: |
-          echo "Automated deployment failed. Please check the following:"
-          echo "1. Make sure Docker is installed on the Windows server"
-          echo "2. Make sure the Docker Hub credentials are set in the GitHub secrets"
-          echo "3. Check if port 8080 is available on the server"
-          echo "4. You can manually run the container with: docker run -d -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          echo "===== DEPLOYMENT INSTRUCTIONS ====="
+          echo "Automatic deployment may have failed. Please use the following options:"
+          echo ""
+          echo "Option 1: Use the deployment scripts"
+          echo "1. Download the 'deployment-scripts' artifact from GitHub Actions"
+          echo "2. Extract the zip file"
+          echo "3. Run the appropriate script for your OS (docker-deploy.sh or docker-deploy.ps1)"
+          echo ""
+          echo "Option 2: Manual Docker commands"
+          echo "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          echo "docker stop hydrodiseasepredictor 2>/dev/null || true"
+          echo "docker rm hydrodiseasepredictor 2>/dev/null || true"
+          echo "docker run -d --name hydrodiseasepredictor -p 8080:8080 -e PORT=8080 -e JWT_SECRET=your_secret_here ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          echo ""
+          echo "Check if the application is running:"
+          echo "docker ps | grep hydrodiseasepredictor"
+          echo "docker logs hydrodiseasepredictor"
+          echo ""
