@@ -43,10 +43,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Set up QEMU for multi-platform builds (needed for Windows)
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       # Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -61,7 +57,6 @@ jobs:
           context: ./backend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
-          platforms: windows/amd64
 
       # Install necessary tools
       - name: Install SSH tools
@@ -80,9 +75,25 @@ jobs:
           echo "Checking Docker on server..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker --version || (echo 'Docker not found, please install Docker Desktop on the Windows server' && exit 1)"
 
-          # Note about container mode
-          echo "Note: Make sure Docker is running in Linux container mode on the server"
-          echo "If deployment fails, switch to Linux container mode manually by right-clicking the Docker icon in the system tray"
+          # IMPORTANT: Manual steps for switching to Linux container mode
+          echo "IMPORTANT: You MUST manually switch Docker to Linux container mode before continuing"
+          echo "Steps to switch to Linux container mode:"
+          echo "1. Right-click the Docker Desktop icon in the system tray"
+          echo "2. Select 'Switch to Linux containers...'"
+          echo "3. Wait for Docker to restart"
+          echo "4. Once Docker is in Linux container mode, run the workflow again"
+
+          # Check container mode
+          echo "Attempting to detect container mode..."
+          container_mode=$(sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker info | findstr 'OSType'" || echo "Unknown")
+          echo "Current container mode: $container_mode"
+
+          # Abort if not in Linux container mode
+          if [[ "$container_mode" != *"linux"* && "$container_mode" != *"Linux"* ]]; then
+            echo "ERROR: Docker is not in Linux container mode. Please switch to Linux container mode and try again."
+            echo "This workflow will now fail to prevent damage to your Windows server."
+            exit 1
+          fi
 
           # Pull the latest Docker image
           echo "Pulling Docker image..."
