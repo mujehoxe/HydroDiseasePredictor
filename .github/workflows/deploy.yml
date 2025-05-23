@@ -77,18 +77,18 @@ jobs:
 
           # Switch to Linux containers if not already
           echo "Switching to Linux containers mode if needed..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"& {\
-            \$path = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'\
-            \$prop = (Get-ItemProperty -Path \$path -Name com.docker.service -ErrorAction SilentlyContinue).'com.docker.service'\
-            if (\$prop -and \$prop.Contains('--windows-service')) {\
-              Write-Output 'Switching Docker to Linux container mode...'\
-              \$cmd = '\"%ProgramFiles%\\Docker\\Docker\\DockerCli.exe\" -SwitchLinuxEngine'\
-              Invoke-Expression \$cmd\
-              Write-Output 'Waiting for Docker to restart...'\
-              Start-Sleep -Seconds 10\
-            } else {\
-              Write-Output 'Docker is already in Linux container mode or we could not determine the mode'\
-            }\
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"& {
+            \$path = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run';
+            \$prop = (Get-ItemProperty -Path \$path -Name com.docker.service -ErrorAction SilentlyContinue).'com.docker.service';
+            if (\$prop -and \$prop.Contains('--windows-service')) {
+              Write-Output 'Switching Docker to Linux container mode...';
+              \$cmd = '\"%ProgramFiles%\\Docker\\Docker\\DockerCli.exe\" -SwitchLinuxEngine';
+              Invoke-Expression \$cmd;
+              Write-Output 'Waiting for Docker to restart...';
+              Start-Sleep -Seconds 10;
+            } else {
+              Write-Output 'Docker is already in Linux container mode or we could not determine the mode';
+            }
           }\""
 
           # Pull the latest Docker image
