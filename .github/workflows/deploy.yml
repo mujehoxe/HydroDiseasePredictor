@@ -70,9 +70,19 @@ jobs:
           echo "Checking WSL on server..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (!(Get-Command wsl -ErrorAction SilentlyContinue)) { Write-Error 'WSL not found, please install WSL on the Windows server'; exit 1 }\""
 
-          # Create deployment directory in WSL
+          # Get WSL username and home directory
+          echo "Getting WSL username..."
+          wsl_user=$(sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e whoami")
+          echo "WSL user: $wsl_user"
+
+          # Create app directory in user's home directory
           echo "Creating deployment directory in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e mkdir -p /home/app"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e mkdir -p ~/app"
+
+          # Get user's home directory in WSL
+          echo "Getting WSL home directory..."
+          wsl_home=$(sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'echo ~'")
+          echo "WSL home: $wsl_home"
 
           # Copy build files to the server using SCP
           echo "Copying files to server..."
@@ -82,20 +92,24 @@ jobs:
 
           # Extract files in WSL
           echo "Extracting files in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd /home/app && tar -xzf /mnt/c/Users/${{ secrets.SSH_USERNAME }}/deployment.tar.gz'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd ~/app && tar -xzf /mnt/c/Users/${{ secrets.SSH_USERNAME }}/deployment.tar.gz'"
+
+          # Set executable permission on the app binary
+          echo "Setting permissions..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'chmod +x ~/app/app'"
 
           # Stop any existing application process
           echo "Stopping existing application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pkill -f '/home/app/app' || echo 'No process to kill'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pkill -f '~/app/app' || echo 'No process to kill'"
 
           # Start the application in background with nohup
           echo "Starting application in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd /home/app && export PORT=8080 && export JWT_SECRET=your_secret_here && nohup ./app > app.log 2>&1 &'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd ~/app && export PORT=8080 && export JWT_SECRET=your_secret_here && nohup ./app > app.log 2>&1 &'"
 
           # Check if application is running
           echo "Checking application status..."
           sleep 3
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pgrep -f '/home/app/app' || echo 'WARNING: Application may not be running!'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pgrep -f 'app/app' || echo 'WARNING: Application may not be running!'"
 
           # Check port status
           echo "Checking if port 8080 is active..."
@@ -103,7 +117,7 @@ jobs:
 
           # Display application logs
           echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e cat /home/app/app.log"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e cat ~/app/app.log"
 
           # Clean up deployment package on server
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "del deployment.tar.gz"
@@ -118,7 +132,8 @@ jobs:
           echo "3. Check if port 8080 is available on the server"
           echo "4. You can manually deploy by following these steps:"
           echo "   a. Install WSL on your Windows server if not already installed"
-          echo "   b. In WSL: mkdir -p /home/app"
-          echo "   c. Copy the backend files to /home/app in WSL"
+          echo "   b. In WSL: mkdir -p ~/app"
+          echo "   c. Copy the backend files to ~/app in WSL"
           echo "   d. Build the Go application or copy the pre-built binary"
-          echo "   e. Run with: cd /home/app && export PORT=8080 && ./app"
+          echo "   e. Make the binary executable: chmod +x ~/app/app"
+          echo "   f. Run with: cd ~/app && export PORT=8080 && ./app"
