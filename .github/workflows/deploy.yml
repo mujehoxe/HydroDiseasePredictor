@@ -88,27 +88,20 @@ jobs:
           echo "Setting permissions..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"chmod +x /mnt/c/wsl-app/app\""
 
-          # Create a simple startup script for WSL
-          echo "Creating startup script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo '#!/bin/bash' > C:\\wsl-app\\start.sh"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo 'cd /mnt/c/wsl-app' >> C:\\wsl-app\\start.sh" 
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo 'PORT=8080 JWT_SECRET=your_secret_here ./app > app.log 2>&1 &' >> C:\\wsl-app\\start.sh"
-
-          # Make the script executable
-          echo "Setting permissions..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec chmod +x /mnt/c/wsl-app/start.sh"
-
           # Stop any existing application process
           echo "Stopping existing application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec pkill -f 'app' || echo 'No process to kill'"
 
-          # Start the application
+          # Start the application directly (in WSL)
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash /mnt/c/wsl-app/start.sh"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && PORT=8080 JWT_SECRET=your_secret_here nohup ./app > app.log 2>&1 &\""
+
+          # Wait a moment for the application to start
+          echo "Waiting for application to start..."
+          sleep 5
 
           # Check if application is running
           echo "Checking application status..."
-          sleep 3
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec ps aux | grep app | grep -v grep || echo 'WARNING: Application may not be running!'"
 
           # Check port status
