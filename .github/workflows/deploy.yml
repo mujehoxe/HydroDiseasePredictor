@@ -90,27 +90,27 @@ jobs:
 
           # Stop any existing application process
           echo "Stopping existing application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec pkill -f 'app' || echo 'No process to kill'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill app || echo No process to kill\""
 
-          # Start the application directly (in WSL)
+          # Start the application directly (in WSL) with WSL1 compatibility
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && PORT=8080 JWT_SECRET=your_secret_here nohup ./app > app.log 2>&1 &\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && chmod +x app && PORT=8080 JWT_SECRET=your_secret_here ./app > app.log 2>&1 &\""
 
           # Wait a moment for the application to start
           echo "Waiting for application to start..."
           sleep 5
 
-          # Check if application is running using PowerShell
+          # Check if application is running using simpler PowerShell
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-Process | Where-Object {`$_.Path -like '*app*'} | Format-Table Name, Id, Path -AutoSize || Write-Output 'WARNING: Application may not be running!'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-Process -Name app -ErrorAction SilentlyContinue || Write-Output 'WARNING: Application may not be running!'\""
 
-          # Check port status using PowerShell
+          # Check port status using simple netstat
           echo "Checking if port 8080 is active..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"netstat -ano | findstr ':8080' || Write-Output 'WARNING: Port 8080 is not active!'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"netstat -an | findstr 8080 || Write-Output 'WARNING: Port 8080 is not active!'\""
 
-          # Display application logs using PowerShell
+          # Display application logs using type command
           echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\\wsl-app\\app.log') { Get-Content 'C:\\wsl-app\\app.log' } else { Write-Output 'No log file found' }\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\\wsl-app\\app.log') { type C:\\wsl-app\\app.log } else { Write-Output 'No log file found' }\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
