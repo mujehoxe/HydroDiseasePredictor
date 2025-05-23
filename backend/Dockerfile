@@ -1,10 +1,17 @@
-FROM golang:1.22-alpine AS builder
+# Build stage
+FROM mcr.microsoft.com/windows/servercore:ltsc2022 AS builder
 
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev
+# Install Chocolatey
+RUN powershell -Command \
+    Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-# Set working directory
-WORKDIR /app
+# Install Go using Chocolatey
+RUN powershell -Command "choco install golang -y"
+
+# Set up Go environment and work directory
+WORKDIR C:\\app
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -15,24 +22,18 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o app
+# Build the application for Windows
+RUN go build -o app.exe
 
-# Use a smaller alpine image for the final image
-FROM alpine:latest
+# Use a smaller Windows image for runtime
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
 
-# Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
+WORKDIR C:\\app
 
-# Set working directory
-WORKDIR /app
-
-# Copy the binary from the builder stage
-COPY --from=builder /app/app .
-COPY --from=builder /app/farm.db .
-
-# Copy the frontend build 
-COPY --from=builder /app/build ./build
+# Copy binary and required files from build stage
+COPY --from=builder C:\\app\\app.exe .
+COPY --from=builder C:\\app\\farm.db .
+COPY --from=builder C:\\app\\build .\\build
 
 # Set environment variables
 ENV PORT=8080
@@ -42,4 +43,4 @@ ENV JWT_SECRET=your_secret_here
 EXPOSE 8080
 
 # Run the binary
-CMD ["./app"] 
+CMD ["C:\\app\\app.exe"] 
