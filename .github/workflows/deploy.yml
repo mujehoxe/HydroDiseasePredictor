@@ -33,15 +33,11 @@ jobs:
         env:
           VITE_API_URL: "/api/v1" # Use local API path for production
 
-      # Copy frontend build to backend for Docker build
-      - name: Copy frontend build to backend
+      # Copy frontend build to backend folder for Docker build
+      - name: Copy frontend to backend
         run: |
           mkdir -p backend/build
-          cp -r dist/* backend/build/
-
-      # Set up QEMU for multi-platform builds
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+          cp -r build/* backend/build/
 
       # Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -61,7 +57,6 @@ jobs:
           context: ./backend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
-          platforms: windows/amd64
 
       # Install necessary tools
       - name: Install SSH tools
@@ -79,6 +74,22 @@ jobs:
           # Check if Docker is installed and running on the server
           echo "Checking Docker on server..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (!(Get-Command docker -ErrorAction SilentlyContinue)) { Write-Error 'Docker not found, please install Docker Desktop on the Windows server'; exit 1 }\""
+
+          # Switch to Linux containers if not already
+          echo "Switching to Linux containers mode if needed..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"& {\
+            \$path = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'\
+            \$prop = (Get-ItemProperty -Path \$path -Name com.docker.service -ErrorAction SilentlyContinue).'com.docker.service'\
+            if (\$prop -and \$prop.Contains('--windows-service')) {\
+              Write-Output 'Switching Docker to Linux container mode...'\
+              \$cmd = '\"%ProgramFiles%\\Docker\\Docker\\DockerCli.exe\" -SwitchLinuxEngine'\
+              Invoke-Expression \$cmd\
+              Write-Output 'Waiting for Docker to restart...'\
+              Start-Sleep -Seconds 10\
+            } else {\
+              Write-Output 'Docker is already in Linux container mode or we could not determine the mode'\
+            }\
+          }\""
 
           # Pull the latest Docker image
           echo "Pulling Docker image..."
