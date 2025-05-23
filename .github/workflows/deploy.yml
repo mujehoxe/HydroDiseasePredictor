@@ -1,4 +1,4 @@
-name: Build and Deploy Docker
+name: Build and Deploy to WSL
 
 on:
   push:
@@ -33,95 +33,92 @@ jobs:
         env:
           VITE_API_URL: "/api/v1" # Use local API path for production
 
-      # Copy frontend build to backend folder for Docker build
+      # Setup Go
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+
+      # Build Go application for Linux (WSL)
+      - name: Build Go application
+        run: |
+          cd backend
+          go build -o app
+          ls -la app  # Verify the build
+
+      # Copy frontend build to backend folder for deployment
       - name: Copy frontend to backend
         run: |
           mkdir -p backend/build
           cp -r dist/* backend/build/
-
-      # Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Login to Docker Hub
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      # Build and push Docker image
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest
+          ls -la backend/build  # Verify the copy
 
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
 
-      # Deploy to Windows server using Docker
-      - name: Deploy with Docker
+      # Deploy to Windows server using WSL
+      - name: Deploy with WSL
         run: |
-          echo "Attempting Docker deployment..."
+          echo "Attempting WSL deployment..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Check if Docker is installed and running on the server
-          echo "Checking Docker on server..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker --version || (echo 'Docker not found, please install Docker Desktop on the Windows server' && exit 1)"
+          # Check if WSL is installed
+          echo "Checking WSL on server..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (!(Get-Command wsl -ErrorAction SilentlyContinue)) { Write-Error 'WSL not found, please install WSL on the Windows server'; exit 1 }\""
 
-          # IMPORTANT: Manual steps for switching to Linux container mode
-          echo "IMPORTANT: You MUST manually switch Docker to Linux container mode before continuing"
-          echo "Steps to switch to Linux container mode:"
-          echo "1. Right-click the Docker Desktop icon in the system tray"
-          echo "2. Select 'Switch to Linux containers...'"
-          echo "3. Wait for Docker to restart"
-          echo "4. Once Docker is in Linux container mode, run the workflow again"
+          # Create deployment directory in WSL
+          echo "Creating deployment directory in WSL..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e mkdir -p /home/app"
 
-          # Check container mode
-          echo "Attempting to detect container mode..."
-          container_mode=$(sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker info | findstr 'OSType'" || echo "Unknown")
-          echo "Current container mode: $container_mode"
+          # Copy build files to the server using SCP
+          echo "Copying files to server..."
+          # Create a deployment package
+          tar -czf deployment.tar.gz -C backend . -C ../dist .
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deployment.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:./deployment.tar.gz
 
-          # Abort if not in Linux container mode
-          if [[ "$container_mode" != *"linux"* && "$container_mode" != *"Linux"* ]]; then
-            echo "ERROR: Docker is not in Linux container mode. Please switch to Linux container mode and try again."
-            echo "This workflow will now fail to prevent damage to your Windows server."
-            exit 1
-          fi
+          # Extract files in WSL
+          echo "Extracting files in WSL..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd /home/app && tar -xzf /mnt/c/Users/${{ secrets.SSH_USERNAME }}/deployment.tar.gz'"
 
-          # Pull the latest Docker image
-          echo "Pulling Docker image..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          # Stop any existing application process
+          echo "Stopping existing application..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pkill -f '/home/app/app' || echo 'No process to kill'"
 
-          # Stop any existing container
-          echo "Stopping existing container..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker stop hydrodiseasepredictor 2>nul || echo No container to stop"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker rm hydrodiseasepredictor 2>nul || echo No container to remove"
+          # Start the application in background with nohup
+          echo "Starting application in WSL..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'cd /home/app && export PORT=8080 && export JWT_SECRET=your_secret_here && nohup ./app > app.log 2>&1 &'"
 
-          # Run the new container
-          echo "Starting new container..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker run -d --name hydrodiseasepredictor -p 8080:8080 -e PORT=8080 -e JWT_SECRET=your_secret_here ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          # Check if application is running
+          echo "Checking application status..."
+          sleep 3
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e pgrep -f '/home/app/app' || echo 'WARNING: Application may not be running!'"
 
-          # Check container status
-          echo "Checking container status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker ps -a | findstr hydrodiseasepredictor"
+          # Check port status
+          echo "Checking if port 8080 is active..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e bash -c 'netstat -tuln | grep 8080 || echo \"WARNING: Port 8080 is not active!\"'"
 
-          # Display container logs
-          echo "Container logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "docker logs hydrodiseasepredictor"
+          # Display application logs
+          echo "Application logs:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl -e cat /home/app/app.log"
+
+          # Clean up deployment package on server
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "del deployment.tar.gz"
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
         if: ${{ failure() }}
         run: |
           echo "Automated deployment failed. Please check the following:"
-          echo "1. Make sure Docker is installed on the Windows server"
-          echo "2. Make sure the Docker Hub credentials are set in the GitHub secrets"
+          echo "1. Make sure WSL is installed on the Windows server"
+          echo "2. Make sure the SSH credentials are set in the GitHub secrets"
           echo "3. Check if port 8080 is available on the server"
-          echo "4. You can manually run the container with: docker run -d -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/hydrodiseasepredictor:latest"
+          echo "4. You can manually deploy by following these steps:"
+          echo "   a. Install WSL on your Windows server if not already installed"
+          echo "   b. In WSL: mkdir -p /home/app"
+          echo "   c. Copy the backend files to /home/app in WSL"
+          echo "   d. Build the Go application or copy the pre-built binary"
+          echo "   e. Run with: cd /home/app && export PORT=8080 && ./app"
