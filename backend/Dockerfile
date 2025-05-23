@@ -1,48 +1,38 @@
-# Use a Windows Server Core image with Go installed
-FROM mcr.microsoft.com/windows/servercore:ltsc2022 as builder
+FROM golang:1.22-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev
 
 # Set working directory
-WORKDIR C:\\app
+WORKDIR /app
 
-# Install Chocolatey for package management
-SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
-    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-# Install Go using Chocolatey
-RUN choco install -y golang --version=1.22.0
-
-# Add Go binaries to PATH
-RUN $env:Path += ';C:\go\bin'; \
-    [Environment]::SetEnvironmentVariable('Path', $env:Path, [EnvironmentVariableTarget]::Machine)
-
-# Copy go.mod and go.sum files
+# Copy go mod and sum files
 COPY go.mod go.sum ./
-
-# Set environment variable for Go modules
-ENV GO111MODULE=on
 
 # Download dependencies
 RUN go mod download
 
-# Copy the backend code
+# Copy source code
 COPY . .
 
-# Build the app
-RUN go build -o app.exe
+# Build the application
+RUN CGO_ENABLED=1 GOOS=linux go build -o app
 
-# Use a smaller Windows image for the runtime
-FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+# Use a smaller alpine image for the final image
+FROM alpine:latest
 
-WORKDIR C:\\app
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates tzdata
 
-# Copy the executable and database
-COPY --from=builder C:\\app\\app.exe .
-COPY --from=builder C:\\app\\farm.db .
+# Set working directory
+WORKDIR /app
 
-# Copy the frontend build
-COPY --from=builder C:\\app\\build .\\build
+# Copy the binary from the builder stage
+COPY --from=builder /app/app .
+COPY --from=builder /app/farm.db .
+
+# Copy the frontend build 
+COPY --from=builder /app/build ./build
 
 # Set environment variables
 ENV PORT=8080
@@ -51,5 +41,5 @@ ENV JWT_SECRET=your_secret_here
 # Expose the port
 EXPOSE 8080
 
-# Set the entry point
-ENTRYPOINT ["C:\\app\\app.exe"] 
+# Run the binary
+CMD ["./app"] 
