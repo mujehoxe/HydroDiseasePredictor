@@ -100,17 +100,17 @@ jobs:
           echo "Waiting for application to start..."
           sleep 5
 
-          # Check if application is running
+          # Check if application is running using PowerShell
           echo "Checking application status..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec ps aux | grep app | grep -v grep || echo 'WARNING: Application may not be running!'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Get-Process | Where-Object {`$_.Path -like '*app*'} | Format-Table Name, Id, Path -AutoSize || Write-Output 'WARNING: Application may not be running!'\""
 
-          # Check port status
+          # Check port status using PowerShell
           echo "Checking if port 8080 is active..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"netstat -tuln | grep 8080 || echo 'WARNING: Port 8080 is not active!'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"netstat -ano | findstr ':8080' || Write-Output 'WARNING: Port 8080 is not active!'\""
 
-          # Display application logs
+          # Display application logs using PowerShell
           echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec cat /mnt/c/wsl-app/app.log || echo 'No log file found'"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (Test-Path 'C:\\wsl-app\\app.log') { Get-Content 'C:\\wsl-app\\app.log' } else { Write-Output 'No log file found' }\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
