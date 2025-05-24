@@ -109,35 +109,31 @@ jobs:
           echo "Installing required libraries on WSL..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"apt-get update > /dev/null 2>&1 || true && apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo 'Failed to install libraries - may need root access'\""
 
-          # Create a very simple run script with minimal complexity
-          echo "Creating simple run script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export PORT=8080' >> /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export JWT_SECRET=test_secret' >> /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \\\"Starting application in foreground mode for testing...\\\"' >> /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo './app > /mnt/c/wsl-app/app.log 2>&1' >> /mnt/c/wsl-app/simple_run.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \$? > /mnt/c/wsl-app/exit_code.txt' >> /mnt/c/wsl-app/simple_run.sh\""
+          # Create a start script for the application
+          echo "Creating start script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export PORT=8080' >> /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export JWT_SECRET=test_secret' >> /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'nohup ./app > app.log 2>&1 &' >> /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/start.sh\""
 
-          # Make run script executable
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/simple_run.sh\""
+          # Run the application directly
+          echo "Starting application..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
+          
+          # Give it a moment to start
+          sleep 3
+          
+          # Check if application is running
+          echo "Checking application status with ps..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ps aux | grep -v grep | grep app || echo 'Process not found with ps'\""
 
-          # Run the application directly (not in background) just to see what happens
-          echo "Running application in foreground mode to capture all output..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"/mnt/c/wsl-app/simple_run.sh &\""
-
-          # Give it a moment to start and possibly fail
-          sleep 5
-
-          # Check if PID file exists and process is running
-          echo "Checking process status using PID file..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/pid.txt ]; then PID=\\\$(cat /mnt/c/wsl-app/pid.txt); if ps -p \\\$PID > /dev/null; then echo 'Process is running with PID '\\\$PID; else echo 'Process with PID '\\\$PID' is not running'; fi; else echo 'No PID file found'; fi\""
-
-          # Check if application is running using simpler PowerShell
-          echo "Checking application status..."
+          # Check if application is running using PowerShell
+          echo "Checking application status with PowerShell..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"try { Get-Process -Name app -ErrorAction Stop } catch { Write-Output 'WARNING: Application may not be running!' }\""
 
-          # Check port status using simple cmd command
+          # Check port status 
           echo "Checking if port 8080 is active..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -an | findstr 8080\""
 
@@ -216,6 +212,10 @@ jobs:
           # Check system info
           echo "System information:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
+
+          # Create Windows scheduled task to start the app on boot
+          echo "Creating Windows scheduled task for autostart..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Set-Content -Path 'C:\\wsl-app\\start-wsl-app.cmd' -Value 'wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh'; \\$action = New-ScheduledTaskAction -Execute 'C:\\wsl-app\\start-wsl-app.cmd'; \\$trigger = New-ScheduledTaskTrigger -AtStartup; \\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'Start WSL App' -Action \\$action -Trigger \\$trigger -Settings \\$settings -User SYSTEM -Force\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
