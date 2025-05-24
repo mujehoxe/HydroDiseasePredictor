@@ -118,12 +118,17 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'nohup ./app > app.log 2>&1 &' >> /mnt/c/wsl-app/start.sh\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/start.sh\""
 
-          # Run the application directly
+          # Run the application
           echo "Starting application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
           
           # Give it a moment to start
           sleep 3
+          
+          # Create Windows scheduled task to start the app on boot (as a separate command)
+          echo "Creating Windows scheduled task for autostart..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Set-Content -Path 'C:\\wsl-app\\start-wsl-app.cmd' -Value 'wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"\\$action = New-ScheduledTaskAction -Execute 'C:\\wsl-app\\start-wsl-app.cmd'; \\$trigger = New-ScheduledTaskTrigger -AtStartup; \\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'Start WSL App' -Action \\$action -Trigger \\$trigger -Settings \\$settings -User SYSTEM -Force\""
           
           # Check if application is running
           echo "Checking application status with ps..."
@@ -133,7 +138,7 @@ jobs:
           echo "Checking application status with PowerShell..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"try { Get-Process -Name app -ErrorAction Stop } catch { Write-Output 'WARNING: Application may not be running!' }\""
 
-          # Check port status 
+          # Check port status using simple cmd command
           echo "Checking if port 8080 is active..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -an | findstr 8080\""
 
@@ -212,10 +217,6 @@ jobs:
           # Check system info
           echo "System information:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
-
-          # Create Windows scheduled task to start the app on boot
-          echo "Creating Windows scheduled task for autostart..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Set-Content -Path 'C:\\wsl-app\\start-wsl-app.cmd' -Value 'wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh'; \\$action = New-ScheduledTaskAction -Execute 'C:\\wsl-app\\start-wsl-app.cmd'; \\$trigger = New-ScheduledTaskTrigger -AtStartup; \\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'Start WSL App' -Action \\$action -Trigger \\$trigger -Settings \\$settings -User SYSTEM -Force\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
