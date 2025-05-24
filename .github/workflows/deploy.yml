@@ -39,12 +39,14 @@ jobs:
         with:
           go-version: "1.22"
 
-      # Build Go application for Linux (WSL) - static binary
+      # Build Go application for Linux (WSL) - with CGO enabled for SQLite
       - name: Build Go application
         run: |
           cd backend
-          # Build with CGO disabled for static binary with fewer dependencies
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o app
+          # Install SQLite development libraries
+          sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+          # Build with CGO enabled for SQLite support
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o app
           # Verify it's a Linux binary
           file app
           # Check the binary size and permissions
@@ -103,6 +105,10 @@ jobs:
           # Stop any existing application
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill -f /mnt/c/wsl-app/app || true\""
 
+          # Install required libraries on WSL
+          echo "Installing required libraries on WSL..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"apt-get update > /dev/null 2>&1 || true && apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo 'Failed to install libraries - may need root access'\""
+
           # Create a very simple run script with minimal complexity
           echo "Creating simple run script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/simple_run.sh\""
@@ -148,6 +154,15 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/diagnose.sh\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export PORT=8080' >> /mnt/c/wsl-app/diagnose.sh\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export JWT_SECRET=your_secret_here' >> /mnt/c/wsl-app/diagnose.sh\""
+          
+          # Add library check and installation to diagnostic script
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== Checking and Installing Libraries ===\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ldd ./app >> diagnostic.log 2>&1 || echo \"ldd failed - trying to install libraries\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"Installing SQLite library...\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'apt-get update >> /dev/null 2>&1 || echo \"apt-get update failed\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'apt-get install -y libsqlite3-0 >> /dev/null 2>&1 || echo \"apt-get install failed\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ldd ./app >> diagnostic.log 2>&1 || echo \"ldd still failed after library installation\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
+          
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo './app >> diagnostic.log 2>&1' >> /mnt/c/wsl-app/diagnose.sh\""
 
           # Make the diagnostic script executable
@@ -177,6 +192,14 @@ jobs:
           # Check file permissions
           echo "Checking file permissions:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ls -la /mnt/c/wsl-app/\""
+          
+          # Check for shared library dependencies
+          echo "Checking shared library dependencies:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ldd /mnt/c/wsl-app/app || echo 'ldd command failed - binary may be statically linked'\""
+          
+          # Check if SQLite3 library is available
+          echo "Checking if SQLite3 library is available:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ldconfig -p | grep sqlite || echo 'SQLite library not found in cache'\""
 
           # Final check for debugging - directly check what happened
           echo "Direct WSL output for debugging:"
