@@ -39,13 +39,16 @@ jobs:
         with:
           go-version: "1.22"
 
-      # Build Go application for Linux (WSL)
+      # Build Go application for Linux (WSL) - static binary
       - name: Build Go application
         run: |
           cd backend
-          GOOS=linux GOARCH=amd64 go build -o app
-          file app  # Verify it's a Linux binary
-          ls -la app  # Check the binary size and permissions
+          # Build with CGO disabled for static binary with fewer dependencies
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o app
+          # Verify it's a Linux binary
+          file app
+          # Check the binary size and permissions
+          ls -la app
 
       # Copy frontend build to backend folder for deployment
       - name: Copy frontend to backend
@@ -105,9 +108,21 @@ jobs:
           echo "Checking binary format..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"file /mnt/c/wsl-app/app || echo 'File command not available'\""
 
-          # Start the application directly with debug output and absolute paths
-          echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Starting app in directory: \$(pwd)' > /mnt/c/wsl-app/app.log 2>&1 && echo 'Executable permissions: \$(ls -la /mnt/c/wsl-app/app)' >> /mnt/c/wsl-app/app.log 2>&1 && cd /mnt/c/wsl-app && PORT=8080 JWT_SECRET=your_secret_here /mnt/c/wsl-app/app >> /mnt/c/wsl-app/app.log 2>&1 &\""
+          # Try running in foreground briefly to catch any startup errors
+          echo "Testing app startup in foreground to capture errors..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && echo '=== Testing app startup ===' > /mnt/c/wsl-app/app.log && PORT=8080 JWT_SECRET=your_secret_here /mnt/c/wsl-app/app >> /mnt/c/wsl-app/app.log 2>&1 || echo \\\$? > /mnt/c/wsl-app/exit_code.txt\""
+
+          # Check libraries needed by the binary
+          echo "Checking library dependencies..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ldd /mnt/c/wsl-app/app 2>/mnt/c/wsl-app/ldd.log || echo 'ldd failed' > /mnt/c/wsl-app/ldd.log\""
+
+          # Display the ldd output
+          echo "Library dependency output:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/ldd.log\""
+
+          # Start the application in the background
+          echo "Starting application in background (after diagnostics)..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && PORT=8080 JWT_SECRET=your_secret_here nohup /mnt/c/wsl-app/app >> /mnt/c/wsl-app/app.log 2>&1 &\""
 
           # Wait a moment for the application to start
           echo "Waiting for application to start..."
@@ -128,6 +143,18 @@ jobs:
           # Final check for debugging - directly check what happened
           echo "Direct WSL output for debugging:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"ls -la /mnt/c/wsl-app/ && echo '=== App Log Content ===' && cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No app.log file found'\""
+
+          # Check if there's an exit code file
+          echo "Checking for exit code:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/exit_code.txt ]; then echo 'Exit code:' && cat /mnt/c/wsl-app/exit_code.txt; else echo 'No exit code file found'; fi\""
+
+          # Try to identify what might be wrong with WSL 1
+          echo "WSL version information:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --version || echo 'WSL version command not supported (likely WSL 1)'"
+
+          # Check system info
+          echo "System information:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
