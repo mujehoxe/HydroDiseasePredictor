@@ -105,9 +105,9 @@ jobs:
           echo "Checking binary format..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"file /mnt/c/wsl-app/app || echo 'File command not available'\""
 
-          # Start the application directly with debug output
+          # Start the application directly with debug output and absolute paths
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && echo 'Starting app in directory: \$(pwd)' > app.log 2>&1 && echo 'Executable permissions: \$(ls -la app)' >> app.log 2>&1 && PORT=8080 JWT_SECRET=your_secret_here ./app >> app.log 2>&1 &\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Starting app in directory: \$(pwd)' > /mnt/c/wsl-app/app.log 2>&1 && echo 'Executable permissions: \$(ls -la /mnt/c/wsl-app/app)' >> /mnt/c/wsl-app/app.log 2>&1 && cd /mnt/c/wsl-app && PORT=8080 JWT_SECRET=your_secret_here /mnt/c/wsl-app/app >> /mnt/c/wsl-app/app.log 2>&1 &\""
 
           # Wait a moment for the application to start
           echo "Waiting for application to start..."
