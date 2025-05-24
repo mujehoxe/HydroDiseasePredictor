@@ -43,8 +43,9 @@ jobs:
       - name: Build Go application
         run: |
           cd backend
-          go build -o app
-          ls -la app  # Verify the build
+          GOOS=linux GOARCH=amd64 go build -o app
+          file app  # Verify it's a Linux binary
+          ls -la app  # Check the binary size and permissions
 
       # Copy frontend build to backend folder for deployment
       - name: Copy frontend to backend
@@ -84,6 +85,14 @@ jobs:
           echo "Extracting files in WSL..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
 
+          # List the extracted files to verify contents
+          echo "Listing extracted files..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"ls -la /mnt/c/wsl-app\""
+
+          # Check if app binary exists
+          echo "Verifying app binary..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"if [ -f /mnt/c/wsl-app/app ]; then echo 'App binary exists'; else echo 'App binary NOT found!'; fi\""
+
           # Set executable permission on the app binary
           echo "Setting permissions..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"chmod +x /mnt/c/wsl-app/app\""
@@ -92,9 +101,13 @@ jobs:
           echo "Stopping existing application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill app || echo No process to kill\""
 
-          # Start the application directly (in WSL) with WSL1 compatibility
+          # Run file command to verify executable format
+          echo "Checking binary format..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"file /mnt/c/wsl-app/app || echo 'File command not available'\""
+
+          # Start the application directly with debug output
           echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && chmod +x app && PORT=8080 JWT_SECRET=your_secret_here ./app > app.log 2>&1 &\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && echo 'Starting app in directory: \$(pwd)' > app.log 2>&1 && echo 'Executable permissions: \$(ls -la app)' >> app.log 2>&1 && PORT=8080 JWT_SECRET=your_secret_here ./app >> app.log 2>&1 &\""
 
           # Wait a moment for the application to start
           echo "Waiting for application to start..."
@@ -111,6 +124,10 @@ jobs:
           # Display application logs using cmd type command
           echo "Application logs:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"if exist C:\\wsl-app\\app.log type C:\\wsl-app\\app.log\""
+
+          # Final check for debugging - directly check what happened
+          echo "Direct WSL output for debugging:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"ls -la /mnt/c/wsl-app/ && echo '=== App Log Content ===' && cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No app.log file found'\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
