@@ -91,6 +91,24 @@ jobs:
           echo "Start script content:"
           cat start.sh
 
+      # Create process check script
+      - name: Create process check script
+        run: |
+          echo '#!/bin/bash' > check_process.sh
+          echo 'if [ -f /mnt/c/wsl-app/app.pid ]; then' >> check_process.sh
+          echo '  PID=$(cat /mnt/c/wsl-app/app.pid)' >> check_process.sh
+          echo '  if ps -p "$PID" > /dev/null; then' >> check_process.sh
+          echo '    echo "Process is running with PID $PID"' >> check_process.sh
+          echo '  else' >> check_process.sh
+          echo '    echo "Process not running (PID $PID not found)"' >> check_process.sh
+          echo '  fi' >> check_process.sh
+          echo 'else' >> check_process.sh
+          echo '  echo "PID file not found"' >> check_process.sh
+          echo 'fi' >> check_process.sh
+          chmod +x check_process.sh
+          echo "Check process script content:"
+          cat check_process.sh
+
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
@@ -120,6 +138,10 @@ jobs:
           echo "Copying start script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} start.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\start.sh"
 
+          # Copy process check script
+          echo "Copying process check script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} check_process.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\check_process.sh"
+
           # Extract files
           echo "Extracting files..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
@@ -141,7 +163,7 @@ jobs:
 
           # Make sure app is executable
           echo "Setting executable permissions..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh\""
 
           # Start the application
           echo "Starting application..."
@@ -159,9 +181,9 @@ jobs:
           echo "Setting up Windows startup..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
 
-          # Fixed: Check if application is running with correct process check syntax
+          # Run the check process script directly (simpler approach that avoids escaping issues)
           echo "Checking if application is running..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/app.pid ]; then PID=\\$(cat /mnt/c/wsl-app/app.pid); if kill -0 \$PID 2>/dev/null; then echo 'Process is running with PID '\$PID; else echo 'Process not running (PID '\$PID' not found)'; fi; else echo 'PID file not found'; fi\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./check_process.sh\""
 
           # Try checking with curl
           echo "Testing HTTP endpoint..."
