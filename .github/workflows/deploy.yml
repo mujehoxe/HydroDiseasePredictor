@@ -98,9 +98,13 @@ jobs:
           echo "Verifying app binary..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"if [ -f /mnt/c/wsl-app/app ]; then echo 'App binary exists'; else echo 'App binary NOT found!'; fi\""
 
-          # Set executable permission on the app binary
-          echo "Setting permissions..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"chmod +x /mnt/c/wsl-app/app\""
+          # Set executable permission on the app binary with detailed error logging
+          echo "Setting permissions (with error logging)..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app 2>&1 || { echo 'chmod failed with exit code: $?'; ls -la /mnt/c/wsl-app/app; }\""
+          
+          # Alternative method to set permissions
+          echo "Trying alternative method to set permissions..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ls -la /mnt/c/wsl-app/app && echo 'Setting executable bit' && chmod 755 /mnt/c/wsl-app/app 2>&1 && ls -la /mnt/c/wsl-app/app || echo 'Alternative chmod failed'\""
 
           # Stop any existing application
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill -f /mnt/c/wsl-app/app || true\""
@@ -118,9 +122,9 @@ jobs:
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'nohup ./app > app.log 2>&1 &' >> /mnt/c/wsl-app/start.sh\""
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/start.sh\""
 
-          # Run the application
-          echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
+          # Run the application with better error handling
+          echo "Starting application with error logging..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && { ./start.sh 2>&1 || echo 'Failed to run start.sh: $?'; }\""
           
           # Give it a moment to start
           sleep 3
