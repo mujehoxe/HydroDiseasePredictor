@@ -56,6 +56,41 @@ jobs:
           mkdir -p backend/build
           cp -r dist/* backend/build/
 
+      # Create start script locally in parts to avoid YAML issues
+      - name: Create start script
+        run: |
+          echo '#!/bin/bash' > start.sh
+          echo 'cd /mnt/c/wsl-app' >> start.sh
+          echo 'export PORT=8080' >> start.sh
+          echo 'export JWT_SECRET=test_secret' >> start.sh
+          echo '' >> start.sh
+          echo '# Log startup information' >> start.sh
+          echo 'echo "=== App Starting at $(date) ===" > app.log' >> start.sh
+          echo 'echo "Working directory: $(pwd)" >> app.log' >> start.sh
+          echo 'echo "Environment:" >> app.log' >> start.sh
+          echo 'env >> app.log' >> start.sh
+          echo 'echo "File permissions:" >> app.log' >> start.sh
+          echo 'ls -la >> app.log' >> start.sh
+          echo '' >> start.sh
+          echo '# Start the application' >> start.sh
+          echo 'echo "Starting app..." >> app.log' >> start.sh
+          echo 'nohup ./app >> app.log 2>&1 &' >> start.sh
+          echo 'APP_PID=$!' >> start.sh
+          echo 'echo $APP_PID > app.pid' >> start.sh
+          echo 'echo "App started with PID: $APP_PID" >> app.log' >> start.sh
+          echo '' >> start.sh
+          echo '# Wait a moment and check if process is still running' >> start.sh
+          echo 'sleep 3' >> start.sh
+          echo 'if ps -p $APP_PID > /dev/null; then' >> start.sh
+          echo '    echo "App is running with PID $APP_PID" >> app.log' >> start.sh
+          echo 'else' >> start.sh
+          echo '    echo "ERROR: App failed to start" >> app.log' >> start.sh
+          echo '    echo "Exit code: $?" >> app.log' >> start.sh
+          echo 'fi' >> start.sh
+          chmod +x start.sh
+          echo "Start script content:"
+          cat start.sh
+
       # Install necessary tools
       - name: Install SSH tools
         run: sudo apt-get install -y openssh-client sshpass
@@ -81,6 +116,10 @@ jobs:
           echo "Copying files to server..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deployment.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\deployment.tar.gz"
 
+          # Copy start script to server
+          echo "Copying start script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} start.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\start.sh"
+
           # Extract files
           echo "Extracting files..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
@@ -102,42 +141,7 @@ jobs:
 
           # Make sure app is executable
           echo "Setting executable permissions..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app\""
-
-          # Create start script with more robust logging - broken into individual commands to avoid YAML syntax issues
-          echo "Creating start script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export PORT=8080' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export JWT_SECRET=test_secret' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '# Log startup information' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== App Starting at \$(date) ===\" > app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"Working directory: \$(pwd)\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"Environment:\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'env >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"File permissions:\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ls -la >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '# Start the application' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"Starting app...\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'nohup ./app >> app.log 2>&1 &' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'APP_PID=\$!' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \$APP_PID > app.pid' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"App started with PID: \$APP_PID\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '# Wait a moment and check if process is still running' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'sleep 3' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'if ps -p \$APP_PID > /dev/null; then' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '    echo \"App is running with PID \$APP_PID\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'else' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '    echo \"ERROR: App failed to start\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '    echo \"Exit code: \$?\" >> app.log' >> /mnt/c/wsl-app/start.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'fi' >> /mnt/c/wsl-app/start.sh\""
-
-          # Make script executable
-          echo "Making script executable..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/start.sh\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh\""
 
           # Start the application
           echo "Starting application..."
@@ -186,5 +190,5 @@ jobs:
           echo "Automated deployment failed. Please deploy manually:"
           echo "1. Install WSL on your Windows server"
           echo "2. Create directory: mkdir -p C:\\wsl-app"
-          echo "3. Copy backend files to C:\\wsl-app"
+          echo "3. Copy backend files to C:\\wsl-app" 
           echo "4. In WSL, run: cd /mnt/c/wsl-app && export PORT=8080 && ./app"
