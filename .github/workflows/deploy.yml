@@ -159,9 +159,9 @@ jobs:
           echo "Setting up Windows startup..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
 
-          # Check if application is running
+          # Fixed: Check if application is running with correct process check syntax
           echo "Checking if application is running..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/app.pid ]; then PID=\$(cat /mnt/c/wsl-app/app.pid); ps -p \$PID && echo 'Process is running' || echo 'Process not running'; else echo 'PID file not found'; fi\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/app.pid ]; then PID=\\$(cat /mnt/c/wsl-app/app.pid); if kill -0 \$PID 2>/dev/null; then echo 'Process is running with PID '\$PID; else echo 'Process not running (PID '\$PID' not found)'; fi; else echo 'PID file not found'; fi\""
 
           # Try checking with curl
           echo "Testing HTTP endpoint..."
