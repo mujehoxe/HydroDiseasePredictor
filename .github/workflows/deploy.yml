@@ -86,128 +86,78 @@ jobs:
           tar -czf deployment.tar.gz -C backend . -C ../dist .
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deployment.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\deployment.tar.gz"
 
-          # Extract files in WSL
-          echo "Extracting files in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
+          # Create a deployment script on the server
+          echo "Creating deployment script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat > /mnt/c/wsl-app/deploy.sh << 'EOL'
+#!/bin/bash
+# Deployment script for WSL app - runs locally on the server
 
-          # List the extracted files to verify contents
-          echo "Listing extracted files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"ls -la /mnt/c/wsl-app\""
+echo \"=== Starting local deployment script ===\" > /mnt/c/wsl-app/deploy.log
+cd /mnt/c/wsl-app
 
-          # Check if app binary exists
-          echo "Verifying app binary..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"if [ -f /mnt/c/wsl-app/app ]; then echo 'App binary exists'; else echo 'App binary NOT found!'; fi\""
+# Extract files
+echo \"Extracting files...\" >> /mnt/c/wsl-app/deploy.log
+tar -xzf deployment.tar.gz
+ls -la >> /mnt/c/wsl-app/deploy.log
 
-          # Stop any existing application
-          echo "Stopping any existing application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill -f /mnt/c/wsl-app/app || true\""
+# Stop any existing application
+echo \"Stopping existing application...\" >> /mnt/c/wsl-app/deploy.log
+pkill -f /mnt/c/wsl-app/app || echo \"No existing process to kill\" >> /mnt/c/wsl-app/deploy.log
 
-          # Install required libraries on WSL
-          echo "Installing required libraries on WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"apt-get update > /dev/null 2>&1 || true && apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo 'Failed to install libraries - may need root access'\""
+# Install SQLite libraries
+echo \"Installing libraries...\" >> /mnt/c/wsl-app/deploy.log
+apt-get update > /dev/null 2>&1 || true
+apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo \"Failed to install libraries - may need root access\"
 
-          # Run the application directly
-          echo "Starting application directly..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && export PORT=8080 && export JWT_SECRET=test_secret && nohup ./app > app.log 2>&1 &\""
+# Create startup file
+echo \"Creating startup script...\" >> /mnt/c/wsl-app/deploy.log
+echo '@echo off' > /mnt/c/wsl-app/run-app.bat
+echo 'start /min wsl -d Ubuntu -e bash -c \"cd /mnt/c/wsl-app && export PORT=8080 && export JWT_SECRET=test_secret && ./app\"' >> /mnt/c/wsl-app/run-app.bat
+
+# Start the application
+echo \"Starting application...\" >> /mnt/c/wsl-app/deploy.log
+export PORT=8080
+export JWT_SECRET=test_secret
+echo \"\$(date) - Starting application\" >> /mnt/c/wsl-app/app.log
+nohup ./app >> /mnt/c/wsl-app/app.log 2>&1 &
+echo \$! > /mnt/c/wsl-app/app.pid
+echo \"Started with PID: \$(cat /mnt/c/wsl-app/app.pid)\" >> /mnt/c/wsl-app/deploy.log
+
+# Check if running
+sleep 3
+ps aux | grep -v grep | grep app >> /mnt/c/wsl-app/deploy.log || echo \"Process not found with ps\" >> /mnt/c/wsl-app/deploy.log
+
+# Done
+echo \"=== Deployment complete ===\" >> /mnt/c/wsl-app/deploy.log
+EOL\""
+
+          # Make the deployment script executable
+          echo "Making deployment script executable..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/deploy.sh\""
+
+          # Execute the deployment script
+          echo "Running deployment script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./deploy.sh\""
           
-          # Give it a moment to start
-          sleep 5
+          # Set up Windows startup
+          echo "Setting up Windows startup..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\run-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
+
+          # Display deployment logs
+          echo "Deployment logs:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/deploy.log\""
           
-          # Check if application is running
-          echo "Checking application status with ps..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ps aux | grep -v grep | grep app || echo 'Process not found with ps'\""
-
-          # Check port status using simple cmd command
-          echo "Checking if port 8080 is active..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"netstat -an | findstr 8080 || echo 'Port 8080 not found in netstat'\""
-
-          # Create startup script (much simpler)
-          echo "Creating startup file for autostart..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\\wsl-app\\start-app.bat && echo start /min wsl -d Ubuntu -e bash -c \\\"cd /mnt/c/wsl-app ^&^& export PORT=8080 ^&^& export JWT_SECRET=test_secret ^&^& ./app\\\" >> C:\\wsl-app\\start-app.bat\""
-          
-          # Register it as a startup item
-          echo "Creating Windows startup shortcut..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
-
-          # Check if application is running using PowerShell
-          echo "Checking application status with PowerShell..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"try { Get-Process -Name app -ErrorAction Stop } catch { Write-Output 'WARNING: Application may not be running!' }\""
-
-          # Create a diagnostic script
-          echo "Creating diagnostic script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== WSL Environment Variables ===\" > diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'env >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== Current Directory ===\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'pwd >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== Running Files ===\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ls -la >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== Run App Directly ===\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export PORT=8080' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'export JWT_SECRET=your_secret_here' >> /mnt/c/wsl-app/diagnose.sh\""
-          
-          # Add library check and installation to diagnostic script
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"=== Checking and Installing Libraries ===\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ldd ./app >> diagnostic.log 2>&1 || echo \"ldd failed - trying to install libraries\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'echo \"Installing SQLite library...\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'apt-get update >> /dev/null 2>&1 || echo \"apt-get update failed\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'apt-get install -y libsqlite3-0 >> /dev/null 2>&1 || echo \"apt-get install failed\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'ldd ./app >> diagnostic.log 2>&1 || echo \"ldd still failed after library installation\" >> diagnostic.log' >> /mnt/c/wsl-app/diagnose.sh\""
-          
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo './app >> diagnostic.log 2>&1' >> /mnt/c/wsl-app/diagnose.sh\""
-
-          # Make the diagnostic script executable
-          echo "Making diagnostic script executable..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/diagnose.sh\""
-
-          # Run the diagnostic script
-          echo "Running diagnostics..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./diagnose.sh || echo 'Diagnostics failed' >> diagnostic.log\""
-
-          # Display diagnostic logs
-          echo "Diagnostic logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/diagnostic.log 2>/dev/null || echo 'No diagnostic log found'\""
-
           # Display application logs
           echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No app.log found'\""
-
-          # Display exit code
-          echo "Application exit code:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/exit_code.txt 2>/dev/null || echo 'No exit code file found'\""
-
-          # Check for specific error messages in the logs
-          echo "Checking for common errors in logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"grep -i 'error\\|fail\\|denied\\|permission' /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No specific errors found in log'\""
-
-          # Check file permissions
-          echo "Checking file permissions:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ls -la /mnt/c/wsl-app/\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/app.log\""
           
-          # Check for shared library dependencies
-          echo "Checking shared library dependencies:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ldd /mnt/c/wsl-app/app || echo 'ldd command failed - binary may be statically linked'\""
+          # Check if process is running
+          echo "Checking if process is running..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/app.pid ]; then PID=\$(cat /mnt/c/wsl-app/app.pid); if ps -p \$PID > /dev/null; then echo 'Process is running with PID '\$PID; else echo 'Process with PID '\$PID' is not running'; fi; else echo 'No PID file found'; fi\""
           
-          # Check if SQLite3 library is available
-          echo "Checking if SQLite3 library is available:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ldconfig -p | grep sqlite || echo 'SQLite library not found in cache'\""
-
-          # Final check for debugging - directly check what happened
-          echo "Direct WSL output for debugging:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"ls -la /mnt/c/wsl-app/ && echo '=== App Log Content ===' && cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No app.log file found'\""
-
-          # Check if there's an exit code file
-          echo "Checking for exit code:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/exit_code.txt ]; then echo 'Exit code:' && cat /mnt/c/wsl-app/exit_code.txt; else echo 'No exit code file found'; fi\""
-
-          # Try to identify what might be wrong with WSL 1
-          echo "WSL version information:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --version || echo 'WSL version command not supported (likely WSL 1)'"
-
-          # Check system info
-          echo "System information:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
+          # Check if port is open
+          echo "Checking if port is open..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"netstat -tulpn | grep 8080 || echo 'Port 8080 not found in netstat'\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
@@ -223,7 +173,3 @@ jobs:
           echo "   c. Copy the backend files to C:\wsl-app"
           echo "   d. Using WSL, make the binary executable: wsl --exec chmod +x /mnt/c/wsl-app/app"
           echo "   e. Run with: wsl --exec bash -c \"cd /mnt/c/wsl-app && export PORT=8080 && ./app\""
-
-          # Create startup batch file
-          echo "Creating startup batch file..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo wsl -d Ubuntu -e bash -c \\\"cd /mnt/c/wsl-app ^&^& export PORT=8080 ^&^& export JWT_SECRET=test_secret ^&^& ./app\\\" > C:\\wsl-app\\start-app.bat\""
