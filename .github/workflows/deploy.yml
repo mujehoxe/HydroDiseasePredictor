@@ -49,15 +49,12 @@ jobs:
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o app
           # Verify it's a Linux binary
           file app
-          # Check the binary size and permissions
-          ls -la app
 
       # Copy frontend build to backend folder for deployment
       - name: Copy frontend to backend
         run: |
           mkdir -p backend/build
           cp -r dist/* backend/build/
-          ls -la backend/build  # Verify the copy
 
       # Install necessary tools
       - name: Install SSH tools
@@ -72,104 +69,64 @@ jobs:
           # Disable StrictHostKeyChecking for this deployment
           echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Check if WSL is installed
-          echo "Checking WSL on server..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"if (!(Get-Command wsl -ErrorAction SilentlyContinue)) { Write-Error 'WSL not found, please install WSL on the Windows server'; exit 1 }\""
-
-          # Create app directory in WSL (directly using root user for simplicity)
+          # Create app directory in WSL
           echo "Creating deployment directory in WSL..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"mkdir -p /mnt/c/wsl-app\""
 
-          # Copy build files to the server using SCP
+          # Create deployment package
+          echo "Creating deployment package..."
+          tar -czf deployment.tar.gz -C backend .
+
+          # Copy files to server
           echo "Copying files to server..."
-          # Create a deployment package
-          tar -czf deployment.tar.gz -C backend . -C ../dist .
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} deployment.tar.gz ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\deployment.tar.gz"
 
-          # Create a deployment script on the server
-          echo "Creating deployment script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat > /mnt/c/wsl-app/deploy.sh << 'EOL'
-#!/bin/bash
-# Deployment script for WSL app - runs locally on the server
+          # Extract files
+          echo "Extracting files..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
 
-echo \"=== Starting local deployment script ===\" > /mnt/c/wsl-app/deploy.log
-cd /mnt/c/wsl-app
+          # Stop any existing app
+          echo "Stopping any existing app..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill -f /mnt/c/wsl-app/app || true\""
 
-# Extract files
-echo \"Extracting files...\" >> /mnt/c/wsl-app/deploy.log
-tar -xzf deployment.tar.gz
-ls -la >> /mnt/c/wsl-app/deploy.log
+          # Install required libraries
+          echo "Installing required libraries..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"apt-get update > /dev/null 2>&1 && apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo 'Failed to install libraries'\""
 
-# Stop any existing application
-echo \"Stopping existing application...\" >> /mnt/c/wsl-app/deploy.log
-pkill -f /mnt/c/wsl-app/app || echo \"No existing process to kill\" >> /mnt/c/wsl-app/deploy.log
+          # Create start script
+          echo "Creating start script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo '#!/bin/bash' > /mnt/c/wsl-app/start.sh && echo 'cd /mnt/c/wsl-app' >> /mnt/c/wsl-app/start.sh && echo 'export PORT=8080' >> /mnt/c/wsl-app/start.sh && echo 'export JWT_SECRET=test_secret' >> /mnt/c/wsl-app/start.sh && echo 'nohup ./app > app.log 2>&1 &' >> /mnt/c/wsl-app/start.sh && chmod +x /mnt/c/wsl-app/start.sh\""
 
-# Install SQLite libraries
-echo \"Installing libraries...\" >> /mnt/c/wsl-app/deploy.log
-apt-get update > /dev/null 2>&1 || true
-apt-get install -y libsqlite3-0 > /dev/null 2>&1 || echo \"Failed to install libraries - may need root access\"
+          # Start the application
+          echo "Starting application..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
 
-# Create startup file
-echo \"Creating startup script...\" >> /mnt/c/wsl-app/deploy.log
-echo '@echo off' > /mnt/c/wsl-app/run-app.bat
-echo 'start /min wsl -d Ubuntu -e bash -c \"cd /mnt/c/wsl-app && export PORT=8080 && export JWT_SECRET=test_secret && ./app\"' >> /mnt/c/wsl-app/run-app.bat
+          # Create Windows startup batch file
+          echo "Creating Windows startup file..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\\wsl-app\\start-app.bat && echo start /min wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh >> C:\\wsl-app\\start-app.bat\""
 
-# Start the application
-echo \"Starting application...\" >> /mnt/c/wsl-app/deploy.log
-export PORT=8080
-export JWT_SECRET=test_secret
-echo \"\$(date) - Starting application\" >> /mnt/c/wsl-app/app.log
-nohup ./app >> /mnt/c/wsl-app/app.log 2>&1 &
-echo \$! > /mnt/c/wsl-app/app.pid
-echo \"Started with PID: \$(cat /mnt/c/wsl-app/app.pid)\" >> /mnt/c/wsl-app/deploy.log
-
-# Check if running
-sleep 3
-ps aux | grep -v grep | grep app >> /mnt/c/wsl-app/deploy.log || echo \"Process not found with ps\" >> /mnt/c/wsl-app/deploy.log
-
-# Done
-echo \"=== Deployment complete ===\" >> /mnt/c/wsl-app/deploy.log
-EOL\""
-
-          # Make the deployment script executable
-          echo "Making deployment script executable..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/deploy.sh\""
-
-          # Execute the deployment script
-          echo "Running deployment script..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./deploy.sh\""
-          
-          # Set up Windows startup
+          # Copy to startup folder
           echo "Setting up Windows startup..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\run-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
 
-          # Display deployment logs
-          echo "Deployment logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/deploy.log\""
-          
-          # Display application logs
-          echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/app.log\""
-          
-          # Check if process is running
-          echo "Checking if process is running..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"if [ -f /mnt/c/wsl-app/app.pid ]; then PID=\$(cat /mnt/c/wsl-app/app.pid); if ps -p \$PID > /dev/null; then echo 'Process is running with PID '\$PID; else echo 'Process with PID '\$PID' is not running'; fi; else echo 'No PID file found'; fi\""
-          
+          # Check if application is running
+          echo "Checking if application is running..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"ps aux | grep -v grep | grep app || echo 'Process not found'\""
+
           # Check if port is open
           echo "Checking if port is open..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"netstat -tulpn | grep 8080 || echo 'Port 8080 not found in netstat'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"netstat -tulpn | grep 8080 || echo 'Port 8080 not found'\""
+
+          # Display logs
+          echo "Application logs:"
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No logs found'\""
 
       # Manual instructions if all else fails
       - name: Deployment failure instructions
         if: ${{ failure() }}
         run: |
-          echo "Automated deployment failed. Please check the following:"
-          echo "1. Make sure WSL is installed on the Windows server"
-          echo "2. Make sure the SSH credentials are set in the GitHub secrets"
-          echo "3. Check if port 8080 is available on the server"
-          echo "4. You can manually deploy by following these steps:"
-          echo "   a. Install WSL on your Windows server if not already installed"
-          echo "   b. Create directory: mkdir -p C:\wsl-app"
-          echo "   c. Copy the backend files to C:\wsl-app"
-          echo "   d. Using WSL, make the binary executable: wsl --exec chmod +x /mnt/c/wsl-app/app"
-          echo "   e. Run with: wsl --exec bash -c \"cd /mnt/c/wsl-app && export PORT=8080 && ./app\""
+          echo "Automated deployment failed. Please deploy manually:"
+          echo "1. Install WSL on your Windows server"
+          echo "2. Create directory: mkdir -p C:\\wsl-app"
+          echo "3. Copy backend files to C:\\wsl-app"
+          echo "4. In WSL, run: cd /mnt/c/wsl-app && export PORT=8080 && ./app"
