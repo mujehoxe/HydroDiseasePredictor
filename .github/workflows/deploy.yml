@@ -85,9 +85,14 @@ jobs:
           echo "Extracting files..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
 
-          # Stop any existing app
+          # Modified: Stop any existing app with error handling
           echo "Stopping any existing app..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"pkill -f /mnt/c/wsl-app/app || true\""
+          set +e  # Don't exit on error for this command
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Checking for running processes...' && ps aux | grep -v grep | grep app && echo 'Found process, attempting to kill...' && pkill -f /mnt/c/wsl-app/app && echo 'Process stopped' || echo 'No process found to stop'\""
+          set -e  # Resume exit on error for subsequent commands
+
+          # Continue with remaining deployment regardless of stop result
+          echo "Continuing deployment..."
 
           # Install required libraries
           echo "Installing required libraries..."
