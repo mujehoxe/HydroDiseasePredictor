@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist
 dist-ssr
 *.local
 
@@ -26,5 +26,6 @@ dist-ssr
 
 /backend/build
 /backend/*.db
+/backend/app
 backend/farm.db
 farm.db

@@ -342,17 +342,53 @@ func (s *Server) setupRoutes() {
 	// Swagger docs
 	apiRouter.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
-	// Serve static files from the frontend build
-	s.router.PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./build"))))
+	// ===== FRONTEND STATIC FILE SERVING =====
 
-	// Serve the index.html for any other routes to support SPA routing
+	// 1. Serve static files with correct paths
+	// Debug files first (highest priority)
+	s.router.Path("/debug.html").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./build/debug.html")
+	})
+	s.router.Path("/test-app.html").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./build/test-app.html")
+	})
+
+	// 2. Serve the logo file
+	s.router.Path("/TecAdvisor.png").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./build/TecAdvisor.png")
+	})
+
+	// 3. Serve assets directory - JS, CSS, fonts, images in /assets
+	fs := http.FileServer(http.Dir("./build/assets"))
+	s.router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", fs))
+
+	// 4. Handle all React router routes
+	// This is crucial for client-side routing with react-router
+	reactRoutes := []string{
+		"/signup",
+		"/ajoutferme",
+		"/vosfermes",
+		"/tableaudebord",
+		"/usersmanagment",
+		"/", // Root path last
+	}
+
+	for _, route := range reactRoutes {
+		s.router.Path(route).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, "./build/index.html")
+		})
+	}
+
+	// 5. Fallback handler for any other routes
+	// Serve index.html for all non-API and non-matched routes (SPA routing)
 	s.router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// For API requests that weren't matched, return 404
-		if r.URL.Path[:4] == "/api" {
+		// Skip API routes that weren't matched
+		if len(r.URL.Path) >= 5 && r.URL.Path[:5] == "/api/" {
 			http.NotFound(w, r)
 			return
 		}
-		// Otherwise serve the frontend
+
+		// For all other routes, serve the React app
 		http.ServeFile(w, r, "./build/index.html")
 	})
 }
