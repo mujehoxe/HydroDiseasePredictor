@@ -45,6 +45,8 @@ jobs:
           cd backend
           # Install SQLite development libraries
           sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+          # Run go mod tidy to ensure all dependencies are available
+          go mod tidy
           # Build with CGO enabled for SQLite support
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o app
           # Verify it's a Linux binary
