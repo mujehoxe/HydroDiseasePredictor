@@ -113,11 +113,12 @@ function Ajoutferme() {
 
       // Fetch the user's existing farms to determine the next unique ID
       const farmsResponse = await fetch(
-        `${API_CONFIG.BASE_URL}users/${userId}/farms`,
+        `${API_CONFIG.BASE_URL}/users/${userId}/farms`,
         {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
@@ -138,8 +139,8 @@ function Ajoutferme() {
       };
 
       const url = isEdit
-        ? `${API_CONFIG.BASE_URL}farms/${farmToEdit.id}`
-        : "${API_CONFIG.BASE_URL}farms";
+        ? `${API_CONFIG.BASE_URL}/farms/${farmToEdit.id}`
+        : `${API_CONFIG.BASE_URL}/farms`;
 
       const method = isEdit ? "PUT" : "POST";
 

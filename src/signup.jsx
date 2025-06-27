@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
+import API_CONFIG from "./config/api";
 import "./css/bootstrap.min.css";
 import "./css/style.css";
 import logo from "./imgtest/logo-tc-advisor 1.png";
@@ -56,7 +57,7 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch("${API_CONFIG.BASE_URL}auth/register", {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

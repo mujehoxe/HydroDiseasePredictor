@@ -68,7 +68,7 @@ function VosFermes() {
   };
 
   useEffect(() => {
-    fetch(`${API_CONFIG.BASE_URL}users/${userId}/farms`, {
+    fetch(`${API_CONFIG.BASE_URL}/users/${userId}/farms`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((response) => response.json())

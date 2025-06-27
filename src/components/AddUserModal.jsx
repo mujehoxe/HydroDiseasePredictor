@@ -75,8 +75,8 @@ function AddUserModal({ show, handleClose, userToEdit, fetchUsers }) {
     try {
       setLoading(true);
       const url = isEdit
-        ? `${API_CONFIG.BASE_URL}users/${userToEdit.id}`
-        : "${API_CONFIG.BASE_URL}auth/register";
+        ? `${API_CONFIG.BASE_URL}/users/${userToEdit.id}`
+        : `${API_CONFIG.BASE_URL}/auth/register`;
       const method = isEdit ? "PUT" : "POST";
 
       const response = await fetch(url, {

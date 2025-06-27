@@ -49,7 +49,7 @@ function UsersManagement() {
       // Update UI optimistically
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
 
-      const response = await fetch(`${API_CONFIG.BASE_URL}users/${userId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/users/${userId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ function UsersManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}users`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/users`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

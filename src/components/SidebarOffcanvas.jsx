@@ -36,7 +36,7 @@ function Sidebar() {
 
       try {
         const response = await fetch(
-          `${API_CONFIG.BASE_URL}users/${userId}/farms`,
+          `${API_CONFIG.BASE_URL}/users/${userId}/farms`,
           {
             method: "GET",
             headers: {
@@ -78,7 +78,7 @@ function Sidebar() {
     const token = sessionStorage.getItem("authToken"); // Retrieve the auth token
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}farms/${farmId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/farms/${farmId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
