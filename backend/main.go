@@ -4,19 +4,19 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Amir-Bitam/vite-project/backend/api/controller"
-	"github.com/Amir-Bitam/vite-project/backend/api/middleware"
-	"github.com/Amir-Bitam/vite-project/backend/config"
-	"github.com/Amir-Bitam/vite-project/backend/domain/model"
-	"github.com/Amir-Bitam/vite-project/backend/domain/service"
-	"github.com/Amir-Bitam/vite-project/backend/infrastructure/persistence"
+	"github.com/HydroDiseasePredictor/backend/api/controller"
+	"github.com/HydroDiseasePredictor/backend/api/middleware"
+	"github.com/HydroDiseasePredictor/backend/config"
+	"github.com/HydroDiseasePredictor/backend/domain/model"
+	"github.com/HydroDiseasePredictor/backend/domain/service"
+	"github.com/HydroDiseasePredictor/backend/infrastructure/persistence"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	_ "github.com/Amir-Bitam/vite-project/backend/docs"
+	_ "github.com/HydroDiseasePredictor/backend/docs"
 )
 
 // @securityDefinitions.apikey BearerAuth

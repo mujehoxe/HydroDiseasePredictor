@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HydroDiseasePredictor/backend/domain/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 )
@@ -28,15 +29,15 @@ func getEnvOrDefault(key, defaultValue string) string {
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	ID        uint       `json:"id,omitempty" swaggerignore:"true"`
-	CreatedAt time.Time  `json:"-" swaggerignore:"true"`
-	UpdatedAt time.Time  `json:"-" swaggerignore:"true"`
-	DeletedAt *time.Time `json:"-" swaggerignore:"true"`
-	Email     string     `json:"email" example:"user@example.com"`
-	Name      string     `json:"name" example:"John Doe"`
-	Password  string     `json:"password,omitempty" example:"secretpassword"`
-	Role      string     `json:"role" example:"admin"` // New field
-	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
+	ID        uint            `json:"id,omitempty" swaggerignore:"true"`
+	CreatedAt time.Time       `json:"-" swaggerignore:"true"`
+	UpdatedAt time.Time       `json:"-" swaggerignore:"true"`
+	DeletedAt *time.Time      `json:"-" swaggerignore:"true"`
+	Email     string          `json:"email" example:"user@example.com"`
+	Name      string          `json:"name" example:"John Doe"`
+	Password  string          `json:"password,omitempty" example:"secretpassword"`
+	Role      string          `json:"role" example:"admin"` // New field
+	Farms     []model.Farm    `json:"farms,omitempty" swaggerignore:"true"`
 }
 
 // LoginRequest represents login credentials
@@ -248,22 +249,13 @@ func (s *Server) getUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} ErrorResponse "Forbidden - Access denied"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Security Bearer
-// @Router /users [get]
+// @Router /admin/users [get]
 func (s *Server) getAllUsers(w http.ResponseWriter, r *http.Request) {
 	var users []User
-
-	result := s.db.Select("id", "email", "name", "role", "created_at").Find(&users) // Exclude sensitive fields
-
-	if result.Error != nil {
-		http.Error(w, "Failed to fetch users: "+result.Error.Error(), http.StatusInternalServerError)
+	if result := s.db.Find(&users); result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	response := SuccessResponse{
-		Message: "Users retrieved successfully",
-		Data:    users,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
-}
+	json.NewEncoder(w).Encode(users)
+} 
