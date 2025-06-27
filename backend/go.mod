@@ -1,4 +1,4 @@
-module github.com/HydroDiseasePredictor/backend
+module github.com/Amir-Bitam/vite-project/backend
 
 go 1.22.5
 

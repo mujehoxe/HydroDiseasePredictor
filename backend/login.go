@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HydroDiseasePredictor/backend/domain/model"
+	"github.com/Amir-Bitam/vite-project/backend/domain/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 )
