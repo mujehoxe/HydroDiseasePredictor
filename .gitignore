@@ -29,3 +29,4 @@ dist-ssr
 /backend/app
 backend/farm.db
 farm.db
+backend/farm.db

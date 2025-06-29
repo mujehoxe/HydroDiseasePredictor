@@ -34,7 +34,9 @@ type User struct {
 	DeletedAt *time.Time `json:"-" swaggerignore:"true"`
 	Email     string     `json:"email" example:"user@example.com"`
 	Name      string     `json:"name" example:"John Doe"`
-	Password  string     `json:"password,omitempty" example:"secretpassword"`
+	Password  string     `json:"-" gorm:"column:password"` // Stored hashed password, not exposed in JSON
+	PlainPassword  string `json:"password,omitempty" gorm:"-" example:"secretpassword"` // Plain password from request, ignored by GORM
+	HashPass string     `json:"-" gorm:"column:hash_pass"` // Stored hashed password, not exposed
 	Role      string     `json:"role" example:"admin"` // New field
 	Farms     []Farm     `json:"farms,omitempty" swaggerignore:"true"`
 }
@@ -145,8 +147,18 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if email already exists
+	var existing int64
+	s.db.Model(&User{}).Where("email = ?", user.Email).Count(&existing)
+	if existing > 0 {
+		http.Error(w, "Email already exists", http.StatusBadRequest)
+		return
+	}
+
 	// Hash the password before saving
-	user.Password = hashPassword(user.Password)
+	hashed := hashPassword(user.PlainPassword)
+	user.HashPass = hashed
+	user.Password = hashed
 
 	if result := s.db.Create(&user); result.Error != nil {
 		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
@@ -154,7 +166,11 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	userResponse := user
+	userResponse.Password = ""
+	userResponse.HashPass = ""
+	userResponse.PlainPassword = ""
+	json.NewEncoder(w).Encode(userResponse)
 }
 
 // @Summary Login user
@@ -181,8 +197,8 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify password
-	if hashPassword(loginReq.Password) != user.Password {
+	// Verify password (check against both possible stored columns)
+	if hash := hashPassword(loginReq.Password); hash != user.HashPass && hash != user.Password {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -206,6 +222,8 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 
 	// Clear sensitive data
 	user.Password = ""
+	user.HashPass = ""
+	user.PlainPassword = ""
 
 	response := LoginResponse{
 		Token: tokenString,

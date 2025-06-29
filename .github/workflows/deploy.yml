@@ -2,7 +2,7 @@ name: Build and Deploy to WSL
 
 on:
   push:
-    branches: [backend]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
