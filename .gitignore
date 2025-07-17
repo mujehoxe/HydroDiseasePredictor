@@ -23,10 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 *.db
+*.sqlite
+*.sqlite3
 
+# Backend specific ignores
 /backend/build
 /backend/*.db
+/backend/*.sqlite
+/backend/*.sqlite3
 /backend/app
 backend/farm.db
 farm.db
-backend/farm.db
