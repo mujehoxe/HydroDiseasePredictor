@@ -146,10 +146,85 @@ jobs:
           echo "Extracting files..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
 
-          # Modified: Stop any existing app with error handling
+          # Stop any existing app with improved error handling
           echo "Stopping any existing app..."
           set +e  # Don't exit on error for this command
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Checking for running processes...' && ps aux | grep -v grep | grep app && echo 'Found process, attempting to kill...' && pkill -f /mnt/c/wsl-app/app && echo 'Process stopped' || echo 'No process found to stop'\""
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"
+            cd /mnt/c/wsl-app
+            echo 'Checking for existing app processes...'
+            
+            # First, kill ALL instances of the app (not just the PID file one)
+            echo 'Killing all app instances...'
+            APP_PIDS=\$(pgrep -f '/mnt/c/wsl-app/app' 2>/dev/null || echo '')
+            if [ -n \"\$APP_PIDS\" ]; then
+              echo 'Found running app processes with PIDs: \$APP_PIDS'
+              echo 'Attempting graceful shutdown of all instances...'
+              pkill -TERM -f '/mnt/c/wsl-app/app'
+              sleep 5
+              
+              # Check if any are still running
+              REMAINING_PIDS=\$(pgrep -f '/mnt/c/wsl-app/app' 2>/dev/null || echo '')
+              if [ -n \"\$REMAINING_PIDS\" ]; then
+                echo 'Some processes still running (PIDs: \$REMAINING_PIDS), forcing kill...'
+                pkill -KILL -f '/mnt/c/wsl-app/app'
+                sleep 2
+              fi
+              
+              # Final check
+              FINAL_CHECK=\$(pgrep -f '/mnt/c/wsl-app/app' 2>/dev/null || echo '')
+              if [ -n \"\$FINAL_CHECK\" ]; then
+                echo 'ERROR: Some processes still running after force kill: \$FINAL_CHECK'
+                echo 'Process details:'
+                ps aux | grep -v grep | grep '/mnt/c/wsl-app/app' || echo 'No processes found in ps output'
+              else
+                echo 'SUCCESS: All app processes stopped'
+              fi
+            else
+              echo 'No app processes found running'
+            fi
+            
+            # Clean up PID file regardless
+            if [ -f app.pid ]; then
+              echo 'Cleaning up PID file'
+              rm -f app.pid
+            fi
+            
+            # Also kill any processes that might be using port 8080
+            echo 'Checking for processes using port 8080...'
+            PORT_PROCS=\$(lsof -ti:8080 2>/dev/null || echo '')
+            if [ -n \"\$PORT_PROCS\" ]; then
+              echo 'Found processes using port 8080: \$PORT_PROCS'
+              echo 'Killing processes on port 8080...'
+              kill -TERM \$PORT_PROCS 2>/dev/null || echo 'Failed to send TERM signal'
+              sleep 3
+              # Force kill if still there
+              PORT_PROCS_AFTER=\$(lsof -ti:8080 2>/dev/null || echo '')
+              if [ -n \"\$PORT_PROCS_AFTER\" ]; then
+                echo 'Force killing remaining processes on port 8080...'
+                kill -KILL \$PORT_PROCS_AFTER 2>/dev/null || echo 'Failed to send KILL signal'
+                sleep 1
+              fi
+            else
+              echo 'No processes found using port 8080'
+            fi
+            
+            # Final verification
+            echo 'Final verification:'
+            FINAL_APP_PROCS=\$(pgrep -f '/mnt/c/wsl-app/app' 2>/dev/null || echo '')
+            FINAL_PORT_PROCS=\$(lsof -ti:8080 2>/dev/null || echo '')
+            
+            if [ -n \"\$FINAL_APP_PROCS\" ]; then
+              echo 'WARNING: App processes still running: \$FINAL_APP_PROCS'
+            else
+              echo 'CONFIRMED: No app processes running'
+            fi
+            
+            if [ -n \"\$FINAL_PORT_PROCS\" ]; then
+              echo 'WARNING: Port 8080 still in use by: \$FINAL_PORT_PROCS'
+            else
+              echo 'CONFIRMED: Port 8080 is free'
+            fi
+          \""
           set -e  # Resume exit on error for subsequent commands
 
           # Continue with remaining deployment regardless of stop result
@@ -169,17 +244,50 @@ jobs:
           echo "Starting application..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
 
-          # Give it a moment to start up
+          # Give it a moment to start up and verify multiple times
           echo "Waiting for application to start..."
-          sleep 5
-
-          # Create Windows startup batch file
-          echo "Creating Windows startup file..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\\wsl-app\\start-app.bat && echo start /min wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh >> C:\\wsl-app\\start-app.bat\""
-
-          # Copy to startup folder
-          echo "Setting up Windows startup..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
+          sleep 3
+          
+          # Enhanced startup verification with retries
+          echo "Verifying application startup..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"
+            cd /mnt/c/wsl-app
+            
+            # Check for up to 30 seconds
+            for i in {1..10}; do
+              echo 'Startup check attempt \$i...'
+              
+              # Check if PID file exists and process is running
+              if [ -f app.pid ]; then
+                PID=\$(cat app.pid)
+                if ps -p \"\$PID\" > /dev/null; then
+                  echo 'SUCCESS: Application is running with PID \$PID'
+                  
+                  # Also test if it's responding on the port
+                  if nc -z localhost 8080; then
+                    echo 'SUCCESS: Application is responding on port 8080'
+                    break
+                  else
+                    echo 'Application process running but not responding on port 8080 yet...'
+                  fi
+                else
+                  echo 'PID file exists but process not running'
+                fi
+              else
+                echo 'PID file not found yet...'
+              fi
+              
+              if [ \$i -eq 10 ]; then
+                echo 'ERROR: Application failed to start properly after 30 seconds'
+                echo 'Current processes:'
+                ps aux | grep -v grep | grep app || echo 'No app processes found'
+                echo 'Application logs:'
+                tail -n 20 app.log 2>/dev/null || echo 'No logs found'
+              else
+                sleep 3
+              fi
+            done
+          \""
 
           # Run the check process script directly (simpler approach that avoids escaping issues)
           echo "Checking if application is running..."
@@ -204,13 +312,3 @@ jobs:
           # Display system information
           echo "System information:"
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
-
-      # Manual instructions if all else fails
-      - name: Deployment failure instructions
-        if: ${{ failure() }}
-        run: |
-          echo "Automated deployment failed. Please deploy manually:"
-          echo "1. Install WSL on your Windows server"
-          echo "2. Create directory: mkdir -p C:\\wsl-app"
-          echo "3. Copy backend files to C:\\wsl-app" 
-          echo "4. In WSL, run: cd /mnt/c/wsl-app && export PORT=8080 && ./app"
