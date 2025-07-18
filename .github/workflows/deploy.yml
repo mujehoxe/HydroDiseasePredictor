@@ -120,12 +120,43 @@ jobs:
           echo "Attempting WSL deployment..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
-          # Disable StrictHostKeyChecking for this deployment
-          echo "StrictHostKeyChecking no" > ~/.ssh/config
+          # Configure SSH with more robust settings
+          cat > ~/.ssh/config << EOF
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+            ConnectTimeout 30
+            ConnectionAttempts 3
+          EOF
 
-          # Create app directory in WSL
+          # Function to retry SSH commands
+          retry_ssh() {
+            local cmd="$1"
+            local max_attempts=3
+            local delay=5
+            
+            for ((i=1; i<=max_attempts; i++)); do
+              echo "SSH attempt $i/$max_attempts..."
+              if eval "$cmd"; then
+                return 0
+              else
+                if [ $i -lt $max_attempts ]; then
+                  echo "SSH command failed, retrying in $delay seconds..."
+                  sleep $delay
+                  delay=$((delay * 2))  # Exponential backoff
+                else
+                  echo "SSH command failed after $max_attempts attempts"
+                  return 1
+                fi
+              fi
+            done
+          }
+
+          # Create app directory in WSL with retry
           echo "Creating deployment directory in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"mkdir -p /mnt/c/wsl-app\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl --exec bash -c \"mkdir -p /mnt/c/wsl-app\"'"
 
           # Create deployment package
           echo "Creating deployment package..."
@@ -143,9 +174,9 @@ jobs:
           echo "Copying process check script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} check_process.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\check_process.sh"
 
-          # Extract files
+          # Extract files with retry
           echo "Extracting files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\"'"
 
           # Copy stop script to server
           echo "Copying stop script..."
@@ -155,31 +186,31 @@ jobs:
           echo "Copying verification script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} scripts/verify_startup.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\verify_startup.sh"
 
-          # Stop any existing app
+          # Stop any existing app with retry
           echo "Stopping any existing app..."
           set +e  # Don't exit on error for this command
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/stop_app.sh && /mnt/c/wsl-app/stop_app.sh\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/stop_app.sh && /mnt/c/wsl-app/stop_app.sh\"'"
           set -e  # Resume exit on error for subsequent commands
 
           # Continue with remaining deployment regardless of stop result
           echo "Continuing deployment..."
 
-          # Install required libraries - with sudo for permission issues
+          # Install required libraries with retry
           echo "Installing required libraries..."
           set +e  # Don't exit on error
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Installing libraries with sudo...' && sudo apt-get update && sudo apt-get install -y libsqlite3-0 net-tools curl\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"echo 'Installing libraries with sudo...' && sudo apt-get update && sudo apt-get install -y libsqlite3-0 net-tools curl\"'"
           set -e  # Resume exit on error
 
           # Add delay to prevent SSH connection issues
           echo "Waiting before setting permissions..."
           sleep 2
 
-          # Make sure app is executable and start the application
+          # Make sure app is executable and start the application with retry
           echo "Setting permissions and starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
             chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh
             cd /mnt/c/wsl-app && ./start.sh
-          \""
+          \"'"
 
           # Give it a moment to start up and verify multiple times
           echo "Waiting for application to start..."
@@ -187,7 +218,7 @@ jobs:
           
           # Enhanced startup verification with retries
           echo "Verifying application startup..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/verify_startup.sh && /mnt/c/wsl-app/verify_startup.sh\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/verify_startup.sh && /mnt/c/wsl-app/verify_startup.sh\"'"
 
           # Add delay to prevent SSH connection issues
           echo "Waiting before final checks..."
@@ -195,7 +226,7 @@ jobs:
 
           # Run the check process script directly and combine with other checks
           echo "Final verification and testing..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
             echo 'Final process check:'
             cd /mnt/c/wsl-app && ./check_process.sh
             echo ''
@@ -208,7 +239,7 @@ jobs:
             echo 'System info:'
             uname -a
             cat /etc/os-release | grep PRETTY_NAME
-          \""
+          \"'"
 
           # Test external endpoint from GitHub Actions runner
           echo "Testing external endpoint from GitHub Actions..."
