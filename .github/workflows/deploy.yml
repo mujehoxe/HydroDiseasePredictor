@@ -131,7 +131,7 @@ jobs:
             ConnectionAttempts 3
           EOF
 
-          # Function to retry SSH commands
+          # Function to retry SSH commands with timeout
           retry_ssh() {
             local cmd="$1"
             local max_attempts=3
@@ -139,7 +139,7 @@ jobs:
             
             for ((i=1; i<=max_attempts; i++)); do
               echo "SSH attempt $i/$max_attempts..."
-              if eval "$cmd"; then
+              if timeout 180 eval "$cmd"; then
                 return 0
               else
                 if [ $i -lt $max_attempts ]; then
@@ -195,10 +195,25 @@ jobs:
           # Continue with remaining deployment regardless of stop result
           echo "Continuing deployment..."
 
-          # Install required libraries with retry
-          echo "Installing required libraries..."
+          # Check if required tools are available (skip installation if they exist)
+          echo "Checking required tools..."
           set +e  # Don't exit on error
-          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"echo 'Installing libraries with sudo...' && sudo apt-get update && sudo apt-get install -y libsqlite3-0 net-tools curl\"'"
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
+            echo 'Checking for required tools...'
+            if command -v curl >/dev/null 2>&1; then
+              echo 'curl: available'
+            else
+              echo 'curl: missing - trying to install...'
+              sudo apt-get install -y curl >/dev/null 2>&1 || echo 'curl install failed'
+            fi
+            if command -v nc >/dev/null 2>&1; then
+              echo 'nc (netcat): available'
+            else
+              echo 'nc: missing - trying to install...'
+              sudo apt-get install -y netcat-openbsd >/dev/null 2>&1 || echo 'nc install failed'
+            fi
+            echo 'Tool check completed'
+          \"'"
           set -e  # Resume exit on error
 
           # Add delay to prevent SSH connection issues
