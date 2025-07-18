@@ -207,7 +207,7 @@ jobs:
               sudo apt-get install -y curl >/dev/null 2>&1 || echo 'curl install failed'
             fi
             if command -v nc >/dev/null 2>&1; then
-              echo 'nc (netcat): available'
+              echo 'nc netcat: available'
             else
               echo 'nc: missing - trying to install...'
               sudo apt-get install -y netcat-openbsd >/dev/null 2>&1 || echo 'nc install failed'
@@ -222,10 +222,7 @@ jobs:
 
           # Make sure app is executable and start the application with retry
           echo "Setting permissions and starting application..."
-          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
-            chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh
-            cd /mnt/c/wsl-app && ./start.sh
-          \"'"
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh && cd /mnt/c/wsl-app && ./start.sh\"'"
 
           # Give it a moment to start up and verify multiple times
           echo "Waiting for application to start..."
@@ -241,20 +238,7 @@ jobs:
 
           # Run the check process script directly and combine with other checks
           echo "Final verification and testing..."
-          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
-            echo 'Final process check:'
-            cd /mnt/c/wsl-app && ./check_process.sh
-            echo ''
-            echo 'Testing HTTP endpoint:'
-            curl -s -o /dev/null -w 'HTTP Status: %{http_code}' http://localhost:8080/api/v1/swagger/ || echo 'Failed to connect to local endpoint'
-            echo ''
-            echo 'Application logs (last 10 lines):'
-            tail -n 10 app.log 2>/dev/null || echo 'No logs found'
-            echo ''
-            echo 'System info:'
-            uname -a
-            cat /etc/os-release | grep PRETTY_NAME
-          \"'"
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"echo Final process check: && cd /mnt/c/wsl-app && ./check_process.sh && echo && echo Testing HTTP endpoint: && curl -s -o /dev/null -w HTTP Status: %{http_code} http://localhost:8080/api/v1/swagger/ || echo Failed to connect to local endpoint && echo && echo Application logs last 10 lines: && tail -n 10 app.log 2>/dev/null || echo No logs found && echo && echo System info: && uname -a && cat /etc/os-release | grep PRETTY_NAME\"'"
 
           # Test external endpoint from GitHub Actions runner
           echo "Testing external endpoint from GitHub Actions..."
