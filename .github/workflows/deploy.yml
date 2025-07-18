@@ -139,7 +139,7 @@ jobs:
             
             for ((i=1; i<=max_attempts; i++)); do
               echo "SSH attempt $i/$max_attempts..."
-              if timeout 180 eval "$cmd"; then
+              if timeout 180 bash -c "$cmd"; then
                 return 0
               else
                 if [ $i -lt $max_attempts ]; then
