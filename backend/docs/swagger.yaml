@@ -112,6 +112,7 @@ definitions:
         example: John Doe
         type: string
       password:
+        description: Plain password from request, ignored by GORM
         example: secretpassword
         type: string
       role:

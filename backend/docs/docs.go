@@ -808,6 +808,7 @@ const docTemplate = `{
                     "example": "John Doe"
                 },
                 "password": {
+                    "description": "Plain password from request, ignored by GORM",
                     "type": "string",
                     "example": "secretpassword"
                 },

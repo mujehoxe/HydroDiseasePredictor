@@ -38,6 +38,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.22"
+          cache-dependency-path: "backend/go.sum"
 
       # Build Go application for Linux (WSL) - with CGO enabled for SQLite
       - name: Build Go application
@@ -119,12 +120,43 @@ jobs:
           echo "Attempting WSL deployment..."
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
-          # Disable StrictHostKeyChecking for this deployment
-          echo "StrictHostKeyChecking no" > ~/.ssh/config
+          # Configure SSH with more robust settings
+          cat > ~/.ssh/config << EOF
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+            ConnectTimeout 30
+            ConnectionAttempts 3
+          EOF
 
-          # Create app directory in WSL
+          # Function to retry SSH commands with timeout
+          retry_ssh() {
+            local cmd="$1"
+            local max_attempts=3
+            local delay=5
+            
+            for ((i=1; i<=max_attempts; i++)); do
+              echo "SSH attempt $i/$max_attempts..."
+              if timeout 180 bash -c "$cmd"; then
+                return 0
+              else
+                if [ $i -lt $max_attempts ]; then
+                  echo "SSH command failed, retrying in $delay seconds..."
+                  sleep $delay
+                  delay=$((delay * 2))  # Exponential backoff
+                else
+                  echo "SSH command failed after $max_attempts attempts"
+                  return 1
+                fi
+              fi
+            done
+          }
+
+          # Create app directory in WSL with retry
           echo "Creating deployment directory in WSL..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"mkdir -p /mnt/c/wsl-app\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl --exec bash -c \"mkdir -p /mnt/c/wsl-app\"'"
 
           # Create deployment package
           echo "Creating deployment package..."
@@ -142,75 +174,81 @@ jobs:
           echo "Copying process check script..."
           sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} check_process.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\check_process.sh"
 
-          # Extract files
+          # Extract files with retry
           echo "Extracting files..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl --exec bash -c \"cd /mnt/c/wsl-app && tar -xzf deployment.tar.gz\"'"
 
-          # Modified: Stop any existing app with error handling
+          # Copy stop script to server
+          echo "Copying stop script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} scripts/stop_app.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\stop_app.sh"
+
+          # Copy verification script to server
+          echo "Copying verification script..."
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -P ${{ secrets.SSH_PORT }} scripts/verify_startup.sh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:"C:\\wsl-app\\verify_startup.sh"
+
+          # Stop any existing app with retry
           echo "Stopping any existing app..."
           set +e  # Don't exit on error for this command
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Checking for running processes...' && ps aux | grep -v grep | grep app && echo 'Found process, attempting to kill...' && pkill -f /mnt/c/wsl-app/app && echo 'Process stopped' || echo 'No process found to stop'\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/stop_app.sh && /mnt/c/wsl-app/stop_app.sh\"'"
           set -e  # Resume exit on error for subsequent commands
 
           # Continue with remaining deployment regardless of stop result
           echo "Continuing deployment..."
 
-          # Install required libraries - with sudo for permission issues
-          echo "Installing required libraries..."
+          # Check if required tools are available (skip installation if they exist)
+          echo "Checking required tools..."
           set +e  # Don't exit on error
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"echo 'Installing libraries with sudo...' && sudo apt-get update && sudo apt-get install -y libsqlite3-0 net-tools curl\""
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"
+            echo 'Checking for required tools...'
+            if command -v curl >/dev/null 2>&1; then
+              echo 'curl: available'
+            else
+              echo 'curl: missing - trying to install...'
+              sudo apt-get install -y curl >/dev/null 2>&1 || echo 'curl install failed'
+            fi
+            if command -v nc >/dev/null 2>&1; then
+              echo 'nc netcat: available'
+            else
+              echo 'nc: missing - trying to install...'
+              sudo apt-get install -y netcat-openbsd >/dev/null 2>&1 || echo 'nc install failed'
+            fi
+            echo 'Tool check completed'
+          \"'"
           set -e  # Resume exit on error
 
-          # Make sure app is executable
-          echo "Setting executable permissions..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh\""
+          # Add delay to prevent SSH connection issues
+          echo "Waiting before setting permissions..."
+          sleep 2
 
-          # Start the application
-          echo "Starting application..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./start.sh\""
+          # Make sure app is executable and start the application with retry
+          echo "Setting permissions and starting application..."
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/app /mnt/c/wsl-app/start.sh /mnt/c/wsl-app/check_process.sh && cd /mnt/c/wsl-app && ./start.sh\"'"
 
-          # Give it a moment to start up
+          # Give it a moment to start up and verify multiple times
           echo "Waiting for application to start..."
-          sleep 5
+          sleep 3
+          
+          # Enhanced startup verification with retries
+          echo "Verifying application startup..."
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"chmod +x /mnt/c/wsl-app/verify_startup.sh && /mnt/c/wsl-app/verify_startup.sh\"'"
 
-          # Create Windows startup batch file
-          echo "Creating Windows startup file..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "cmd /c \"echo @echo off > C:\\wsl-app\\start-app.bat && echo start /min wsl -d Ubuntu -e /mnt/c/wsl-app/start.sh >> C:\\wsl-app\\start-app.bat\""
+          # Add delay to prevent SSH connection issues
+          echo "Waiting before final checks..."
+          sleep 2
 
-          # Copy to startup folder
-          echo "Setting up Windows startup..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "powershell -Command \"Copy-Item 'C:\\wsl-app\\start-app.bat' -Destination ([Environment]::GetFolderPath('Startup')) -Force\""
+          # Run the check process script directly and combine with other checks
+          echo "Final verification and testing..."
+          retry_ssh "sshpass -p '${{ secrets.SSH_PASSWORD }}' ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'wsl bash -c \"echo Final process check: && cd /mnt/c/wsl-app && ./check_process.sh && echo && echo Testing HTTP endpoint: && curl -s -o /dev/null -w HTTP Status: %{http_code} http://localhost:8080/api/v1/swagger/ || echo Failed to connect to local endpoint && echo && echo Application logs last 10 lines: && tail -n 10 app.log 2>/dev/null || echo No logs found && echo && echo System info: && uname -a && cat /etc/os-release | grep PRETTY_NAME\"'"
 
-          # Run the check process script directly (simpler approach that avoids escaping issues)
-          echo "Checking if application is running..."
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cd /mnt/c/wsl-app && ./check_process.sh\""
-
-          # Try checking with curl
-          echo "Testing HTTP endpoint..."
+          # Test external endpoint from GitHub Actions runner
+          echo "Testing external endpoint from GitHub Actions..."
           set +e
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/v1/swagger/ || echo 'Failed to connect'\""
+          HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://197.140.16.206:8080/api/v1/swagger/ || echo "000")
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "SUCCESS: External endpoint is responding (HTTP $HTTP_CODE)"
+          else
+            echo "WARNING: External endpoint returned HTTP $HTTP_CODE or failed to connect"
+          fi
           set -e
 
-          # Test external endpoint
-          echo "Testing external endpoint..."
-          set +e
-          curl -s -o /dev/null -w '%{http_code}' http://197.140.16.206:8080/api/v1/swagger/ || echo "Failed to connect to external endpoint"
-          set -e
-
-          # Display logs
-          echo "Application logs:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"cat /mnt/c/wsl-app/app.log 2>/dev/null || echo 'No logs found'\""
-
-          # Display system information
-          echo "System information:"
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "wsl bash -c \"uname -a && cat /etc/os-release | grep PRETTY_NAME\""
-
-      # Manual instructions if all else fails
-      - name: Deployment failure instructions
-        if: ${{ failure() }}
-        run: |
-          echo "Automated deployment failed. Please deploy manually:"
-          echo "1. Install WSL on your Windows server"
-          echo "2. Create directory: mkdir -p C:\\wsl-app"
-          echo "3. Copy backend files to C:\\wsl-app" 
-          echo "4. In WSL, run: cd /mnt/c/wsl-app && export PORT=8080 && ./app"
+          echo "Deployment completed successfully!"
