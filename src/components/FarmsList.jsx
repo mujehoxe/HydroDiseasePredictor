@@ -237,7 +237,7 @@ function FarmsList({ userId }) {
 }
 
 FarmsList.propTypes = {
-  userId: PropTypes.string.isRequired,
+  userId: PropTypes.number.isRequired,
 };
 
 export default FarmsList;
