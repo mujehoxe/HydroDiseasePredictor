@@ -39,7 +39,7 @@ function Sidebar({ onClose }) {
   // Handle logout
   const handleLogout = () => {
     logout(); // Clear all auth cookies
-    navigate("/signin"); // Redirect to login page
+    navigate("/"); // Redirect to login page
   };
 
   // Handle clicking "Vos Fermes" (Navigate to /vosfermes)
