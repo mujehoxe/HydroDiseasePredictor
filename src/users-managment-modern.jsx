@@ -47,11 +47,11 @@ function UsersManagement() {
   }, []);
 
   useEffect(() => {
-    const filtered = Array.isArray(users) ? users.filter(user => 
+    const filtered = users.filter(user => 
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.role.toLowerCase().includes(searchTerm.toLowerCase())
-    ) : [];
+    );
     setFilteredUsers(filtered);
   }, [users, searchTerm]);
 
@@ -70,7 +70,7 @@ function UsersManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(Array.isArray(data) ? data : []);
+        setUsers(data);
       } else {
         const errorData = await response.json();
         setError(errorData.message || "Failed to fetch users");
@@ -102,7 +102,7 @@ function UsersManagement() {
       });
 
       if (response.ok) {
-        setUsers(prevUsers => Array.isArray(prevUsers) ? prevUsers.filter(user => user.id !== userId) : []);
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
         setSuccess(language === "fr" ? "Utilisateur supprimé avec succès" : "تم حذف المستخدم بنجاح");
         setTimeout(() => setSuccess(null), 3000);
       } else {

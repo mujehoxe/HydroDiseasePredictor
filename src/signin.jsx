@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { isAuthenticated } from "./utils/auth";
 import API_CONFIG from "./config/api";
-import "./css/bootstrap.min.css";
-import "./css/style.css";
+import { EyeIcon, EyeSlashIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import logo from "./imgtest/logo-tc-advisor 1.png";
 import { useLanguage } from "./LanguageContext";
 
@@ -16,6 +15,8 @@ function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check if user is already authenticated and redirect to dashboard
   useEffect(() => {
@@ -26,6 +27,8 @@ function SignIn() {
 
   const handleLogin = async () => {
     setError(""); // Clear any previous error
+    setIsLoading(true);
+    
     try {
       const response = await fetch(`${API_CONFIG.BASE_URL}/auth/login`, {
         method: "POST",
@@ -53,79 +56,174 @@ function SignIn() {
     } catch (err) {
       setError(language === "fr" ? "Une erreur s'est produite" : "حدث خطأ");
       console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
       handleLogin();
-      console.log("Enter key pressed");
     }
   };
 
   return (
-    <div className="container-xxl position-relative bg-white d-flex p-0">
-      <div className="container-fluid">
-        <div
-          className="row h-100 align-items-center justify-content-center"
-          style={{ minHeight: "100vh" }}
-        >
-          <div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
-            <div className="bg-light rounded p-4 p-sm-5 my-4 mx-3">
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <img src={logo} alt="Logo" style={{ height: "60px" }} />
-                <h3>{language === "fr" ? "Connexion" : "تسجيل الدخول"}</h3>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center">
+          <img
+            className="h-16 w-auto"
+            src={logo}
+            alt="TecAdvisor Logo"
+          />
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+          {language === "fr" ? "Connectez-vous à votre compte" : "تسجيل الدخول إلى حسابك"}
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          {language === "fr" ? "Ou " : "أو "}
+          <button
+            onClick={() => navigate("/signup")}
+            className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
+          >
+            {language === "fr" ? "créez un nouveau compte" : "إنشاء حساب جديد"}
+          </button>
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-lg sm:px-10">
+          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 animate-fade-in">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      {error}
+                    </h3>
+                  </div>
+                </div>
               </div>
+            )}
 
-              {error && <div className="alert alert-danger">{error}</div>}
-
-              <div className="form-floating mb-3">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                {language === "fr" ? "Adresse e-mail" : "البريد الإلكتروني"}
+              </label>
+              <div className="mt-1">
                 <input
-                  type="text"
-                  className="form-control"
                   id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm transition-colors duration-200"
                   placeholder={
-                    language === "fr" ? "Adresse mail" : "البريد الإلكتروني"
+                    language === "fr" ? "Entrez votre adresse e-mail" : "أدخل بريدك الإلكتروني"
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
                   onKeyDown={handleKeyDown}
                 />
-                <label htmlFor="email">
-                  {language === "fr" ? "Adresse mail" : "البريد الإلكتروني"}
-                </label>
               </div>
+            </div>
 
-              <div className="form-floating mb-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                {language === "fr" ? "Mot de passe" : "كلمة المرور"}
+              </label>
+              <div className="mt-1 relative">
                 <input
-                  type="password"
-                  className="form-control"
                   id="password"
-                  placeholder={language === "fr" ? "Mot de passe" : "كلمة السر"}
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm transition-colors duration-200"
+                  placeholder={
+                    language === "fr" ? "Entrez votre mot de passe" : "أدخل كلمة المرور"
+                  }
                   value={password}
                   onChange={(e) => setPassword(e.target.value.trimStart())}
                   onKeyDown={handleKeyDown}
                 />
-                <label htmlFor="password">
-                  {language === "fr" ? "Mot de passe" : "كلمة السر"}
-                </label>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-500 focus:outline-none focus:text-gray-500 transition-colors duration-200"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
+            </div>
 
+            <div>
               <button
-                onClick={handleLogin}
-                className="btn btn-primary py-3 w-100 mb-4"
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
-                {language === "fr" ? "Se connecter" : "تسجيل الدخول"}
+                {isLoading ? (
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : null}
+                {isLoading
+                  ? (language === "fr" ? "Connexion..." : "جار تسجيل الدخول...")
+                  : (language === "fr" ? "Se connecter" : "تسجيل الدخول")
+                }
               </button>
             </div>
-            <div className="d-flex justify-content-center">
-              <a
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  {language === "fr" ? "Préférences" : "التفضيلات"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <button
                 onClick={toggleLanguage}
-                className="text-black fw-bold text-decoration-underline"
-                style={{ fontSize: "16px", cursor: "pointer" }}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
               >
+                <GlobeAltIcon className="h-4 w-4 mr-2" />
                 {language === "fr" ? "العربية" : "Français"}
-              </a>
+              </button>
             </div>
           </div>
         </div>

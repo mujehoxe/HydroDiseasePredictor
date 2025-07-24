@@ -11,7 +11,7 @@ import {
   CloudIcon,
   EyeIcon,
   EyeSlashIcon,
-  FireIcon,
+  TemperatureIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
@@ -200,8 +200,8 @@ function Tableaudebord() {
 
                     {/* Temperature Display */}
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-2">
-                        <FireIcon className="h-10 w-10 text-red-600" />
+                      <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-2">
+                        <CloudIcon className="h-10 w-10 text-blue-600" />
                       </div>
                       <h2 className="text-4xl font-bold text-gray-900">
                         {temperature !== null ? `${temperature}°C` : 'Loading...'}

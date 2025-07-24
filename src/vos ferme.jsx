@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
-import Offcanvas from "react-bootstrap/Offcanvas";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
 import { getUser, getAuthToken } from "./utils/auth";
 import FarmsList from "./components/FarmsList";
 import Sidebar from "./components/SidebarOffcanvas";
 import API_CONFIG from "./config/api";
-import "./css/bootstrap.min.css";
-import "./css/style.css";
+import { Bars3Icon, ChartBarIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import diseaseRiskCalculators from "./js/diseaseRiskCalculator";
 import { getRecommendation } from "./js/getRecommendation";
 import { getWeather } from "./js/weatherAPI";
@@ -20,11 +18,7 @@ function VosFermes() {
   const [summaries, setSummaries] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // State to manage the Offcanvas visibility
-  const [showOffcanvas, setShowOffcanvas] = useState(false);
-  const handleCloseOffcanvas = () => setShowOffcanvas(false);
-  const handleShowOffcanvas = () => setShowOffcanvas(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Retrieve userId and authToken from cookies
   const user = getUser();
@@ -32,7 +26,7 @@ function VosFermes() {
 
   useEffect(() => {
     if (!user || !user.id || !token) {
-      navigate("/");
+      navigate("/signin");
     }
   }, [navigate, user, token]);
 
@@ -69,7 +63,10 @@ function VosFermes() {
   };
 
   useEffect(() => {
-    fetch(`${API_CONFIG.BASE_URL}users/${userId}/farms`, {
+    if (!userId || !token) return;
+    
+    setLoading(true);
+    fetch(`${API_CONFIG.BASE_URL}/users/${userId}/farms`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((response) => response.json())
@@ -92,112 +89,207 @@ function VosFermes() {
           }
         });
       })
-      .catch((error) => console.error("Error fetching farms:", error));
-  }, [user.id, token]);
-
-  const handleUsersManagement = () => {
-    navigate("/usersmanagment");
-  };
+      .catch((error) => {
+        console.error("Error fetching farms:", error);
+        setError("Failed to fetch farms");
+      })
+      .finally(() => setLoading(false));
+  }, [userId, token, language]);
 
   return (
-    <div className="container-xxl position-relative bg-white d-flex p-0">
-      {/* Sidebar Start */}
-      <div className="desktop-sidebar">
+    <div className="flex h-screen bg-blue-50">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:inset-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <Sidebar />
       </div>
 
-      {/* Sidebar End */}
-
-      {/* Content Start */}
-      <div className="content">
-        {/* Navbar Start */}
-        <nav className="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
-          <a
-            href="#"
-            className="sidebar-toggler flex-shrink-0 d-lg-none"
-            onClick={handleShowOffcanvas}
-          >
-            <i className="fa fa-bars"></i>
-          </a>
-          <div
-            style={{
-              display: "flex",
-              color: "black",
-              fontSize: "25px",
-              height: "64px",
-              alignItems: "center",
-              paddingLeft: "20px",
-            }}
-          >
-            {language === "fr" ? "Tableau de Bord" : "لوحة مراقبة"}
-          </div>
-        </nav>
-        {/* Navbar End */}
-        <div
-          className="container-fluid pt-4 px-4 d-flex justify-content-center align-items-center"
-          style={{ minHeight: "100vh" }}
-        >
-          <div
-            className="row g-4 w-100 justify-content-center align-items-stretch"
-            style={{ maxWidth: "1200px" }}
-          >
-            <div className="col-12 col-md-6 d-flex">
-              <div className="bg-light rounded p-4 my-4 mx-3 w-100">
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                  <h3>{language === "fr" ? "Vos Fermes" : "مزارعك"}</h3>
-                </div>
-                <FarmsList userId={userId} />
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex items-center">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="text-gray-500 hover:text-gray-700 lg:hidden p-2"
+                >
+                  <Bars3Icon className="h-6 w-6" />
+                </button>
+                <h1 className="ml-4 text-xl font-semibold text-gray-900">
+                  {language === "fr" ? "Tableau de Bord" : "لوحة المراقبة"}
+                </h1>
               </div>
             </div>
+          </div>
+        </header>
 
-            <div className="col-12 col-md-6 d-flex">
-              <div className="bg-light rounded p-4 my-4 mx-3 w-100">
-                <h3>
-                  {language === "fr"
-                    ? "Résumé des recommendations"
-                    : "ملخص التوصيات"}
-                </h3>
-                <div className="recommendations-content">
-                  {farms.map((farm) => (
-                    <div key={farm.id}>
-                      <h6>
-                        {farm.name} ({farm.address}) :
-                      </h6>
-                      {summaries[farm.id]?.length > 0 ? (
-                        <ul style={{ listStyle: "none", padding: 0 }}>
-                          {summaries[farm.id].map((rec, index) => (
-                            <li key={index} style={{ marginBottom: "8px" }}>
-                              {rec}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>
-                          {language === "fr"
-                            ? "Pas de recommandations disponibles pour l'instant."
-                            : "لا توجد توصيات متاحة حاليًا."}
-                        </p>
-                      )}
+        {/* Main content area */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto">
+              {/* Page header */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {language === "fr" ? "Aperçu de vos fermes" : "نظرة عامة على مزارعك"}
+                </h2>
+                <p className="mt-2 text-gray-600">
+                  {language === "fr" 
+                    ? "Gérez vos fermes et consultez les recommandations basées sur les conditions météorologiques"
+                    : "إدارة مزارعك ومراجعة التوصيات بناءً على الظروف الجوية"
+                  }
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-8 rounded-md bg-red-50 p-4">
+                  <div className="flex">
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">
+                        {language === "fr" ? "Erreur" : "خطأ"}
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>{error}</p>
+                      </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Farms List Section */}
+                  <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <div className="flex items-center">
+                        <MapPinIcon className="h-5 w-5 text-gray-400 mr-2" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {language === "fr" ? "Vos Fermes" : "مزارعك"}
+                        </h3>
+                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                          {farms.length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <FarmsList userId={userId} />
+                    </div>
+                  </div>
+
+                  {/* Recommendations Summary Section */}
+                  <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <div className="flex items-center">
+                        <ChartBarIcon className="h-5 w-5 text-gray-400 mr-2" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {language === "fr"
+                            ? "Résumé des recommandations"
+                            : "ملخص التوصيات"}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="space-y-6">
+                        {farms.length === 0 ? (
+                          <div className="text-center py-8">
+                            <MapPinIcon className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-2 text-sm font-medium text-gray-900">
+                              {language === "fr" ? "Aucune ferme" : "لا توجد مزارع"}
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                              {language === "fr" 
+                                ? "Commencez par ajouter votre première ferme."
+                                : "ابدأ بإضافة مزرعتك الأولى."}
+                            </p>
+                            <div className="mt-6">
+                              <button
+                                onClick={() => navigate("/Ajoutferme", { state: { isEdit: false, userId } })}
+                                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                              >
+                                {language === "fr" ? "Ajouter une ferme" : "إضافة مزرعة"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          farms.map((farm) => (
+                            <div key={farm.id} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
+                              <div className="flex items-start justify-between">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-sm font-medium text-gray-900 truncate">
+                                    {farm.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-500 truncate">
+                                    {farm.address}
+                                  </p>
+                                </div>
+                                {weatherData[farm.id] && (
+                                  <div className="ml-4 flex-shrink-0">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                      {weatherData[farm.id].temperature}°C
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="mt-3">
+                                {summaries[farm.id]?.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {summaries[farm.id].slice(0, 3).map((rec, index) => (
+                                      <div key={index} className="flex items-start">
+                                        <div className="flex-shrink-0">
+                                          <div className="h-1.5 w-1.5 rounded-full bg-green-400 mt-2"></div>
+                                        </div>
+                                        <p className="ml-3 text-sm text-gray-700">
+                                          {rec}
+                                        </p>
+                                      </div>
+                                    ))}
+                                    {summaries[farm.id].length > 3 && (
+                                      <p className="text-xs text-gray-500 ml-6">
+                                        {language === "fr" 
+                                          ? `+${summaries[farm.id].length - 3} recommandations supplémentaires`
+                                          : `+${summaries[farm.id].length - 3} توصيات إضافية`
+                                        }
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-gray-500 italic">
+                                    {language === "fr"
+                                      ? "Pas de recommandations disponibles pour l'instant."
+                                      : "لا توجد توصيات متاحة حاليًا."}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <Offcanvas
-            show={showOffcanvas}
-            onHide={handleCloseOffcanvas}
-            className="custom-offcanvas"
-          >
-            <Offcanvas.Header
-              closeButton
-              className="d-flex justify-content-end"
-            />
-            <Offcanvas.Body>
-              <Sidebar />
-            </Offcanvas.Body>
-          </Offcanvas>
-        </div>
+        </main>
       </div>
     </div>
   );
