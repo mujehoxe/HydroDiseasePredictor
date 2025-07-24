@@ -30,7 +30,7 @@ function Sidebar({ onClose }) {
 
   if (!user || !user.id || !token) {
     // Redirect to login if userId or token is missing
-    navigate("/signin");
+    navigate("/");
     return;
   }
 
