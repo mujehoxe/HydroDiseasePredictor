@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import API_CONFIG from "./config/api";
 import { useLanguage } from "./LanguageContext";
+import { isAuthenticated } from "./utils/auth";
 import "./css/bootstrap.min.css";
 import "./css/style.css";
 import logo from "./imgtest/logo-tc-advisor 1.png";
@@ -8,6 +10,13 @@ import logo from "./imgtest/logo-tc-advisor 1.png";
 function SignUp() {
   const navigate = useNavigate();
   const { language, toggleLanguage } = useLanguage();
+
+  // Check if user is already authenticated and redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/vosfermes"); // Redirect to dashboard/farms page
+    }
+  }, [navigate]);
 
   // State variables for form inputs
   const [formData, setFormData] = useState({
@@ -56,7 +65,7 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch("${API_CONFIG.BASE_URL}auth/register", {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

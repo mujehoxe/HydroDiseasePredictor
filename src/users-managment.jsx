@@ -4,6 +4,7 @@ import Button from "react-bootstrap/Button";
 import Offcanvas from "react-bootstrap/Offcanvas";
 import { useNavigate } from "react-router-dom";
 import { Table, Tbody, Th, Thead, Tr } from "react-super-responsive-table";
+import { getUser, getAuthToken } from "./utils/auth";
 import AddUserModal from "./components/AddUserModal";
 import Sidebar from "./components/SidebarOffcanvas";
 import UserRow from "./components/UserRow";
@@ -17,7 +18,7 @@ function UsersManagement() {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const handleCloseOffcanvas = () => setShowOffcanvas(false);
   const handleShowOffcanvas = () => setShowOffcanvas(true);
-  const token = sessionStorage.getItem("authToken");
+  const token = getAuthToken();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -25,8 +26,8 @@ function UsersManagement() {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [error, setError] = useState(null);
 
-  // Retrieve userId and authToken from sessionStorage
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  // Retrieve userId and authToken from cookies
+  const user = getUser();
 
   if (!user || !user.id || !token || !user.role) {
     // Redirect to login if userId or token is missing

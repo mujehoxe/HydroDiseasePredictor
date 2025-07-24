@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { isAuthenticated } from "./utils/auth";
 import API_CONFIG from "./config/api";
 import "./css/bootstrap.min.css";
 import "./css/style.css";
@@ -15,6 +17,13 @@ function SignIn() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // Check if user is already authenticated and redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/vosfermes"); // Redirect to dashboard/farms page
+    }
+  }, [navigate]);
+
   const handleLogin = async () => {
     setError(""); // Clear any previous error
     try {
@@ -28,9 +37,9 @@ function SignIn() {
         const data = await response.json();
         console.log("Login successful:", data);
 
-        // Save the token in sessionStorage
-        sessionStorage.setItem("authToken", data.token);
-        sessionStorage.setItem("user", JSON.stringify(data.user)); // Save user details
+        // Save the token in cookies (expires in 7 days)
+        Cookies.set("authToken", data.token, { expires: 7, secure: false, sameSite: 'lax' });
+        Cookies.set("user", JSON.stringify(data.user), { expires: 7, secure: false, sameSite: 'lax' });
 
         // Redirect to the VosFermes page
         navigate("/vosfermes");

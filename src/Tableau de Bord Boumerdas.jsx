@@ -1,16 +1,18 @@
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
 import { getWeather } from './js/weatherAPI'; // Import the weather service
 import { useLanguage } from './LanguageContext';
+import { getUser, getAuthToken } from './utils/auth';
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/SidebarOffcanvas';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import MaladiesList from './components/MaladiesList';
 
 function Tableaudebord() {
-    // Retrieve userId and authToken from sessionStorage
-    const user = JSON.parse(sessionStorage.getItem('user'));
-    const token = sessionStorage.getItem('authToken');
+    // Retrieve userId and authToken from cookies
+    const user = getUser();
+    const token = getAuthToken();
+    const navigate = useNavigate();
   
     if (!user || !user.id || !token) {
       // Redirect to login if userId or token is missing

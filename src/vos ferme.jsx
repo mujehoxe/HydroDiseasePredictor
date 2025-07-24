@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Offcanvas from "react-bootstrap/Offcanvas";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
+import { getUser, getAuthToken } from "./utils/auth";
 import FarmsList from "./components/FarmsList";
 import Sidebar from "./components/SidebarOffcanvas";
 import API_CONFIG from "./config/api";
@@ -25,9 +26,9 @@ function VosFermes() {
   const handleCloseOffcanvas = () => setShowOffcanvas(false);
   const handleShowOffcanvas = () => setShowOffcanvas(true);
 
-  // Retrieve userId and authToken from sessionStorage
-  const user = JSON.parse(sessionStorage.getItem("user"));
-  const token = sessionStorage.getItem("authToken");
+  // Retrieve userId and authToken from cookies
+  const user = getUser();
+  const token = getAuthToken();
 
   useEffect(() => {
     if (!user || !user.id || !token) {

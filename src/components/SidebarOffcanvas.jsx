@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API_CONFIG from "../config/api";
+import { getUser, getAuthToken, logout } from "../utils/auth";
 import logo from "../imgtest/logo-tc-advisor 2.png";
 import { useLanguage } from "../LanguageContext";
 
@@ -10,9 +11,10 @@ function Sidebar() {
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // Retrieve userId and authToken from sessionStorage
-  const user = JSON.parse(sessionStorage.getItem("user"));
-  const token = sessionStorage.getItem("authToken");
+  
+  // Retrieve userId and authToken from cookies
+  const user = getUser();
+  const token = getAuthToken();
 
   if (!user || !user.id || !token) {
     // Redirect to login if userId or token is missing
@@ -22,6 +24,12 @@ function Sidebar() {
 
   const userId = user.id;
 
+  // Handle logout
+  const handleLogout = () => {
+    logout(); // Clear all auth cookies
+    navigate("/signin"); // Redirect to login page
+  };
+
   // Handle clicking "Vos Fermes" (Navigate to /vosfermes)
   const handleVosFermesClick = () => {
     navigate("/vosfermes");
@@ -30,17 +38,17 @@ function Sidebar() {
   useEffect(() => {
     // Fetch the user's farms from the API
     const fetchFarms = async () => {
-      const token = sessionStorage.getItem("authToken"); // Retrieve the auth token
+      const authToken = getAuthToken(); // Retrieve the auth token from cookies
       setLoading(true);
       setError("");
 
       try {
         const response = await fetch(
-          `${API_CONFIG.BASE_URL}users/${userId}/farms`,
+          `${API_CONFIG.BASE_URL}/users/${userId}/farms`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`, // Add the auth token here
+              Authorization: `Bearer ${authToken}`, // Add the auth token here
               "Content-Type": "application/json",
             },
           }
@@ -145,6 +153,13 @@ function Sidebar() {
               onClick={handleVosFermesClick}
             >
               {language === "fr" ? "Vos fermes" : "مزارعكم"}
+            </li>
+            <li
+              className="nav-item nav-link"
+              onClick={handleLogout}
+              style={{ color: "#dc3545", cursor: "pointer" }}
+            >
+              {language === "fr" ? "Se déconnecter" : "تسجيل الخروج"}
             </li>
           </ul>
         </nav>

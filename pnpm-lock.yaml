@@ -23,12 +23,18 @@ importers:
       express:
         specifier: ^4.21.1
         version: 4.21.2
+      js-cookie:
+        specifier: ^3.0.5
+        version: 3.0.5
       mongoose:
         specifier: ^8.7.2
         version: 8.9.2
       package.json:
         specifier: ^2.0.1
         version: 2.0.1
+      prop-types:
+        specifier: ^15.8.1
+        version: 15.8.1
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1247,6 +1253,10 @@ packages:
   iterator.prototype@1.1.4:
     resolution: {integrity: sha512-x4WH0BWmrMmg4oHHl+duwubhrvczGlyuGAZu3nvrf0UXOfPu8IhZObFEr7DE/iv01YgVZrsOiRcqw2srkKEDIA==}
     engines: {node: '>= 0.4'}
+
+  js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -3319,6 +3329,8 @@ snapshots:
       has-symbols: 1.1.0
       reflect.getprototypeof: 1.0.9
       set-function-name: 2.0.2
+
+  js-cookie@3.0.5: {}
 
   js-tokens@4.0.0: {}
 
