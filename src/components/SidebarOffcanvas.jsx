@@ -11,12 +11,13 @@ import {
   Cog6ToothIcon,
   PencilIcon,
   TrashIcon,
-  PlusIcon
+  PlusIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 import logo from "../imgtest/logo-tc-advisor 2.png";
 import { useLanguage } from "../LanguageContext";
 
-function Sidebar() {
+function Sidebar({ onClose }) {
   const { language, toggleLanguage } = useLanguage();
   const navigate = useNavigate();
   const [farms, setFarms] = useState([]);
@@ -132,14 +133,23 @@ function Sidebar() {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200 shadow-lg">
+    <div className="flex h-full w-full flex-col bg-white border-r border-gray-200 shadow-lg">
       {/* Logo */}
-      <div className="flex h-16 flex-shrink-0 items-center justify-center px-4">
+      <div className="flex h-16 flex-shrink-0 items-center justify-between px-4">
         <img
           className="h-12 w-auto"
           src={logo}
           alt="TecAdvisor Logo"
         />
+        {/* Close button for mobile/tablet */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="xl:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* User Info */}

@@ -3,13 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
 import { getUser, getAuthToken } from "./utils/auth";
 import API_CONFIG from "./config/api";
-import Sidebar from "./components/SidebarOffcanvas";
+import Layout from "./components/Layout";
 import {
-  Bars3Icon,
   BuildingOfficeIcon,
   MapPinIcon,
   PencilSquareIcon,
-  ArrowLeftIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
@@ -44,7 +42,6 @@ function Ajoutferme() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const algerianCities = [
     "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Bejaia", "Biskra", "Bechar",
@@ -127,63 +124,17 @@ function Ajoutferme() {
   }
 
   return (
-    <div className="flex h-screen bg-blue-50">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
-        </div>
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <Sidebar />
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="text-gray-500 hover:text-gray-700 lg:hidden p-2"
-                >
-                  <Bars3Icon className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={() => navigate("/vosfermes")}
-                  className="ml-4 lg:ml-0 flex items-center text-gray-500 hover:text-gray-700"
-                >
-                  <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                  <span className="text-sm font-medium">
-                    {language === "fr" ? "Retour" : "عودة"}
-                  </span>
-                </button>
-                <h1 className="ml-4 text-xl font-semibold text-gray-900">
-                  {isEdit
-                    ? (language === "fr" ? "Modifier la ferme" : "تعديل المزرعة")
-                    : (language === "fr" ? "Ajouter une ferme" : "إضافة مزرعة")
-                  }
-                </h1>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
-            <div className="max-w-2xl mx-auto">
+    <Layout
+      title={isEdit
+        ? (language === "fr" ? "Modifier la ferme" : "تعديل المزرعة")
+        : (language === "fr" ? "Ajouter une ferme" : "إضافة مزرعة")
+      }
+      showBackButton={true}
+      backButtonPath="/vosfermes"
+      className="bg-blue-50"
+    >
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-2xl mx-auto">
               {/* Success Message */}
               {success && (
                 <div className="mb-8 rounded-md bg-green-50 p-4">
@@ -224,11 +175,11 @@ function Ajoutferme() {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <div className="h-10 w-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                      <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
                         {isEdit ? (
-                          <PencilSquareIcon className="h-5 w-5 text-primary-600" />
+                          <PencilSquareIcon className="h-5 w-5 text-blue-600" />
                         ) : (
-                          <BuildingOfficeIcon className="h-5 w-5 text-primary-600" />
+                          <BuildingOfficeIcon className="h-5 w-5 text-blue-600" />
                         )}
                       </div>
                     </div>
@@ -260,7 +211,7 @@ function Ajoutferme() {
                         type="text"
                         id="farmName"
                         required
-                        className="block w-full rounded-md border border-gray-300 px-3 py-2 pl-10 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                        className="block w-full rounded-md border border-gray-300 px-3 py-2 pl-10 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                         placeholder={
                           language === "fr" ? "Entrez le nom de votre ferme" : "أدخل اسم مزرعتك"
                         }
@@ -282,7 +233,7 @@ function Ajoutferme() {
                       <select
                         id="farmCity"
                         required
-                        className="block w-full rounded-md border border-gray-300 px-3 py-2 pl-10 pr-10 bg-white shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                        className="block w-full rounded-md border border-gray-300 px-3 py-2 pl-10 pr-10 bg-white shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                         value={farmCity}
                         onChange={(e) => setFarmCity(e.target.value)}
                       >
@@ -315,7 +266,7 @@ function Ajoutferme() {
                       <textarea
                         id="farmDescription"
                         rows={4}
-                        className="block w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                        className="block w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
                         placeholder={
                           language === "fr" 
                             ? "Décrivez votre ferme, les types de cultures, etc."
@@ -332,14 +283,14 @@ function Ajoutferme() {
                     <button
                       type="button"
                       onClick={() => navigate("/vosfermes")}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       {language === "fr" ? "Annuler" : "إلغاء"}
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <svg
@@ -375,9 +326,7 @@ function Ajoutferme() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </Layout>
   );
 }
 

@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
 import { getUser, getAuthToken } from "./utils/auth";
 import FarmsList from "./components/FarmsList";
-import Sidebar from "./components/SidebarOffcanvas";
+import Layout from "./components/Layout";
 import API_CONFIG from "./config/api";
-import { Bars3Icon, ChartBarIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import diseaseRiskCalculators from "./js/diseaseRiskCalculator";
 import { getRecommendation } from "./js/getRecommendation";
 import { getWeather } from "./js/weatherAPI";
@@ -18,7 +18,6 @@ function VosFermes() {
   const [summaries, setSummaries] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Retrieve userId and authToken from cookies
   const user = getUser();
@@ -97,63 +96,16 @@ function VosFermes() {
   }, [userId, token, language]);
 
   return (
-    <div className="flex h-screen bg-blue-50">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" />
-        </div>
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <Sidebar />
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="text-gray-500 hover:text-gray-700 lg:hidden p-2"
-                >
-                  <Bars3Icon className="h-6 w-6" />
-                </button>
-                <h1 className="ml-4 text-xl font-semibold text-gray-900">
-                  {language === "fr" ? "Tableau de Bord" : "لوحة المراقبة"}
-                </h1>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
-            <div className="max-w-7xl mx-auto">
-              {/* Page header */}
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {language === "fr" ? "Aperçu de vos fermes" : "نظرة عامة على مزارعك"}
-                </h2>
-                <p className="mt-2 text-gray-600">
-                  {language === "fr" 
-                    ? "Gérez vos fermes et consultez les recommandations basées sur les conditions météorologiques"
-                    : "إدارة مزارعك ومراجعة التوصيات بناءً على الظروف الجوية"
-                  }
-                </p>
-              </div>
+    <Layout
+      title={language === "fr" ? "Tableau de Bord" : "لوحة المراقبة"}
+      subtitle={language === "fr" 
+        ? "Gérez vos fermes et consultez les recommandations basées sur les conditions météorologiques"
+        : "إدارة مزارعك ومراجعة التوصيات بناءً على الظروف الجوية"
+      }
+      className="bg-blue-50"
+    >
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto">
 
               {error && (
                 <div className="mb-8 rounded-md bg-red-50 p-4">
@@ -289,9 +241,7 @@ function VosFermes() {
               )}
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </Layout>
   );
 }
 
