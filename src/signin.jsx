@@ -52,11 +52,11 @@ function SignIn() {
         const errorData = await response.json();
         setError(
           errorData.message ||
-            (language === "fr" ? "Erreur de connexion" : "خطأ في تسجيل الدخول")
+            t('loginError')
         );
       }
     } catch (err) {
-      setError(language === "fr" ? "Une erreur s'est produite" : "حدث خطأ");
+      setError(t('generalError'));
       console.error("Login error:", err);
     } finally {
       setIsLoading(false);
@@ -80,17 +80,8 @@ function SignIn() {
           />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          {language === "fr" ? "Connectez-vous à votre compte" : "تسجيل الدخول إلى حسابك"}
+          {t('signIn')}
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          {language === "fr" ? "Ou " : "أو "}
-          <button
-            onClick={() => navigate("/signup")}
-            className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
-          >
-            {language === "fr" ? "créez un nouveau compte" : "إنشاء حساب جديد"}
-          </button>
-        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -115,7 +106,7 @@ function SignIn() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                {language === "fr" ? "Adresse e-mail" : "البريد الإلكتروني"}
+                {t('email')}
               </label>
               <div className="mt-1">
                 <input
@@ -124,10 +115,8 @@ function SignIn() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm transition-colors duration-200"
-                  placeholder={
-                    language === "fr" ? "Entrez votre adresse e-mail" : "أدخل بريدك الإلكتروني"
-                  }
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm transition-colors duration-200"
+                  placeholder={t('enterEmail')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value.trim())}
                   onKeyDown={handleKeyDown}
@@ -137,7 +126,7 @@ function SignIn() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                {language === "fr" ? "Mot de passe" : "كلمة المرور"}
+                {t('password')}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -146,10 +135,8 @@ function SignIn() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm transition-colors duration-200"
-                  placeholder={
-                    language === "fr" ? "Entrez votre mot de passe" : "أدخل كلمة المرور"
-                  }
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm transition-colors duration-200"
+                  placeholder={t('enterPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value.trimStart())}
                   onKeyDown={handleKeyDown}
@@ -174,7 +161,7 @@ function SignIn() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
               >
                 {isLoading ? (
                   <svg
@@ -221,7 +208,7 @@ function SignIn() {
             <div className="mt-6 flex justify-center">
               <button
                 onClick={toggleLanguage}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               >
                 <GlobeAltIcon className="h-4 w-4 mr-2" />
                 {t('languageName')}
