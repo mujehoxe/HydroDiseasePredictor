@@ -66,10 +66,29 @@ export async function getWeather(city) {
       }
     }
     
+    // Add current time data point from "current" in JSON response
+    const currentTimeString = currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); // "HH:MM" format
+    const currentDataPoint = {
+      time: currentTimeString, // Current time like "19:32"
+      timestamp: currentTime.getTime(),
+      // Real current data from API
+      temperature: data.current.temp_c,
+      humidity: data.current.humidity,
+      // Static mock data for other dashboard parameters
+      dissolvedOxygen: 2.0,
+      ph: 7.0,
+      ec: 1.5,
+      uv: Math.max(0, data.current.uv || 0)
+    };
+    
+    // Combine historical data (8 hours) + current data point (total: 9 points)
+    const allDataPoints = [...last8Hours, currentDataPoint];
+    
     console.log(`Weather API: Fetched data for ${city}`);
     console.log(`Real API time extracted: Last 8 hours from ${last8Hours[0]?.time || 'N/A'} to ${last8Hours[7]?.time || 'N/A'}`);
-    console.log(`Real data extracted: humidity and temp_c for each hour from API response`);
-    console.log(`Data points created: ${last8Hours.length}`);
+    console.log(`Current time data point added: ${currentTimeString} with real current values`);
+    console.log(`Total data points created: ${allDataPoints.length} (8 historical + 1 current)`);
+    console.log(`Real data extracted: humidity and temp_c for each hour from API response + current values`);
     
     return {
       // Current weather data
@@ -84,8 +103,8 @@ export async function getWeather(city) {
       uvIndex: data.current.uv,
       visibility: data.current.vis_km,
       feelsLike: data.current.feelslike_c,
-      // Historical data for dashboard charts (8 hours with actual API times)
-      historicalData: last8Hours,
+      // Historical data for dashboard charts (8 hours + current time = 9 total points)
+      historicalData: allDataPoints,
       // Meta information
       dataSource: 'WeatherAPI forecast with real time data',
       lastUpdated: new Date().toISOString()
@@ -117,7 +136,24 @@ export async function getWeather(city) {
       });
     }
     
+    // Add current time fallback data point
+    const currentTimeString = currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const currentFallbackPoint = {
+      time: currentTimeString,
+      timestamp: currentTime.getTime(),
+      temperature: 22, // Fallback current temperature
+      humidity: 55,    // Fallback current humidity
+      dissolvedOxygen: 2.0,
+      ph: 7.0,
+      ec: 1.5,
+      uv: 5
+    };
+    
+    // Combine historical + current (total: 9 points)
+    const allFallbackPoints = [...fallbackHistorical, currentFallbackPoint];
+    
     console.log('Weather API: Using fallback data due to API error');
+    console.log(`Fallback data: 8 historical hours + 1 current time point = ${allFallbackPoints.length} total points`);
     
     return {
       location: city,
@@ -131,7 +167,7 @@ export async function getWeather(city) {
       uvIndex: 0,
       visibility: 10,
       feelsLike: 22,
-      historicalData: fallbackHistorical,
+      historicalData: allFallbackPoints,
       dataSource: 'Fallback data with calculated times',
       lastUpdated: new Date().toISOString()
     };
