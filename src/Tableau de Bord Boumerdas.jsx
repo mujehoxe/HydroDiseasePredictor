@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getWeather } from './js/weatherAPI';
 import { useLanguage } from './LanguageContext';
 import { useTranslation } from './i18n';
 import { getUser, getAuthToken } from './utils/auth';
@@ -39,7 +38,7 @@ ChartJS.register(
   Legend
 );
 
-function Tableaudebord() {
+function Tableaudebord({ weatherData, onRefreshWeather }) {
   const { language } = useLanguage();
   const t = useTranslation();
   const navigate = useNavigate();
@@ -66,290 +65,155 @@ function Tableaudebord() {
   const [weatherHistory, setWeatherHistory] = useState([]);
   const [diseaseData, setDiseaseData] = useState([]);
 
-  // Fetch weather data when component mounts
+  // Update component state when weatherData prop changes
   useEffect(() => {
-    if (address) {
-      fetchWeatherDataWithHistory();
-    }
-  }, [address]);
-
-  const fetchWeatherDataWithHistory = async () => {
-    setWeatherLoading(true);
-    
-    try {
-      // Get current weather data
-      const weatherData = await getWeather(address);
-      console.log('Current weather data:', weatherData);
-      
+    if (weatherData) {
+      console.log('Dashboard: Received weather data from props');
       setTemperature(weatherData.temperature);
       setHumidity(weatherData.humidity);
-      setDissolvedOxygen(weatherData.dissolvedOxygen);
-
-      // Try to get historical data from weather API
-      await fetchHistoricalWeatherData(address, weatherData);
+      setDissolvedOxygen(2.0); // Static value as per requirements
       
-    } catch (error) {
-      console.error('Error fetching weather:', error);
-    } finally {
-      setWeatherLoading(false);
+      // Use historical data from weatherAPI.js (no API calls in dashboard)
+      if (weatherData.historicalData && weatherData.historicalData.length > 0) {
+        setWeatherHistory(weatherData.historicalData);
+        console.log(`Dashboard: Using ${weatherData.historicalData.length} historical data points from props`);
+        console.log('Dashboard: NO API calls made in this component');
+      }
     }
-  };
+  }, [weatherData]);
 
-  const fetchHistoricalWeatherData = async (city, currentWeather) => {
-    const apiKey = '06371176807d4b07a85114311241810';
-    const storageKey = `weather_history_${city.replace(/\s+/g, '_')}`;
-    
-    try {
-      // Try to get historical data from API (last 3 days)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const dayBefore = new Date();
-      dayBefore.setDate(dayBefore.getDate() - 2);
-      
-      const historyUrl = `https://api.weatherapi.com/v1/history.json?key=${apiKey}&q=${city}&dt=${yesterday.toISOString().split('T')[0]}`;
-      
-      try {
-        const historyResponse = await fetch(historyUrl);
-        const historyData = await historyResponse.json();
-        
-        if (historyData.forecast && historyData.forecast.forecastday) {
-          // Process historical hourly data
-          const hourlyData = historyData.forecast.forecastday[0].hour;
-          const historicalPoints = [];
-          
-          // Get data from every 4 hours for the past day
-          for (let i = 0; i < 24; i += 4) {
-            if (hourlyData[i]) {
-              const hour = hourlyData[i];
-              const time = new Date(hour.time);
-              historicalPoints.push({
-                time: time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                timestamp: time.getTime(),
-                temperature: hour.temp_c,
-                humidity: hour.humidity,
-                dissolvedOxygen: (currentWeather.dissolvedOxygen || 2) + (Math.random() - 0.5) * 0.5,
-                ph: 7 + (Math.random() - 0.5) * 0.5,
-                ec: 1.5 + (Math.random() - 0.5) * 0.3,
-                uv: hour.uv || Math.floor(Math.random() * 10)
-              });
-            }
-          }
-          
-          // Add current data point
-          const now = new Date();
-          historicalPoints.push({
-            time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            timestamp: now.getTime(),
-            temperature: currentWeather.temperature,
-            humidity: currentWeather.humidity,
-            dissolvedOxygen: currentWeather.dissolvedOxygen || 2,
-            ph: 7 + (Math.random() - 0.5) * 0.5,
-            ec: 1.5 + (Math.random() - 0.5) * 0.3,
-            uv: currentWeather.uv || Math.floor(Math.random() * 10)
-          });
-          
-          // Store in localStorage and state
-          localStorage.setItem(storageKey, JSON.stringify(historicalPoints));
-          setWeatherHistory(historicalPoints);
-          
-          console.log('Historical weather data fetched and stored');
-          return;
-          
-        }
-      } catch (historyError) {
-        console.warn('Could not fetch historical data:', historyError);
-      }
-      
-      // Fallback: Use stored data or create new storage
-      let storedData = [];
-      try {
-        const stored = localStorage.getItem(storageKey);
-        if (stored) {
-          storedData = JSON.parse(stored);
-          // Remove data older than 24 hours
-          const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-          storedData = storedData.filter(point => point.timestamp > oneDayAgo);
-        }
-      } catch (e) {
-        console.warn('Error reading stored weather data:', e);
-        storedData = [];
-      }
-      
-      // Add current data point
-      const now = new Date();
-      const newDataPoint = {
-        time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        timestamp: now.getTime(),
-        temperature: currentWeather.temperature,
-        humidity: currentWeather.humidity,
-        dissolvedOxygen: currentWeather.dissolvedOxygen || 2,
-        ph: 7 + (Math.random() - 0.5) * 0.5,
-        ec: 1.5 + (Math.random() - 0.5) * 0.3,
-        uv: currentWeather.uv || Math.floor(Math.random() * 10)
-      };
-      
-      // Check if we should add this point (don't add if less than 30 minutes since last point)
-      const lastPoint = storedData[storedData.length - 1];
-      if (!lastPoint || (now.getTime() - lastPoint.timestamp) > (30 * 60 * 1000)) {
-        storedData.push(newDataPoint);
-      }
-      
-      // Keep only last 20 points (roughly 10 hours if taken every 30 minutes)
-      if (storedData.length > 20) {
-        storedData = storedData.slice(-20);
-      }
-      
-      // If we have very little data, generate some mock historical points
-      if (storedData.length < 6) {
-        const mockPoints = [];
-        for (let i = 5; i >= 1; i--) {
-          const pastTime = new Date(now.getTime() - (i * 60 * 60 * 1000)); // i hours ago
-          mockPoints.push({
-            time: pastTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            timestamp: pastTime.getTime(),
-            temperature: currentWeather.temperature + (Math.random() - 0.5) * 4,
-            humidity: currentWeather.humidity + (Math.random() - 0.5) * 10,
-            dissolvedOxygen: (currentWeather.dissolvedOxygen || 2) + (Math.random() - 0.5) * 1,
-            ph: 7 + (Math.random() - 0.5) * 0.5,
-            ec: 1.5 + (Math.random() - 0.5) * 0.3,
-            uv: Math.floor(Math.random() * 10)
-          });
-        }
-        storedData = [...mockPoints, ...storedData];
-      }
-      
-      // Store updated data and set state
-      localStorage.setItem(storageKey, JSON.stringify(storedData));
-      setWeatherHistory(storedData);
-      
-      console.log(`Using stored/real-time weather data: ${storedData.length} points`);
-      
-    } catch (error) {
-      console.error('Error handling weather history:', error);
-      // Generate minimal mock data as final fallback
-      const now = new Date();
-      const fallbackData = [];
-      for (let i = 6; i >= 0; i--) {
-        const pastTime = new Date(now.getTime() - (i * 60 * 60 * 1000));
-        fallbackData.push({
-          time: pastTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-          timestamp: pastTime.getTime(),
-          temperature: currentWeather.temperature + (Math.random() - 0.5) * 4,
-          humidity: currentWeather.humidity + (Math.random() - 0.5) * 10,
-          dissolvedOxygen: (currentWeather.dissolvedOxygen || 2) + (Math.random() - 0.5) * 1,
-          ph: 7 + (Math.random() - 0.5) * 0.5,
-          ec: 1.5 + (Math.random() - 0.5) * 0.3,
-          uv: Math.floor(Math.random() * 10)
-        });
-      }
-      setWeatherHistory(fallbackData);
+  // Refresh weather data by calling parent's refresh function
+  const handleRefreshWeather = useCallback(() => {
+    if (onRefreshWeather && address) {
+      setWeatherLoading(true);
+      console.log('Dashboard: Requesting weather data refresh from parent component');
+      onRefreshWeather(address).finally(() => setWeatherLoading(false));
     }
-  };
+  }, [onRefreshWeather, address]);
 
   // Mock disease data for pie chart
   useEffect(() => {
     const mockDiseases = [
-      { name: t('diseases'), risk: 'high', count: 3 },
+      { name: 'High Risk', risk: 'high', count: 3 },
       { name: 'Low Risk', risk: 'low', count: 5 },
       { name: 'Medium Risk', risk: 'medium', count: 2 }
     ];
     setDiseaseData(mockDiseases);
-  }, [t]);
-
-  // Set up periodic weather data collection (every 30 minutes)
-  useEffect(() => {
-    if (!address) return;
-
-    const interval = setInterval(async () => {
-      try {
-        console.log('Collecting periodic weather data...');
-        const weatherData = await getWeather(address);
-        
-        // Update current values
-        setTemperature(weatherData.temperature);
-        setHumidity(weatherData.humidity);
-        setDissolvedOxygen(weatherData.dissolvedOxygen);
-        
-        // Add to historical data
-        const storageKey = `weather_history_${address.replace(/\s+/g, '_')}`;
-        let storedData = [];
-        
-        try {
-          const stored = localStorage.getItem(storageKey);
-          if (stored) {
-            storedData = JSON.parse(stored);
-            // Remove data older than 24 hours
-            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-            storedData = storedData.filter(point => point.timestamp > oneDayAgo);
-          }
-        } catch (e) {
-          console.warn('Error reading stored data during periodic update:', e);
-        }
-        
-        // Add new data point
-        const now = new Date();
-        const newDataPoint = {
-          time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-          timestamp: now.getTime(),
-          temperature: weatherData.temperature,
-          humidity: weatherData.humidity,
-          dissolvedOxygen: weatherData.dissolvedOxygen || 2,
-          ph: 7 + (Math.random() - 0.5) * 0.5,
-          ec: 1.5 + (Math.random() - 0.5) * 0.3,
-          uv: weatherData.uv || Math.floor(Math.random() * 10)
-        };
-        
-        storedData.push(newDataPoint);
-        
-        // Keep only last 20 points
-        if (storedData.length > 20) {
-          storedData = storedData.slice(-20);
-        }
-        
-        // Update storage and state
-        localStorage.setItem(storageKey, JSON.stringify(storedData));
-        setWeatherHistory(storedData);
-        
-        console.log('Periodic weather data collected and stored');
-        
-      } catch (error) {
-        console.error('Error during periodic weather update:', error);
-      }
-    }, 30 * 60 * 1000); // 30 minutes
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-  }, [address]);
+  }, []); // Remove t dependency to prevent infinite re-renders
 
   const toggleEnvironment = () => {
     setIsOutside(prev => !prev);
   };
 
   // Chart configurations
+  const getSafetyIntervals = () => {
+    return {
+      temperature: { min: 0, max: 22 },
+      humidity: { min: 40, max: 60 },
+      dissolvedOxygen: { min: 0, max: 2 },
+      ph: { min: 6, max: 8 },
+      ec: { min: 1, max: 2 },
+      uv: { min: 5, max: 8 }
+    };
+  };
+
+  const getColorForValue = (value, variable) => {
+    const intervals = getSafetyIntervals();
+    const interval = intervals[variable];
+    
+    if (!interval) return 'rgb(59, 130, 246)'; // Default blue
+    
+    const { min, max } = interval;
+    
+    // If value is within safe range, return green
+    if (value >= min && value <= max) {
+      return 'rgb(34, 197, 94)'; // Green
+    }
+    
+    // Calculate how far outside the safe range
+    let deviation;
+    if (value < min) {
+      deviation = (min - value) / min; // How far below minimum
+    } else {
+      deviation = (value - max) / max; // How far above maximum
+    }
+    
+    // Cap deviation at 1 for color calculation
+    deviation = Math.min(deviation, 1);
+    
+    // Interpolate between yellow and red based on deviation
+    if (deviation < 0.5) {
+      // Green to Yellow (warning)
+      const factor = deviation * 2;
+      const red = Math.round(34 + (245 - 34) * factor);   // 34 -> 245
+      const green = Math.round(197 + (158 - 197) * factor); // 197 -> 158
+      const blue = Math.round(94 + (11 - 94) * factor);    // 94 -> 11
+      return `rgb(${red}, ${green}, ${blue})`;
+    } else {
+      // Yellow to Red (danger)
+      const factor = (deviation - 0.5) * 2;
+      const red = Math.round(245 + (239 - 245) * factor);   // 245 -> 239
+      const green = Math.round(158 + (68 - 158) * factor);  // 158 -> 68
+      const blue = Math.round(11 + (68 - 11) * factor);     // 11 -> 68
+      return `rgb(${red}, ${green}, ${blue})`;
+    }
+  };
+
+  const createGradientDataset = (data, variable, label) => {
+    // Create segment colors based on values
+    const segmentColors = [];
+    const backgroundColors = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const color = getColorForValue(data[i], variable);
+      segmentColors.push(color);
+      backgroundColors.push(color.replace('rgb', 'rgba').replace(')', ', 0.1)'));
+    }
+    
+    return {
+      label: label,
+      data: data,
+      borderColor: (context) => {
+        const index = context.dataIndex;
+        return segmentColors[index] || 'rgb(59, 130, 246)';
+      },
+      backgroundColor: (context) => {
+        const index = context.dataIndex;
+        return backgroundColors[index] || 'rgba(59, 130, 246, 0.1)';
+      },
+      pointBackgroundColor: segmentColors,
+      pointBorderColor: segmentColors,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.4,
+      fill: false,
+      segment: {
+        borderColor: (ctx) => {
+          const startValue = ctx.p0.parsed.y;
+          const endValue = ctx.p1.parsed.y;
+          const avgValue = (startValue + endValue) / 2;
+          return getColorForValue(avgValue, variable);
+        }
+      }
+    };
+  };
+
   const getWeatherChartData = () => {
     const variableMap = {
-      temperature: { key: 'temperature', label: t('currentTemperature'), color: 'rgb(239, 68, 68)' },
-      humidity: { key: 'humidity', label: t('ambientHumidity'), color: 'rgb(59, 130, 246)' },
-      dissolvedOxygen: { key: 'dissolvedOxygen', label: t('electricalConductivity'), color: 'rgb(34, 197, 94)' },
-      ph: { key: 'ph', label: 'pH', color: 'rgb(168, 85, 247)' },
-      ec: { key: 'ec', label: 'EC', color: 'rgb(245, 158, 11)' },
-      uv: { key: 'uv', label: 'UV Index', color: 'rgb(236, 72, 153)' }
+      temperature: { key: 'temperature', label: t('currentTemperature') },
+      humidity: { key: 'humidity', label: t('ambientHumidity') },
+      dissolvedOxygen: { key: 'dissolvedOxygen', label: t('electricalConductivity') },
+      ph: { key: 'ph', label: 'pH' },
+      ec: { key: 'ec', label: 'EC' },
+      uv: { key: 'uv', label: 'UV Index' }
     };
 
     const variable = variableMap[selectedVariable];
+    const data = weatherHistory.map(item => item[variable.key]);
     
     return {
       labels: weatherHistory.map(item => item.time),
-      datasets: [
-        {
-          label: variable.label,
-          data: weatherHistory.map(item => item[variable.key]),
-          borderColor: variable.color,
-          backgroundColor: variable.color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
-          tension: 0.4,
-          fill: true
-        }
-      ]
+      datasets: [createGradientDataset(data, selectedVariable, variable.label)]
     };
   };
 
@@ -367,19 +231,156 @@ function Tableaudebord() {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          generateLabels: (chart) => {
+            const variable = selectedVariable;
+            const intervals = getSafetyIntervals();
+            const interval = intervals[variable];
+            
+            return [
+              {
+                text: `${chart.data.datasets[0].label}`,
+                fillStyle: 'rgb(34, 197, 94)',
+                strokeStyle: 'rgb(34, 197, 94)',
+                hidden: false
+              },
+              {
+                text: interval ? `${language === 'fr' ? 'Zone sûre' : 'منطقة آمنة'}: ${interval.min} - ${interval.max}` : '',
+                fillStyle: 'rgb(34, 197, 94)',
+                strokeStyle: 'rgb(34, 197, 94)',
+                hidden: false,
+                pointStyle: 'line'
+              },
+              {
+                text: `${language === 'fr' ? 'Zone d\'alerte' : 'منطقة تحذير'}`,
+                fillStyle: 'rgb(245, 158, 11)',
+                strokeStyle: 'rgb(245, 158, 11)',
+                hidden: false,
+                pointStyle: 'line'
+              },
+              {
+                text: `${language === 'fr' ? 'Zone de danger' : 'منطقة خطر'}`,
+                fillStyle: 'rgb(239, 68, 68)',
+                strokeStyle: 'rgb(239, 68, 68)',
+                hidden: false,
+                pointStyle: 'line'
+              }
+            ];
+          }
+        }
       },
       title: {
         display: false,
       },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const value = context.parsed.y;
+            const formattedValue = parseFloat(value.toFixed(2));
+            const variableLabels = {
+              temperature: language === 'fr' ? 'Température' : 'درجة الحرارة',
+              humidity: language === 'fr' ? 'Humidité' : 'الرطوبة',
+              ph: 'pH',
+              ec: 'EC',
+              dissolvedOxygen: language === 'fr' ? 'Oxygène dissous' : 'الأكسجين المذاب',
+              uv: language === 'fr' ? 'Index UV' : 'مؤشر الأشعة فوق البنفسجية'
+            };
+            const label = variableLabels[selectedVariable] || selectedVariable;
+            return `${label}: ${formattedValue}`;
+          },
+          afterLabel: (context) => {
+            const value = parseFloat(context.parsed.y.toFixed(2));
+            const variable = selectedVariable;
+            const intervals = getSafetyIntervals();
+            const interval = intervals[variable];
+            
+            if (!interval) return '';
+            
+            const { min, max } = interval;
+            
+            if (value >= min && value <= max) {
+              return language === 'fr' ? '✓ Valeur sûre' : '✓ قيمة آمنة';
+            } else if (value < min) {
+              const deviation = ((min - value) / min * 100).toFixed(1);
+              return language === 'fr' 
+                ? `⚠ ${deviation}% en dessous du minimum` 
+                : `⚠ ${deviation}% تحت الحد الأدنى`;
+            } else {
+              const deviation = ((value - max) / max * 100).toFixed(1);
+              return language === 'fr' 
+                ? `⚠ ${deviation}% au-dessus du maximum` 
+                : `⚠ ${deviation}% فوق الحد الأقصى`;
+            }
+          }
+        }
+      }
     },
     scales: {
       y: {
         beginAtZero: false,
+        grid: {
+          color: (context) => {
+            const variable = selectedVariable;
+            const intervals = getSafetyIntervals();
+            const interval = intervals[variable];
+            
+            if (!interval) return '#e5e7eb';
+            
+            const value = context.tick.value;
+            const { min, max } = interval;
+            
+            // Highlight safe zone boundaries
+            if (value === min || value === max) {
+              return 'rgb(34, 197, 94)';
+            }
+            
+            return '#e5e7eb';
+          }
+        },
+        ticks: {
+          callback: function(value) {
+            const variable = selectedVariable;
+            const intervals = getSafetyIntervals();
+            const interval = intervals[variable];
+            
+            // Format value to maximum 2 decimal places
+            const formattedValue = parseFloat(value.toFixed(2));
+            
+            if (!interval) return formattedValue;
+            
+            const { min, max } = interval;
+            
+            // Add safety indicators to tick labels
+            if (Math.abs(value - min) < 0.01) {
+              return `${formattedValue} (min)`;
+            } else if (Math.abs(value - max) < 0.01) {
+              return `${formattedValue} (max)`;
+            }
+            
+            return formattedValue;
+          }
+        }
       },
+      x: {
+        grid: {
+          display: false
+        }
+      }
     },
+    elements: {
+      point: {
+        radius: 4,
+        hoverRadius: 6
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    }
   };
 
   const pieOptions = {
@@ -519,7 +520,7 @@ function Tableaudebord() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={fetchWeatherDataWithHistory}
+                          onClick={handleRefreshWeather}
                           disabled={weatherLoading}
                           className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
                           title={language === 'fr' ? 'Actualiser les données' : 'تحديث البيانات'}
@@ -544,6 +545,61 @@ function Tableaudebord() {
                       {weatherHistory.length > 0 ? (
                         <>
                           <Line data={getWeatherChartData()} options={chartOptions} />
+                          
+                          {/* Safety Status Indicator */}
+                          {(() => {
+                            const currentValue = weatherHistory[weatherHistory.length - 1]?.[selectedVariable === 'dissolvedOxygen' ? 'dissolvedOxygen' : selectedVariable];
+                            const intervals = getSafetyIntervals();
+                            const interval = intervals[selectedVariable];
+                            
+                            if (!interval || currentValue === undefined) return null;
+                            
+                            const { min, max } = interval;
+                            const isInSafeZone = currentValue >= min && currentValue <= max;
+                            
+                            let statusColor, statusText, statusIcon;
+                            
+                            if (isInSafeZone) {
+                              statusColor = 'bg-green-100 text-green-800 border-green-200';
+                              statusText = language === 'fr' ? 'Valeur dans la zone sûre' : 'القيمة في المنطقة الآمنة';
+                              statusIcon = '✓';
+                            } else {
+                              const deviation = currentValue < min 
+                                ? ((min - currentValue) / min * 100).toFixed(1)
+                                : ((currentValue - max) / max * 100).toFixed(1);
+                              
+                              if (parseFloat(deviation) > 50) {
+                                statusColor = 'bg-red-100 text-red-800 border-red-200';
+                                statusText = language === 'fr' ? 'Valeur en zone de danger' : 'القيمة في منطقة خطر';
+                                statusIcon = '⚠';
+                              } else {
+                                statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                statusText = language === 'fr' ? 'Valeur en zone d\'alerte' : 'القيمة في منطقة تحذير';
+                                statusIcon = '⚠';
+                              }
+                            }
+                            
+                            return (
+                              <div className={`mt-2 p-2 rounded-md border ${statusColor}`}>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="flex items-center">
+                                    <span className="mr-1">{statusIcon}</span>
+                                    {statusText}
+                                  </span>
+                                  <span className="font-medium">
+                                    {language === 'fr' ? 'Actuel' : 'الحالي'}: {currentValue} 
+                                    {selectedVariable === 'temperature' ? '°C' : 
+                                     selectedVariable === 'humidity' ? '%' : 
+                                     selectedVariable === 'uv' ? '' : ''}
+                                  </span>
+                                </div>
+                                <div className="text-xs mt-1 opacity-75">
+                                  {language === 'fr' ? 'Zone sûre' : 'المنطقة الآمنة'}: {min} - {max}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          
                           <div className="mt-2 text-xs text-gray-500 text-center">
                             {language === 'fr' 
                               ? `${weatherHistory.length} points de données • Dernière mise à jour: ${weatherHistory[weatherHistory.length - 1]?.time || 'N/A'}`

@@ -6,7 +6,7 @@ import SignIn from './signin';
 import SignUp from './signup';
 import Ajoutferme from './Ajouter-une-ferme';
 import VosFermes from './vos ferme';
-import Tableaudebord from './Tableau de Bord Boumerdas';
+import DashboardWrapper from './DashboardWrapper';
 import UsersManagement from './users-managment';
 import './index.css';
 
@@ -19,7 +19,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/signup" element={<SignUp />} />
           <Route path="/ajoutferme" element={<Ajoutferme />} />
           <Route path="/vosfermes" element={<VosFermes />} />
-          <Route path="/tableaudebord" element={<Tableaudebord />} />
+          <Route path="/tableaudebord" element={<DashboardWrapper />} />
           <Route path="/usersmanagment" element={<UsersManagement/>}/>
         </Routes>
       </Router>

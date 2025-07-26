@@ -1,119 +1,139 @@
-// weatherService.js
+// weatherAPI.js - Single source of weather data
+
+const API_KEY = '06371176807d4b07a85114311241810';
+const BASE_URL = 'https://api.weatherapi.com/v1';
 
 // Function to get current weather (kept for compatibility)
 export async function getCurrentWeather(city) {
-  const apiKey = '06371176807d4b07a85114311241810';
-  const apiUrl = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}`;
-
   try {
-    const response = await fetch(apiUrl);
+    const response = await fetch(`${BASE_URL}/current.json?key=${API_KEY}&q=${city}`);
     const data = await response.json();
     
-    const temperature = data.current.temp_c;
-    const humidity = data.current.humidity;
-    const uv = data.current.uv;
-    const dissolvedOxygen = 1;
-
-    return { temperature, humidity, uv, dissolvedOxygen };
+    return {
+      temperature: data.current.temp_c,
+      humidity: data.current.humidity,
+      uv: data.current.uv,
+      dissolvedOxygen: 1
+    };
   } catch (error) {
     console.error('Error fetching current weather data:', error);
     return { temperature: null, humidity: null, uv: null, dissolvedOxygen: null };
   }
 }
 
-// Function to get 4-hour mean weather data
+// Main function to get weather data for dashboard
 export async function getWeather(city) {
-  const apiKey = '06371176807d4b07a85114311241810';
-  
   try {
-    // First, always try to get current weather as a baseline
-    const currentWeatherData = await getCurrentWeather(city);
+    // Single API call to get forecast data
+    const response = await fetch(`${BASE_URL}/forecast.json?key=${API_KEY}&q=${city}&days=1&aqi=no&alerts=no`);
     
-    if (!currentWeatherData.temperature) {
-      throw new Error('Could not get current weather data');
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`);
     }
     
-    // Try to get forecast data for hourly information
-    const forecastUrl = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=1&aqi=no&alerts=no`;
+    const data = await response.json();
     
-    try {
-      const forecastResponse = await fetch(forecastUrl);
-      const forecastData = await forecastResponse.json();
+    // Get current time and find current hour
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const hourlyData = data.forecast.forecastday[0].hour;
+    
+    // Extract last 8 hours using real API time data
+    // Start from current hour (rounded down) and go back 7 hours
+    const last8Hours = [];
+    
+    for (let i = 0; i < 8; i++) {
+      const hourIndex = (currentHour - (7 - i) + 24) % 24; // Calculate hour index, handle day rollover
+      const hourData = hourlyData[hourIndex];
       
-      // Check for API errors
-      if (forecastData.error) {
-        console.warn('Forecast API error:', forecastData.error.message);
-        return currentWeatherData; // Fall back to current data
+      if (hourData) {
+        // Extract the actual time from API response (e.g., "2025-07-26 23:00")
+        const apiTime = hourData.time; // "2025-07-26 23:00"
+        const timeOnly = apiTime.split(' ')[1]; // Extract "23:00"
+        
+        last8Hours.push({
+          time: timeOnly, // Use real API time like "23:00", "00:00", "01:00", etc.
+          timestamp: hourData.time_epoch * 1000, // Convert to milliseconds for consistency
+          // Only real API data: humidity and temperature
+          temperature: hourData.temp_c,
+          humidity: hourData.humidity,
+          // Static mock data for other dashboard parameters
+          dissolvedOxygen: 2.0,
+          ph: 7.0,
+          ec: 1.5,
+          uv: Math.max(0, hourData.uv || 0)
+        });
       }
-      
-      // Check if hourly data is available
-      const hourlyData = forecastData.forecast?.forecastday?.[0]?.hour;
-      
-      if (!hourlyData || !Array.isArray(hourlyData)) {
-        console.warn('No hourly forecast data available, using current data');
-        return currentWeatherData;
-      }
-      
-      // Get current hour and calculate the last 4 hours
-      const now = new Date();
-      const currentHour = now.getHours();
-      
-      // Get data for the last 4 hours (or as many as available)
-      const last4Hours = [];
-      for (let i = Math.max(0, currentHour - 3); i <= currentHour; i++) {
-        if (hourlyData[i]) {
-          last4Hours.push(hourlyData[i]);
-        }
-      }
-      
-      // If we don't have enough hours, pad with current data
-      if (last4Hours.length === 0) {
-        console.warn('No hourly data available, using current weather');
-        return currentWeatherData;
-      }
-      
-      // If we have less than 4 hours, supplement with current data
-      const syntheticHour = {
-        temp_c: currentWeatherData.temperature,
-        humidity: currentWeatherData.humidity,
-        uv: currentWeatherData.uv
-      };
-      
-      while (last4Hours.length < 4) {
-        last4Hours.unshift(syntheticHour); // Add to beginning
-      }
-      
-      // Calculate mean values
-      const meanTemperature = last4Hours.reduce((sum, hour) => sum + (hour.temp_c || currentWeatherData.temperature), 0) / last4Hours.length;
-      const meanHumidity = last4Hours.reduce((sum, hour) => sum + (hour.humidity || currentWeatherData.humidity), 0) / last4Hours.length;
-      const meanUV = last4Hours.reduce((sum, hour) => sum + (hour.uv || currentWeatherData.uv), 0) / last4Hours.length;
-      
-      console.log(`Weather data: Using ${last4Hours.length} hours of data for mean calculation`);
-      
-      return {
-        temperature: Math.round(meanTemperature * 10) / 10,
-        humidity: Math.round(meanHumidity),
-        uv: Math.round(meanUV * 10) / 10,
-        dissolvedOxygen: 1,
-        hoursUsed: last4Hours.length
-      };
-      
-    } catch (forecastError) {
-      console.warn('Error fetching forecast data:', forecastError);
-      console.log('Using current weather data as fallback');
-      return currentWeatherData;
     }
+    
+    console.log(`Weather API: Fetched data for ${city}`);
+    console.log(`Real API time extracted: Last 8 hours from ${last8Hours[0]?.time || 'N/A'} to ${last8Hours[7]?.time || 'N/A'}`);
+    console.log(`Real data extracted: humidity and temp_c for each hour from API response`);
+    console.log(`Data points created: ${last8Hours.length}`);
+    
+    return {
+      // Current weather data
+      location: data.location.name,
+      country: data.location.country,
+      temperature: data.current.temp_c,
+      condition: data.current.condition.text,
+      humidity: data.current.humidity,
+      windSpeed: data.current.wind_kph,
+      pressure: data.current.pressure_mb,
+      icon: data.current.condition.icon,
+      uvIndex: data.current.uv,
+      visibility: data.current.vis_km,
+      feelsLike: data.current.feelslike_c,
+      // Historical data for dashboard charts (8 hours with actual API times)
+      historicalData: last8Hours,
+      // Meta information
+      dataSource: 'WeatherAPI forecast with real time data',
+      lastUpdated: new Date().toISOString()
+    };
     
   } catch (error) {
-    console.error('Error in getWeather:', error);
+    console.error('Error fetching weather data from API:', error);
     
-    // Ultimate fallback - return some default values
+    // Fallback data generation with calculated times
+    const currentTime = new Date();
+    const fallbackHistorical = [];
+    
+    // Generate 8 hours of fallback data with calculated times
+    for (let i = 7; i >= 0; i--) {
+      const pastTime = new Date(currentTime.getTime() - (i * 60 * 60 * 1000));
+      const timeString = pastTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); // "HH:MM" format
+      
+      fallbackHistorical.push({
+        time: timeString, // Calculated time in same format as API
+        timestamp: pastTime.getTime(),
+        // Fallback values for humidity and temperature
+        temperature: 22 + (Math.random() - 0.5) * 6, // Random temp around 22°C ±3°C
+        humidity: 55 + (Math.random() - 0.5) * 20, // Random humidity around 55% ±10%
+        // Static mock data for other parameters
+        dissolvedOxygen: 2.0,
+        ph: 7.0,
+        ec: 1.5,
+        uv: Math.floor(Math.random() * 8) + 1
+      });
+    }
+    
+    console.log('Weather API: Using fallback data due to API error');
+    
     return {
-      temperature: 25, // Default temperature
-      humidity: 50,    // Default humidity
-      uv: 5,          // Default UV
-      dissolvedOxygen: 1,
-      hoursUsed: 0
+      location: city,
+      country: 'Unknown',
+      temperature: 22,
+      condition: 'Data unavailable',
+      humidity: 55,
+      windSpeed: 0,
+      pressure: 1013,
+      icon: '',
+      uvIndex: 0,
+      visibility: 10,
+      feelsLike: 22,
+      historicalData: fallbackHistorical,
+      dataSource: 'Fallback data with calculated times',
+      lastUpdated: new Date().toISOString()
     };
   }
 }
