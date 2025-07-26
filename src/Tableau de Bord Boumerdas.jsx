@@ -242,12 +242,7 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
             const interval = intervals[variable];
             
             return [
-              {
-                text: `${chart.data.datasets[0].label}`,
-                fillStyle: 'rgb(34, 197, 94)',
-                strokeStyle: 'rgb(34, 197, 94)',
-                hidden: false
-              },
+              // Safe zone label
               {
                 text: interval ? `${language === 'fr' ? 'Zone sûre' : 'منطقة آمنة'}: ${interval.min} - ${interval.max}` : '',
                 fillStyle: 'rgb(34, 197, 94)',
@@ -255,6 +250,7 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
                 hidden: false,
                 pointStyle: 'line'
               },
+              // Warning zone label
               {
                 text: `${language === 'fr' ? 'Zone d\'alerte' : 'منطقة تحذير'}`,
                 fillStyle: 'rgb(245, 158, 11)',
@@ -262,6 +258,7 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
                 hidden: false,
                 pointStyle: 'line'
               },
+              // Danger zone label
               {
                 text: `${language === 'fr' ? 'Zone de danger' : 'منطقة خطر'}`,
                 fillStyle: 'rgb(239, 68, 68)',
@@ -274,7 +271,27 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
         }
       },
       title: {
-        display: false,
+        display: true,
+        text: (() => {
+          const variableNames = {
+            temperature: language === 'fr' ? 'Température' : 'درجة الحرارة',
+            humidity: language === 'fr' ? 'Humidité' : 'الرطوبة',
+            dissolvedOxygen: language === 'fr' ? 'Oxygène dissous' : 'الأكسجين المذاب',
+            ph: 'pH',
+            ec: 'EC',
+            uv: language === 'fr' ? 'Index UV' : 'مؤشر الأشعة فوق البنفسجية'
+          };
+          return variableNames[selectedVariable] || selectedVariable;
+        })(),
+        font: {
+          size: 16,
+          weight: 'bold'
+        },
+        color: 'rgb(31, 41, 55)', // Dark gray color
+        padding: {
+          top: 10,
+          bottom: 20
+        }
       },
       tooltip: {
         callbacks: {
