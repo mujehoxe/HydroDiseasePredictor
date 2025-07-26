@@ -116,7 +116,7 @@ function UsersManagement() {
     }
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/users`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,12 +132,32 @@ function UsersManagement() {
         fetchUsers();
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Failed to add user");
+        // Handle error response
+        let errorMessage = "Failed to add user";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON, use status text
+          if (response.status === 404) {
+            errorMessage = language === "fr" 
+              ? "Erreur: Le serveur backend n'est pas disponible. Veuillez démarrer le serveur backend sur le port 8080."
+              : "Error: Backend server is not available. Please start the backend server on port 8080.";
+          } else {
+            errorMessage = response.statusText || errorMessage;
+          }
+        }
+        setError(errorMessage);
       }
     } catch (error) {
       console.error("Error adding user:", error);
-      setError("An error occurred while adding the user");
+      let errorMessage = "An error occurred while adding the user";
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = language === "fr"
+          ? "Erreur de connexion: Le serveur backend n'est pas accessible. Veuillez vérifier que le serveur backend fonctionne sur le port 8080."
+          : "Connection error: Backend server is not accessible. Please ensure the backend server is running on port 8080.";
+      }
+      setError(errorMessage);
     }
   };
 
