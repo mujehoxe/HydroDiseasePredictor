@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "./LanguageContext";
+import { useTranslation } from "./i18n";
 import { getUser, getAuthToken } from "./utils/auth";
 import API_CONFIG from "./config/api";
 import Layout from "./components/Layout";
@@ -14,6 +15,7 @@ import {
 
 function Ajoutferme() {
   const { language } = useLanguage();
+  const t = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = location;

@@ -4,6 +4,7 @@ import { getUser, getAuthToken } from "./utils/auth";
 import Layout from "./components/Layout";
 import API_CONFIG from "./config/api";
 import { useLanguage } from "./LanguageContext";
+import { useTranslation } from "./i18n";
 import {
   UserGroupIcon,
   PlusIcon,
@@ -17,6 +18,7 @@ import {
 function UsersManagement() {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const t = useTranslation();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -102,7 +104,7 @@ function UsersManagement() {
   };
 
   const deleteUser = async (userId) => {
-    if (!window.confirm(language === "fr" ? "Êtes-vous sûr de vouloir supprimer cet utilisateur ?" : "هل أنت متأكد من حذف هذا المستخدم؟")) {
+    if (!window.confirm(t('deleteUserConfirm'))) {
       return;
     }
 
@@ -115,15 +117,15 @@ function UsersManagement() {
       });
 
       if (response.ok) {
-        setSuccess(language === "fr" ? "Utilisateur supprimé avec succès" : "تم حذف المستخدم بنجاح");
+        setSuccess(t('userDeleted'));
         fetchUsers();
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError("Failed to delete user");
+        setError(t('failedToDeleteUser'));
       }
     } catch (error) {
       console.error("Error deleting user:", error);
-      setError("An error occurred while deleting the user");
+      setError(t('failedToDeleteUser'));
     }
   };
 
@@ -131,7 +133,7 @@ function UsersManagement() {
     e.preventDefault();
     
     if (!newUser.name || !newUser.email || !newUser.password) {
-      setError(language === "fr" ? "Tous les champs sont obligatoires" : "جميع الحقول مطلوبة");
+      setError(t('allFieldsRequired'));
       return;
     }
 
@@ -146,23 +148,21 @@ function UsersManagement() {
       });
 
       if (response.ok) {
-        setSuccess(language === "fr" ? "Utilisateur ajouté avec succès" : "تم إضافة المستخدم بنجاح");
+        setSuccess(t('userAdded'));
         setShowAddModal(false);
         setNewUser({ name: "", email: "", password: "", role: "farmer" });
         fetchUsers();
         setTimeout(() => setSuccess(null), 3000);
       } else {
         // Handle error response
-        let errorMessage = "Failed to add user";
+        let errorMessage = t('failedToAddUser');
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch (jsonError) {
           // If response is not JSON, use status text
           if (response.status === 404) {
-            errorMessage = language === "fr" 
-              ? "Erreur: Le serveur backend n'est pas disponible. Veuillez démarrer le serveur backend sur le port 8080."
-              : "Error: Backend server is not available. Please start the backend server on port 8080.";
+            errorMessage = t('serverNotAvailable');
           } else {
             errorMessage = response.statusText || errorMessage;
           }
@@ -171,11 +171,9 @@ function UsersManagement() {
       }
     } catch (error) {
       console.error("Error adding user:", error);
-      let errorMessage = "An error occurred while adding the user";
+      let errorMessage = t('failedToAddUser');
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        errorMessage = language === "fr"
-          ? "Erreur de connexion: Le serveur backend n'est pas accessible. Veuillez vérifier que le serveur backend fonctionne sur le port 8080."
-          : "Connection error: Backend server is not accessible. Please ensure the backend server is running on port 8080.";
+        errorMessage = t('connectionError');
       }
       setError(errorMessage);
     }
@@ -193,7 +191,7 @@ function UsersManagement() {
 
   return (
     <Layout
-      title={language === "fr" ? "Gestion des utilisateurs" : "إدارة المستخدمين"}
+      title={t('userManagement')}
     >
       {/* Content area */}
       <div className="px-4 sm:px-6 lg:px-8 py-8">
@@ -205,13 +203,10 @@ function UsersManagement() {
                 <UserGroupIcon className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {language === "fr" ? "Utilisateurs" : "المستخدمون"}
+                    {t('users')}
                   </h2>
                   <p className="text-gray-600">
-                    {language === "fr" 
-                      ? "Gérez les comptes utilisateurs du système" 
-                      : "إدارة حسابات المستخدمين في النظام"
-                    }
+                    {t('manageUserAccounts')}
                   </p>
                 </div>
               </div>
@@ -221,7 +216,7 @@ function UsersManagement() {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              {language === "fr" ? "Ajouter un utilisateur" : "إضافة مستخدم"}
+              {t('addUser')}
             </button>
           </div>
 
@@ -256,7 +251,7 @@ function UsersManagement() {
               </div>
               <input
                 type="text"
-                placeholder={language === "fr" ? "Rechercher des utilisateurs..." : "البحث عن المستخدمين..."}
+                placeholder={t('searchUsers')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -268,7 +263,7 @@ function UsersManagement() {
           <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">
-                {language === "fr" ? "Liste des utilisateurs" : "قائمة المستخدمين"}
+                {t('usersList')}
               </h3>
             </div>
             
@@ -276,34 +271,30 @@ function UsersManagement() {
               <div className="p-6 text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-2 text-gray-500">
-                  {language === "fr" ? "Chargement..." : "جاري التحميل..."}
+                  {t('loading')}
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 {filteredUsers.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
-                    {searchTerm ? (
-                      language === "fr" ? "Aucun utilisateur trouvé" : "لم يتم العثور على مستخدمين"
-                    ) : (
-                      language === "fr" ? "Aucun utilisateur disponible" : "لا توجد مستخدمون متاحون"
-                    )}
+                    {searchTerm ? t('noUsersFound') : t('noUsersAvailable')}
                   </div>
                 ) : (
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {language === "fr" ? "Nom" : "الاسم"}
+                          {t('userName')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {language === "fr" ? "Email" : "البريد الإلكتروني"}
+                          {t('userEmail')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {language === "fr" ? "Rôle" : "الدور"}
+                          {t('userRole')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {language === "fr" ? "Actions" : "الإجراءات"}
+                          {t('actions')}
                         </th>
                       </tr>
                     </thead>
@@ -326,10 +317,7 @@ function UsersManagement() {
                                 ? 'bg-purple-100 text-purple-800' 
                                 : 'bg-green-100 text-green-800'
                             }`}>
-                              {userItem.role === 'admin' 
-                                ? (language === "fr" ? "Administrateur" : "مدير")
-                                : (language === "fr" ? "Fermier" : "مزارع")
-                              }
+                              {userItem.role === 'admin' ? t('administrator') : t('farmer')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -337,7 +325,7 @@ function UsersManagement() {
                               <button
                                 onClick={() => deleteUser(userItem.id)}
                                 className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
-                                title={language === "fr" ? "Supprimer" : "حذف"}
+                                title={t('delete')}
                               >
                                 <TrashIcon className="h-4 w-4" />
                               </button>
@@ -377,7 +365,7 @@ function UsersManagement() {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    {language === "fr" ? "Ajouter un utilisateur" : "إضافة مستخدم"}
+                    {t('addUser')}
                   </h3>
                 </div>
               </div>
@@ -386,7 +374,7 @@ function UsersManagement() {
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === "fr" ? "Nom" : "الاسم"}
+                    {t('userName')}
                   </label>
                   <input
                     type="text"
@@ -399,7 +387,7 @@ function UsersManagement() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === "fr" ? "Email" : "البريد الإلكتروني"}
+                    {t('userEmail')}
                   </label>
                   <input
                     type="email"
@@ -412,7 +400,7 @@ function UsersManagement() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === "fr" ? "Mot de passe" : "كلمة المرور"}
+                    {t('userPassword')}
                   </label>
                   <input
                     type="password"
@@ -425,15 +413,15 @@ function UsersManagement() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {language === "fr" ? "Rôle" : "الدور"}
+                    {t('userRole')}
                   </label>
                   <select
                     value={newUser.role}
                     onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                     className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="farmer">{language === "fr" ? "Fermier" : "مزارع"}</option>
-                    <option value="admin">{language === "fr" ? "Administrateur" : "مدير"}</option>
+                    <option value="farmer">{t('farmer')}</option>
+                    <option value="admin">{t('administrator')}</option>
                   </select>
                 </div>
               </div>
@@ -445,13 +433,13 @@ function UsersManagement() {
                   onClick={closeModal}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  {language === "fr" ? "Annuler" : "إلغاء"}
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  {language === "fr" ? "Ajouter" : "إضافة"}
+                  {t('add')}
                 </button>
               </div>
             </form>

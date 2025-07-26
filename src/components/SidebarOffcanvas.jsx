@@ -16,9 +16,11 @@ import {
 } from "@heroicons/react/24/outline";
 import logo from "../imgtest/logo-tc-advisor 2.png";
 import { useLanguage } from "../LanguageContext";
+import { useTranslation } from "../i18n";
 
 function Sidebar({ onClose }) {
   const { language, toggleLanguage } = useLanguage();
+  const t = useTranslation();
   const navigate = useNavigate();
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -178,7 +180,7 @@ function Sidebar({ onClose }) {
             className="group flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary-700 hover:bg-primary-50 transition-colors duration-200"
           >
             <UserGroupIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-primary-500" />
-            {language === "fr" ? "Gestion des utilisateurs" : "إدارة المستخدمين"}
+            {t('userManagement')}
           </button>
         )}
 
@@ -188,7 +190,7 @@ function Sidebar({ onClose }) {
           className="group flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary-700 hover:bg-primary-50 transition-colors duration-200"
         >
           <BuildingOfficeIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-primary-500" />
-          {language === "fr" ? "Vos fermes" : "مزارعكم"}
+          {t('yourFarms')}
         </button>
 
         {/* Add Farm */}
@@ -197,7 +199,7 @@ function Sidebar({ onClose }) {
           className="group flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-secondary-700 hover:bg-secondary-50 transition-colors duration-200"
         >
           <PlusIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-secondary-500" />
-          {language === "fr" ? "Ajouter une ferme" : "إضافة مزرعة"}
+          {t('addFarm')}
         </button>
 
         {/* Farms List */}
@@ -250,7 +252,7 @@ function Sidebar({ onClose }) {
                   onClick={handleVosFermesClick}
                   className="w-full text-xs text-gray-500 hover:text-primary-600 py-1 transition-colors duration-200"
                 >
-                  {language === "fr" ? `Voir toutes (${farms.length})` : `عرض الكل (${farms.length})`}
+                  {t('viewAll')} ({farms.length})
                 </button>
               )}
             </div>
@@ -259,7 +261,7 @@ function Sidebar({ onClose }) {
 
         {loading && (
           <div className="px-2 py-4 text-sm text-gray-500">
-            {language === "fr" ? "Chargement..." : "جار التحميل..."}
+            {t('loading')}
           </div>
         )}
       </nav>
@@ -272,7 +274,7 @@ function Sidebar({ onClose }) {
           className="group flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-primary-700 hover:bg-primary-50 transition-colors duration-200"
         >
           <GlobeAltIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-primary-500" />
-          {language === "fr" ? "العربية" : "Français"}
+          {t('languageName')}
         </button>
 
         {/* Logout */}
@@ -281,7 +283,7 @@ function Sidebar({ onClose }) {
           className="group flex w-full items-center px-2 py-2 text-sm font-medium rounded-md text-red-700 hover:text-red-900 hover:bg-red-50 transition-colors duration-200"
         >
           <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 text-red-500 group-hover:text-red-700" />
-          {language === "fr" ? "Se déconnecter" : "تسجيل الخروج"}
+          {t('logout')}
         </button>
       </div>
     </div>

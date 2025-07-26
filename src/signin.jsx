@@ -6,9 +6,11 @@ import API_CONFIG from "./config/api";
 import { EyeIcon, EyeSlashIcon, GlobeAltIcon } from "@heroicons/react/24/outline";
 import logo from "./imgtest/logo-tc-advisor 1.png";
 import { useLanguage } from "./LanguageContext";
+import { useTranslation } from "./i18n";
 
 function SignIn() {
   const { language, toggleLanguage } = useLanguage();
+  const t = useTranslation();
   const navigate = useNavigate();
 
   // State for email, password, and error message
@@ -197,8 +199,8 @@ function SignIn() {
                   </svg>
                 ) : null}
                 {isLoading
-                  ? (language === "fr" ? "Connexion..." : "جار تسجيل الدخول...")
-                  : (language === "fr" ? "Se connecter" : "تسجيل الدخول")
+                  ? t('signingIn')
+                  : t('signIn')
                 }
               </button>
             </div>
@@ -211,7 +213,7 @@ function SignIn() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  {language === "fr" ? "Préférences" : "التفضيلات"}
+                  {t('preferences')}
                 </span>
               </div>
             </div>
@@ -222,7 +224,7 @@ function SignIn() {
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200"
               >
                 <GlobeAltIcon className="h-4 w-4 mr-2" />
-                {language === "fr" ? "العربية" : "Français"}
+                {t('languageName')}
               </button>
             </div>
           </div>

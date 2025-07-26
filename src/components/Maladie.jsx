@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { InformationCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from '../LanguageContext';
+import { useTranslation } from '../i18n';
 
 function Maladie({ name, risk, info, recommendation }) {
   const { language } = useLanguage();
+  const t = useTranslation();
   
   // State to manage the info modal visibility
   const [showInfo, setShowInfo] = useState(false);
@@ -14,10 +16,6 @@ function Maladie({ name, risk, info, recommendation }) {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const handleCloseRecommendations = () => setShowRecommendations(false);
   const handleShowRecommendations = () => setShowRecommendations(true);
-
-  const noRecommendationText = language === 'fr' 
-    ? 'Pas de recommandations pour le moment' 
-    : 'لا توجد توصيات في الوقت الحالي';
 
   return (
     <>
@@ -31,7 +29,7 @@ function Maladie({ name, risk, info, recommendation }) {
         </div>
         <div className="flex items-center">
           <span className="text-gray-700">
-            {language === 'fr' ? 'Risque : ' : 'خطر : '}{risk}%
+            {t('risk')} : {risk}%
           </span>
           <ShieldCheckIcon
             className="ml-2 w-5 h-5 text-green-500 cursor-pointer hover:text-green-700 transition-colors"
@@ -59,7 +57,7 @@ function Maladie({ name, risk, info, recommendation }) {
                 onClick={handleCloseInfo}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-gray-600 transition-colors"
               >
-                {language === 'fr' ? 'Fermer' : 'غلق'}
+                {t('close')}
               </button>
             </div>
           </div>
@@ -72,7 +70,7 @@ function Maladie({ name, risk, info, recommendation }) {
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {language === 'fr' ? 'Recommandations' : 'توصيات'}
+                {t('recommendations')}
               </h3>
               <XMarkIcon
                 className="w-6 h-6 text-gray-400 cursor-pointer hover:text-gray-600"
@@ -90,7 +88,7 @@ function Maladie({ name, risk, info, recommendation }) {
                   ))}
                 </ul>
               ) : (
-                <p className="text-gray-500">{noRecommendationText}</p>
+                <p className="text-gray-500">{t('noRecommendations')}</p>
               )}
             </div>
             <div className="flex justify-end">
@@ -98,7 +96,7 @@ function Maladie({ name, risk, info, recommendation }) {
                 onClick={handleCloseRecommendations}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-gray-600 transition-colors"
               >
-                {language === 'fr' ? 'Fermer' : 'غلق'}
+                {t('close')}
               </button>
             </div>
           </div>
