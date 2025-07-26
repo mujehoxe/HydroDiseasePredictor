@@ -66,10 +66,30 @@ function UsersManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(Array.isArray(data) ? data : []);
+        
+        // Handle the SuccessResponse structure from backend
+        let usersArray = [];
+        if (data && data.data && Array.isArray(data.data)) {
+          // Backend returns: { message: "...", data: [...] }
+          usersArray = data.data;
+        } else if (Array.isArray(data)) {
+          // Direct array response
+          usersArray = data;
+        } else if (data && data.users && Array.isArray(data.users)) {
+          // Alternative structure
+          usersArray = data.users;
+        } else {
+          console.log("Unexpected data structure:", data);
+          usersArray = [];
+        }
+        
+        setUsers(usersArray);
+        setError(null);
       } else {
-        console.error("Failed to fetch users");
-        setError("Failed to fetch users");
+        console.error("Failed to fetch users - Response not OK:", response.status, response.statusText);
+        const errorText = await response.text();
+        console.error("Error response body:", errorText);
+        setError(`Failed to fetch users: ${response.status} ${response.statusText}`);
         setUsers([]);
       }
     } catch (error) {
