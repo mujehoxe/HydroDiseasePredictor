@@ -5,6 +5,8 @@ import { useTranslation } from './i18n';
 import { getUser, getAuthToken } from './utils/auth';
 import Layout from './components/Layout';
 import MaladiesList from './components/MaladiesList';
+import diseaseRiskCalculators from './js/diseaseRiskCalculator';
+import { getRecommendation } from './js/getRecommendation';
 import {
   MapPinIcon,
   CloudIcon,
@@ -20,19 +22,17 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Pie } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -64,6 +64,7 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
   const [selectedVariable, setSelectedVariable] = useState('temperature');
   const [weatherHistory, setWeatherHistory] = useState([]);
   const [diseaseData, setDiseaseData] = useState([]);
+  const [farmRecommendations, setFarmRecommendations] = useState([]);
 
   // Update component state when weatherData prop changes
   useEffect(() => {
@@ -79,8 +80,27 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
         console.log(`Dashboard: Using ${weatherData.historicalData.length} historical data points from props`);
         console.log('Dashboard: NO API calls made in this component');
       }
+
+      // Generate farm recommendations based on weather data
+      generateFarmRecommendations(weatherData.temperature, weatherData.humidity, 2.0, isOutside);
     }
-  }, [weatherData]);
+  }, [weatherData, isOutside]);
+
+  // Generate farm recommendations similar to vos fermes
+  const generateFarmRecommendations = useCallback((temp, humid, dissolvedOxy, outside) => {
+    const uniqueRecommendations = new Set();
+
+    Object.keys(diseaseRiskCalculators).forEach((disease) => {
+      const risk = diseaseRiskCalculators[disease](temp, humid, dissolvedOxy, outside);
+      const recommendations = getRecommendation(disease, risk, humid, dissolvedOxy, language);
+
+      if (recommendations) {
+        recommendations.forEach((rec) => uniqueRecommendations.add(rec));
+      }
+    });
+
+    setFarmRecommendations(Array.from(uniqueRecommendations));
+  }, [language]);
 
   // Refresh weather data by calling parent's refresh function
   const handleRefreshWeather = useCallback(() => {
@@ -90,16 +110,6 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
       onRefreshWeather(address).finally(() => setWeatherLoading(false));
     }
   }, [onRefreshWeather, address]);
-
-  // Mock disease data for pie chart
-  useEffect(() => {
-    const mockDiseases = [
-      { name: 'High Risk', risk: 'high', count: 3 },
-      { name: 'Low Risk', risk: 'low', count: 5 },
-      { name: 'Medium Risk', risk: 'medium', count: 2 }
-    ];
-    setDiseaseData(mockDiseases);
-  }, []); // Remove t dependency to prevent infinite re-renders
 
   const toggleEnvironment = () => {
     setIsOutside(prev => !prev);
@@ -215,18 +225,6 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
       labels: weatherHistory.map(item => item.time),
       datasets: [createGradientDataset(data, selectedVariable, variable.label)]
     };
-  };
-
-  const diseaseChartData = {
-    labels: ['High Risk', 'Medium Risk', 'Low Risk'],
-    datasets: [
-      {
-        data: [3, 2, 5],
-        backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
-        borderColor: ['#dc2626', '#d97706', '#16a34a'],
-        borderWidth: 2
-      }
-    ]
   };
 
   const chartOptions = {
@@ -398,15 +396,6 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
       intersect: false,
       mode: 'index'
     }
-  };
-
-  const pieOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom',
-      },
-    },
   };
 
   if (!user || !token) {
@@ -673,18 +662,46 @@ function Tableaudebord({ weatherData, onRefreshWeather }) {
                     })()}
                   </div>
 
-                  {/* Disease Risk Chart */}
+                  {/* Farm Recommendations */}
                   <div>
                     <div className="flex items-center mb-4">
                       <ChartBarIcon className="h-5 w-5 text-gray-400 mr-2" />
                       <h4 className="text-md font-medium text-gray-900">
-                        {language === 'fr' ? 'Répartition des risques' : 'توزيع المخاطر'}
+                        {t('recommendations')}
                       </h4>
                     </div>
-                    <div className="h-64 flex items-center justify-center">
-                      <div className="w-48 h-48">
-                        <Pie data={diseaseChartData} options={pieOptions} />
-                      </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {farmRecommendations.length > 0 ? (
+                        <div className="space-y-3">
+                          {farmRecommendations.slice(0, 6).map((recommendation, index) => (
+                            <div key={index} className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <div className="h-1.5 w-1.5 rounded-full bg-green-400 mt-2"></div>
+                              </div>
+                              <p className="ml-3 text-sm text-gray-700">
+                                {recommendation}
+                              </p>
+                            </div>
+                          ))}
+                          {farmRecommendations.length > 6 && (
+                            <p className="text-xs text-gray-500 ml-6 pt-2 border-t">
+                              {`+${farmRecommendations.length - 6} ${t('additionalRecommendations')}`}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-sm text-gray-500 italic">
+                            {t('noRecommendationsAvailable')}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            {language === 'fr' 
+                              ? 'Les recommandations apparaîtront une fois les données météorologiques chargées.' 
+                              : 'ستظهر التوصيات بمجرد تحميل البيانات الجوية.'
+                            }
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
