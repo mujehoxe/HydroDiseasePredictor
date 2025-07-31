@@ -73,12 +73,15 @@ export const translations = {
     searchUsers: "Rechercher des utilisateurs...",
     usersList: "Liste des utilisateurs",
     userAdded: "Utilisateur ajouté avec succès",
+    userUpdated: "Utilisateur mis à jour avec succès",
     userDeleted: "Utilisateur supprimé avec succès",
+    editUser: "Modifier l'utilisateur",
     deleteUserConfirm: "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
     allFieldsRequired: "Tous les champs sont obligatoires",
     noUsersFound: "Aucun utilisateur trouvé",
     noUsersAvailable: "Aucun utilisateur disponible",
     failedToAddUser: "Échec de l'ajout de l'utilisateur",
+    failedToUpdateUser: "Échec de la mise à jour de l'utilisateur",
     failedToDeleteUser: "Échec de la suppression de l'utilisateur",
     
     // Weather & Environment
@@ -190,12 +193,15 @@ export const translations = {
     searchUsers: "البحث عن المستخدمين...",
     usersList: "قائمة المستخدمين",
     userAdded: "تم إضافة المستخدم بنجاح",
+    userUpdated: "تم تحديث المستخدم بنجاح",
     userDeleted: "تم حذف المستخدم بنجاح",
+    editUser: "تعديل المستخدم",
     deleteUserConfirm: "هل أنت متأكد من حذف هذا المستخدم؟",
     allFieldsRequired: "جميع الحقول مطلوبة",
     noUsersFound: "لم يتم العثور على مستخدمين",
     noUsersAvailable: "لا توجد مستخدمون متاحون",
     failedToAddUser: "فشل في إضافة المستخدم",
+    failedToUpdateUser: "فشل في تحديث المستخدم",
     failedToDeleteUser: "فشل في حذف المستخدم",
     
     // Weather & Environment

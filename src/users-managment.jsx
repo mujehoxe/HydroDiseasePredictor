@@ -26,6 +26,8 @@ function UsersManagement() {
   const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null); // For edit mode
+  const [isEditMode, setIsEditMode] = useState(false); // Track if we're editing
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -129,33 +131,60 @@ function UsersManagement() {
     }
   };
 
-  const addUser = async (e) => {
+  const addOrEditUser = async (e) => {
     e.preventDefault();
     
-    if (!newUser.name || !newUser.email || !newUser.password) {
+    if (!newUser.name || !newUser.email || (!isEditMode && !newUser.password)) {
       setError(t('allFieldsRequired'));
       return;
     }
 
     try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(newUser),
-      });
+      let response;
+      if (isEditMode) {
+        // Update existing user
+        const updateData = {
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role
+        };
+        
+        // Only include password if it's provided
+        if (newUser.password) {
+          updateData.password = newUser.password;
+        }
+
+        response = await fetch(`${API_CONFIG.BASE_URL}/users/${editingUser.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(updateData),
+        });
+      } else {
+        // Create new user
+        response = await fetch(`${API_CONFIG.BASE_URL}/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(newUser),
+        });
+      }
 
       if (response.ok) {
-        setSuccess(t('userAdded'));
+        setSuccess(isEditMode ? t('userUpdated') : t('userAdded'));
         setShowAddModal(false);
+        setIsEditMode(false);
+        setEditingUser(null);
         setNewUser({ name: "", email: "", password: "", role: "farmer" });
         fetchUsers();
         setTimeout(() => setSuccess(null), 3000);
       } else {
         // Handle error response
-        let errorMessage = t('failedToAddUser');
+        let errorMessage = isEditMode ? t('failedToUpdateUser') : t('failedToAddUser');
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
@@ -170,8 +199,8 @@ function UsersManagement() {
         setError(errorMessage);
       }
     } catch (error) {
-      console.error("Error adding user:", error);
-      let errorMessage = t('failedToAddUser');
+      console.error("Error adding/editing user:", error);
+      let errorMessage = isEditMode ? t('failedToUpdateUser') : t('failedToAddUser');
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         errorMessage = t('connectionError');
       }
@@ -181,7 +210,30 @@ function UsersManagement() {
 
   const closeModal = () => {
     setShowAddModal(false);
+    setIsEditMode(false);
+    setEditingUser(null);
     setNewUser({ name: "", email: "", password: "", role: "farmer" });
+    setError(null);
+  };
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+    setIsEditMode(true);
+    setNewUser({
+      name: user.name,
+      email: user.email,
+      password: "", // Don't prefill password for security
+      role: user.role
+    });
+    setShowAddModal(true);
+    setError(null);
+  };
+
+  const openAddModal = () => {
+    setIsEditMode(false);
+    setEditingUser(null);
+    setNewUser({ name: "", email: "", password: "", role: "farmer" });
+    setShowAddModal(true);
     setError(null);
   };
 
@@ -212,7 +264,7 @@ function UsersManagement() {
               </div>
             </div>
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={openAddModal}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
@@ -323,6 +375,13 @@ function UsersManagement() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2">
                               <button
+                                onClick={() => openEditModal(userItem)}
+                                className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
+                                title={t('edit')}
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </button>
+                              <button
                                 onClick={() => deleteUser(userItem.id)}
                                 className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
                                 title={t('delete')}
@@ -357,7 +416,7 @@ function UsersManagement() {
             className="relative bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <form onSubmit={addUser} className="p-6">
+            <form onSubmit={addOrEditUser} className="p-6">
               {/* Header */}
               <div className="flex items-center mb-6">
                 <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-100">
@@ -365,7 +424,7 @@ function UsersManagement() {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    {t('addUser')}
+                    {isEditMode ? t('editUser') : t('addUser')}
                   </h3>
                 </div>
               </div>
@@ -401,13 +460,19 @@ function UsersManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('userPassword')}
+                    {isEditMode && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({language === 'fr' ? 'optionnel - laissez vide pour conserver' : 'اختياري - اتركه فارغًا للاحتفاظ'})
+                      </span>
+                    )}
                   </label>
                   <input
                     type="password"
                     value={newUser.password}
                     onChange={(e) => setNewUser({...newUser, password: e.target.value})}
                     className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
+                    required={!isEditMode}
+                    placeholder={isEditMode ? (language === 'fr' ? 'Nouveau mot de passe (optionnel)' : 'كلمة مرور جديدة (اختياري)') : ''}
                   />
                 </div>
                 
@@ -439,7 +504,7 @@ function UsersManagement() {
                   type="submit"
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  {t('add')}
+                  {isEditMode ? t('update') : t('add')}
                 </button>
               </div>
             </form>
